@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>둘이서 ERD</title>
+<style>
+  :root {
+    --bg: #FAF9FC;
+    --ink: #1C1A22;
+    --ink-2: #4A4553;
+    --ink-3: #7D7787;
+    --line: #DAD6E0;
+    --edge: #8E879A;
+    --card: #FFFFFF;
+    --purple: #6D4AE0;
+    --purple-tint: #F1EDFD;
+    --orange: #E0612F;
+    --orange-tint: #FDF0EA;
+    --blue: #2F6FDB;
+    --blue-tint: #EBF2FD;
+    --neutral-tint: #F2F1F5;
+    --pk: #B7791F;
+    --pk-bg: #FCF3E3;
+    --fk: #2F6FDB;
+    --fk-bg: #EAF1FC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: "Noto Sans CJK KR", "Apple SD Gothic Neo", sans-serif; color: var(--ink); }
+  #root { position: relative; display: inline-block; padding: 44px 56px 40px; background: var(--bg); }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+  .sub { margin-top: 8px; font-size: 17px; color: var(--ink-2); }
+  .meta { margin-top: 4px; font-size: 13px; color: var(--ink-3); }
+  .zones { display: flex; gap: 72px; margin-top: 34px; align-items: flex-start; }
+  .zone { border-radius: 16px; padding: 18px 26px 26px; border: 1px solid var(--line); }
+  .zone.account { background: var(--neutral-tint); }
+  .zone.space { background: var(--purple-tint); border-color: #DCD3FA; }
+  .zone.content { background: var(--orange-tint); border-color: #F6D9CB; }
+  .zone-label { font-size: 16px; font-weight: 700; height: 26px; display: flex; align-items: center; gap: 8px; }
+  .zone-label span { font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+  .zone-body { display: flex; gap: 72px; margin-top: 22px; }
+  .col { display: flex; flex-direction: column; gap: 26px; width: 300px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(28,26,34,.05); }
+  .card.core { border: 2px solid var(--purple); }
+  .head { padding: 9px 12px 8px; border-bottom: 1px solid var(--line); }
+  .account .head { background: #ECEAF1; }
+  .space .head { background: #E7E0FC; }
+  .content .head { background: #FBE3D7; }
+  .tname { font-family: "Noto Sans Mono CJK KR", "DejaVu Sans Mono", Menlo, monospace; font-size: 14.5px; font-weight: 700; }
+  .tdesc { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .rows { padding: 4px 0 5px; }
+  .row { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; padding: 2.5px 12px 2.5px 8px; font-size: 12.5px; min-height: 22px; }
+  .row .k { font-size: 9.5px; font-weight: 700; text-align: center; border-radius: 4px; padding: 1px 0; width: 24px; }
+  .row .k.pk { background: var(--pk-bg); color: var(--pk); }
+  .row .k.fk { background: var(--fk-bg); color: var(--fk); }
+  .row .k.pkfk { background: linear-gradient(90deg, var(--pk-bg) 50%, var(--fk-bg) 50%); color: var(--ink-2); }
+  .row .n { font-family: "Noto Sans Mono CJK KR", "DejaVu Sans Mono", Menlo, monospace; color: var(--ink); white-space: nowrap; }
+  .row .t { font-size: 11.5px; color: var(--ink-3); text-align: right; white-space: nowrap; padding-left: 8px; }
+  .row .t b { color: var(--fk); font-weight: 600; }
+  .note { margin: 2px 10px 8px; padding: 5px 8px; font-size: 11.5px; color: var(--ink-2); background: #F7F5FA; border-radius: 6px; line-height: 1.45; }
+  .core .note { background: var(--purple-tint); }
+  #wires { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+  .legend { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 26px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .legend .item { display: flex; align-items: center; gap: 8px; }
+  .legend .k { font-size: 9.5px; font-weight: 700; border-radius: 4px; padding: 1px 4px; }
+  .legend .k.pk { background: var(--pk-bg); color: var(--pk); }
+  .legend .k.fk { background: var(--fk-bg); color: var(--fk); }
+  .rules { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .rule { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+  .rule b { color: var(--ink); display: block; font-size: 13.5px; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<div id="root">
+  <h1>둘이서 ERD (MVP v0.1)</h1>
+  <div class="sub">모든 콘텐츠는 공간에 속하고, 사용자는 활성 공간 하나에 속한다</div>
+  <div class="meta">PostgreSQL 16 · 14개 테이블 · 기준 문서 PRD v0.3 · 2026-10-17</div>
+
+  <div class="zones">
+    <!-- 계정 -->
+    <div class="zone account">
+      <div class="zone-label">계정 <span>로그인·세션·알림</span></div>
+      <div class="zone-body">
+        <div class="col">
+          <div class="card" id="users">
+            <div class="head"><div class="tname">users</div><div class="tdesc">사용자 한 명 (게스트·회원)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span></span><span class="n">account_type</span><span class="t">GUEST · MEMBER</span></div>
+              <div class="row"><span></span><span class="n">nickname</span><span class="t">varchar(20)</span></div>
+              <div class="row"><span></span><span class="n">profile_image_key</span><span class="t">varchar · null</span></div>
+              <div class="row"><span></span><span class="n">time_zone</span><span class="t">Asia/Seoul</span></div>
+              <div class="row"><span></span><span class="n">deleted_at</span><span class="t">탈퇴 시 익명화</span></div>
+            </div>
+          </div>
+          <div class="card" id="social">
+            <div class="head"><div class="tname">social_accounts</div><div class="tdesc">Google·Kakao 로그인 수단</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">provider</span><span class="t">GOOGLE · KAKAO</span></div>
+              <div class="row"><span></span><span class="n">provider_user_id</span><span class="t">varchar(100)</span></div>
+            </div>
+            <div class="note">UNIQUE (provider, provider_user_id)</div>
+          </div>
+          <div class="card" id="sessions">
+            <div class="head"><div class="tname">auth_sessions</div><div class="tdesc">refresh 토큰 (회원 30일, 게스트 365일)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">refresh_token_hash</span><span class="t">SHA-256 · UQ</span></div>
+              <div class="row"><span></span><span class="n">expires_at</span><span class="t">timestamptz</span></div>
+              <div class="row"><span></span><span class="n">revoked_at</span><span class="t">timestamptz · null</span></div>
+            </div>
+          </div>
+          <div class="card" id="devices">
+            <div class="head"><div class="tname">devices</div><div class="tdesc">FCM 푸시 토큰</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">fcm_token</span><span class="t">varchar · UQ</span></div>
+              <div class="row"><span></span><span class="n">platform</span><span class="t">ANDROID</span></div>
+            </div>
+          </div>
+          <div class="card" id="notif">
+            <div class="head"><div class="tname">notification_settings</div><div class="tdesc">알림 종류별 켜기·끄기 (1:1)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pkfk">PK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">event_reminder</span><span class="t">bool</span></div>
+              <div class="row"><span></span><span class="n">partner_created</span><span class="t">bool</span></div>
+              <div class="row"><span></span><span class="n">memo_pinned</span><span class="t">bool</span></div>
+              <div class="row"><span></span><span class="n">anniversary</span><span class="t">bool</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 공간 -->
+    <div class="zone space">
+      <div class="zone-label">공간 <span>개인·커플, 연결</span></div>
+      <div class="zone-body">
+        <div class="col">
+          <div class="card core" id="spaces">
+            <div class="head"><div class="tname">spaces</div><div class="tdesc">개인 공간 또는 커플 공간</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span></span><span class="n">type</span><span class="t">PERSONAL · COUPLE</span></div>
+              <div class="row"><span></span><span class="n">status</span><span class="t">ACTIVE · UNLINKED</span></div>
+              <div class="row"><span></span><span class="n">start_date</span><span class="t">사귄 날 · date</span></div>
+              <div class="row"><span></span><span class="n">together_color</span><span class="t">'함께' 색</span></div>
+              <div class="row"><span></span><span class="n">unlinked_at</span><span class="t">timestamptz · null</span></div>
+              <div class="row"><span></span><span class="n">purge_at</span><span class="t">삭제 예정 시각</span></div>
+            </div>
+            <div class="note">해제 +30일, 구성원 탈퇴 시 +90일 보관 후 삭제</div>
+          </div>
+          <div class="card" id="members">
+            <div class="head"><div class="tname">space_members</div><div class="tdesc">사용자의 공간 소속</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">color</span><span class="t">사람 색</span></div>
+              <div class="row"><span></span><span class="n">joined_at</span><span class="t">timestamptz</span></div>
+              <div class="row"><span></span><span class="n">left_at</span><span class="t">timestamptz · null</span></div>
+            </div>
+            <div class="note">부분 UNIQUE (user_id) WHERE left_at IS NULL<br>→ 사용자당 활성 공간 1개</div>
+          </div>
+          <div class="card" id="invites">
+            <div class="head"><div class="tname">invite_codes</div><div class="tdesc">커플 연결 초대코드 (24시간, 1회용)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span></span><span class="n">code</span><span class="t">char(8) · UQ</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">creator_user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">used_by_user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">expires_at</span><span class="t">생성 +24시간</span></div>
+              <div class="row"><span></span><span class="n">used_at · revoked_at</span><span class="t">null</span></div>
+            </div>
+          </div>
+          <div class="card" id="attempts">
+            <div class="head"><div class="tname">invite_code_attempts</div><div class="tdesc">오입력 기록 (1시간 10회 제한)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">succeeded</span><span class="t">bool</span></div>
+              <div class="row"><span></span><span class="n">attempted_at</span><span class="t">timestamptz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 콘텐츠 -->
+    <div class="zone content">
+      <div class="zone-label">콘텐츠 <span>모두 space_id로 공간에 소속 · 작성자 참조는 → users</span></div>
+      <div class="zone-body">
+        <div class="col">
+          <div class="card" id="events">
+            <div class="head"><div class="tname">events</div><div class="tdesc">일정 (대상: 나 또는 함께)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">author_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">is_together</span><span class="t">bool · 함께 일정</span></div>
+              <div class="row"><span></span><span class="n">title · note</span><span class="t">50자 · 1,000자</span></div>
+              <div class="row"><span></span><span class="n">is_all_day</span><span class="t">bool</span></div>
+              <div class="row"><span></span><span class="n">start_at · end_at</span><span class="t">시간 일정</span></div>
+              <div class="row"><span></span><span class="n">start_date · end_date</span><span class="t">종일 일정</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">updated_by</span><span class="t"><b>→ users</b></span></div>
+            </div>
+          </div>
+          <div class="card" id="reminders">
+            <div class="head"><div class="tname">event_reminders</div><div class="tdesc">사용자별 일정 알림</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">event_id</span><span class="t"><b>→ events</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">option</span><span class="t">AT_TIME · MIN_10 …</span></div>
+              <div class="row"><span></span><span class="n">fire_at · sent_at</span><span class="t">timestamptz</span></div>
+            </div>
+            <div class="note">UNIQUE (event_id, user_id)</div>
+          </div>
+          <div class="card" id="annivs">
+            <div class="head"><div class="tname">anniversaries</div><div class="tdesc">직접 기념일 (자동 기념일은 계산)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">author_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">name</span><span class="t">varchar(30)</span></div>
+              <div class="row"><span></span><span class="n">date</span><span class="t">date</span></div>
+              <div class="row"><span></span><span class="n">repeats_yearly</span><span class="t">bool</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card" id="memos">
+            <div class="head"><div class="tname">memos</div><div class="tdesc">메모 (고정 핀이 공지 역할)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">author_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">title · body</span><span class="t">50자 · 5,000자</span></div>
+              <div class="row"><span></span><span class="n">pinned_at</span><span class="t">null이면 고정 안 됨</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">pinned_by</span><span class="t"><b>→ users</b></span></div>
+            </div>
+          </div>
+          <div class="card" id="checklist">
+            <div class="head"><div class="tname">memo_checklist_items</div><div class="tdesc">체크리스트 (체크는 둘 다, 내용은 작성자)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">memo_id</span><span class="t"><b>→ memos</b></span></div>
+              <div class="row"><span></span><span class="n">content</span><span class="t">200자</span></div>
+              <div class="row"><span></span><span class="n">position</span><span class="t">smallint</span></div>
+              <div class="row"><span></span><span class="n">checked · checked_by</span><span class="t">bool · uuid</span></div>
+            </div>
+          </div>
+          <div class="card" id="favorites">
+            <div class="head"><div class="tname">memo_favorites</div><div class="tdesc">사용자별 즐겨찾기 (상대에게 안 보임)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pkfk">PK</span><span class="n">memo_id</span><span class="t"><b>→ memos</b></span></div>
+              <div class="row"><span class="k pkfk">PK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span></span><span class="n">created_at</span><span class="t">timestamptz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="item"><span class="k pk">PK</span> 기본 키</div>
+    <div class="item"><span class="k fk">FK</span> 외래 키</div>
+    <div class="item"><svg width="56" height="14"><line x1="2" y1="7" x2="54" y2="7" stroke="#8E879A" stroke-width="1.5"/><line x1="4" y1="1" x2="4" y2="13" stroke="#8E879A" stroke-width="1.5"/><path d="M44 7L54 1M44 7L54 7M44 7L54 13" stroke="#8E879A" stroke-width="1.5" fill="none"/></svg> 1 : N (부모 → 자식)</div>
+    <div class="item"><svg width="56" height="14"><line x1="2" y1="7" x2="54" y2="7" stroke="#8E879A" stroke-width="1.5"/><line x1="4" y1="1" x2="4" y2="13" stroke="#8E879A" stroke-width="1.5"/><line x1="52" y1="1" x2="52" y2="13" stroke="#8E879A" stroke-width="1.5"/></svg> 1 : 1</div>
+    <div class="item">파란색 <b style="color:#2F6FDB">→ 테이블</b> = 참조 대상 (작성자 등 users 참조는 선 생략)</div>
+  </div>
+  <div class="rules">
+    <div class="rule"><b>권한의 출발점</b>요청자의 활성 공간(space_members.left_at IS NULL) = 리소스의 space_id. 아니면 404</div>
+    <div class="rule"><b>삭제 방식</b>콘텐츠는 물리 삭제, 공간은 purge_at 이후 정리 작업이 삭제. 탈퇴한 사용자는 익명화</div>
+    <div class="rule"><b>계산 값</b>자동 기념일(100일 단위, 매년)과 D-day는 저장하지 않고 spaces.start_date로 계산</div>
+  </div>
+  <svg id="wires"></svg>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById('root');
+  const svg = document.getElementById('wires');
+  const R = root.getBoundingClientRect();
+  svg.setAttribute('width', R.width);
+  svg.setAttribute('height', R.height);
+  const box = id => {
+    const r = document.getElementById(id).getBoundingClientRect();
+    return { l: r.left - R.left, r: r.right - R.left, t: r.top - R.top, b: r.bottom - R.top, cy: (r.top + r.bottom) / 2 - R.top };
+  };
+  const rowY = (id, idx) => {
+    const rows = document.getElementById(id).querySelectorAll('.row');
+    const r = rows[idx].getBoundingClientRect();
+    return (r.top + r.bottom) / 2 - R.top;
+  };
+  const headY = id => { const r = document.getElementById(id).querySelector('.head').getBoundingClientRect(); return (r.top + r.bottom) / 2 - R.top; };
+  const zoneTop = sel => document.querySelector(sel).getBoundingClientRect().top - R.top;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML =
+    '<marker id="many" viewBox="0 0 12 12" refX="12" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 6L12 0.5M1 6L12 6M1 6L12 11.5" stroke="#8E879A" stroke-width="1.5" fill="none"/></marker>' +
+    '<marker id="one" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M5 0.5L5 11.5" stroke="#8E879A" stroke-width="1.5" fill="none"/></marker>' +
+    '<marker id="oneEnd" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M7 0.5L7 11.5" stroke="#8E879A" stroke-width="1.5" fill="none"/></marker>';
+  svg.appendChild(defs);
+
+  const path = (d, end, accent) => {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', accent || '#8E879A');
+    p.setAttribute('stroke-width', '1.5');
+    p.setAttribute('stroke-linejoin', 'round');
+    p.setAttribute('marker-start', 'url(#one)');
+    p.setAttribute('marker-end', end === 'one' ? 'url(#oneEnd)' : 'url(#many)');
+    svg.appendChild(p);
+  };
+
+  // 같은 열 안에서 왼쪽으로 돌아가는 선 (부모 → 자식)
+  const leftLoop = (parent, child, end, pyIdx, offset) => {
+    const P = box(parent), C = box(child);
+    const x = P.l - (offset || 14);
+    const y1 = pyIdx == null ? headY(parent) : rowY(parent, pyIdx);
+    const y2 = headY(child);
+    path(`M${P.l} ${y1}H${x}V${y2}H${C.l}`, end);
+  };
+  // 같은 열 안에서 오른쪽으로 돌아가는 선
+  const rightLoop = (parent, child, pyIdx, offset, cyIdx) => {
+    const P = box(parent), C = box(child);
+    const x = P.r + (offset || 14);
+    const y1 = pyIdx == null ? headY(parent) : rowY(parent, pyIdx);
+    const y2 = cyIdx == null ? headY(child) : rowY(child, cyIdx);
+    path(`M${P.r} ${y1}H${x}V${y2}H${C.r}`, 'many');
+  };
+  // 오른쪽 열로 건너가는 선 (줄기 x 지정)
+  const cross = (parent, pyIdx, child, cyIdx, trunkX) => {
+    const P = box(parent), C = box(child);
+    const y1 = rowY(parent, pyIdx);
+    const y2 = cyIdx == null ? headY(child) : rowY(child, cyIdx);
+    path(`M${P.r} ${y1}H${trunkX}V${y2}H${C.l}`, 'many');
+  };
+
+  // 계정 영역: users → 자식들 (왼쪽)
+  leftLoop('users', 'social', 'many', 0, 14);
+  leftLoop('users', 'sessions', 'many', 0, 14);
+  leftLoop('users', 'devices', 'many', 0, 14);
+  leftLoop('users', 'notif', 'one', 0, 14);
+
+  // users → 공간 영역 (줄기: 계정·공간 사이)
+  const U = box('users'), SP = box('spaces');
+  const gap12a = U.r + 30, gap12b = U.r + 44, gap12c = U.r + 58;
+  cross('users', 0, 'members', 2, gap12a);
+  cross('users', 0, 'invites', 2, gap12b);
+  cross('users', 0, 'attempts', 1, gap12c);
+
+  // spaces → space_members (오른쪽)
+  rightLoop('spaces', 'members', 0, 16, 1);
+
+  // spaces → 일정 열 (줄기: 공간·콘텐츠 사이)
+  const EV = box('events');
+  const trunk = SP.r + 40;
+  cross('spaces', 0, 'events', 1, trunk);
+  cross('spaces', 0, 'annivs', 1, trunk);
+
+  // spaces → memos: 콘텐츠 카드 위 통로로 이동
+  const ME = box('memos');
+  const channelY = EV.t - 12;
+  const y1 = rowY('spaces', 0);
+  const gap34 = ME.l - 26;
+  path(`M${SP.r} ${y1}H${trunk}V${channelY}H${gap34}V${rowY('memos', 1)}H${ME.l}`, 'many');
+
+  // events → event_reminders (오른쪽, 일정·메모 열 사이)
+  rightLoop('events', 'reminders', 0, 18, 1);
+
+  // memos → 자식들 (오른쪽)
+  rightLoop('memos', 'checklist', 0, 18, 1);
+  rightLoop('memos', 'favorites', 0, 18, 0);
+
+  document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

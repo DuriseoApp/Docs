@@ -1,0 +1,14 @@
+{
+  "name": "duriseo-docs",
+  "private": true,
+  "type": "module",
+  "description": "둘이서 기획 문서 도구 (ERD 이미지 렌더링)",
+  "scripts": {
+    "render:erd": "node scripts/render.mjs docs/erd/erd.html docs/ERD.png",
+    "render:screen": "node scripts/render.mjs",
+    "check": "bash scripts/check-ids.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}
