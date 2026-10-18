@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.4
 
-> 상태: 디자인 반영 전
+> 상태: 반영 완료 (2026-10-18, 캔버스 버전 28)
 > 기준 문서: 둘이서 PRD v0.4 (`docs/PRD.md`), `docs/SCREENS.md`
 > 작성일: 2026-10-18
 
@@ -95,21 +95,50 @@ PRD가 v0.4로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지우�
 
 | # | 화면 | 반영 |
 | --- | --- | --- |
-| 1 | SCR-CAL-01 알림 버튼 점, 날짜 목록·날짜 점의 메모 | ⬜ |
-| 2 | SCR-COUPLE-02 10분 유효, 재요청 대기 상태 | ⬜ |
-| 3 | SCR-COUPLE-04 "처음 만난 날" | ⬜ |
-| 4 | SCR-ANNIV-01 "처음 만난 날" | ⬜ |
-| 5 | SCR-MEMO-01 검색·읽음·NEW 제거, 메모 날짜 | ⬜ |
-| 6 | SCR-MEMO-02 읽음·NEW 제거, 메모 날짜 | ⬜ |
-| 7 | SCR-MEMO-04 [날짜 추가] 버튼, 날짜 행 | ⬜ |
-| 8 | SCR-SET-01 프로필 카드 (게스트·혼자) | ⬜ |
-| 9 | SCR-SET-03 직접 고르기 제거 | ⬜ |
-| 10 | SCR-NOTI-01 알림 목록 (새 화면) | ⬜ |
-| 11 | SCR-CAL-02 일정 상세 (새 화면) | ⬜ |
-| 12 | SCR-MEMO-03 메모 상세 (새 화면) | ⬜ |
-| 13 | SCR-SET-02 알림 설정 (새 화면) | ⬜ |
-| 14 | SCR-COUPLE-03 확인 | ⬜ |
-| 15 | SCR-START-01 "공지사항" 유지 확인 | ⬜ |
-| 16 | SCR-COUPLE-02 코드 만료 화면 (물어보기) | ⬜ |
-| 17 | 디자인 시스템 쓰임 점검 | ⬜ |
-| 18 | 새 토큰·컴포넌트 필요 여부 | ⬜ |
+| 1 | SCR-CAL-01 알림 버튼 점, 날짜 목록·날짜 점의 메모 | ✅ |
+| 2 | SCR-COUPLE-02 10분 유효, 재요청 대기 상태 | ✅ |
+| 3 | SCR-COUPLE-04 "처음 만난 날" | ✅ |
+| 4 | SCR-ANNIV-01 "처음 만난 날" | ✅ |
+| 5 | SCR-MEMO-01 검색·읽음·NEW 제거, 메모 날짜 | ✅ |
+| 6 | SCR-MEMO-02 읽음·NEW 제거, 메모 날짜 | ✅ |
+| 7 | SCR-MEMO-04 [날짜 추가] 버튼, 날짜 행 | ✅ |
+| 8 | SCR-SET-01 프로필 카드 (게스트·혼자) | ✅ (MenuSolo 보드 추가, Menu는 연결됨 상태) |
+| 9 | SCR-SET-03 직접 고르기 제거 | ✅ |
+| 10 | SCR-NOTI-01 알림 목록 (새 화면) | ✅ |
+| 11 | SCR-CAL-02 일정 상세 (새 화면) | ✅ |
+| 12 | SCR-MEMO-03 메모 상세 (새 화면) | ✅ |
+| 13 | SCR-SET-02 알림 설정 (새 화면) | ✅ |
+| 14 | SCR-COUPLE-03 확인 | ✅ 변경 없음 |
+| 15 | SCR-START-01 "공지사항" 유지 확인 | ✅ 그대로 |
+| 16 | SCR-COUPLE-02 코드 만료 화면 (물어보기) | ❓ 사용자에게 물어봄 (그리지 않음) |
+| 17 | 디자인 시스템 쓰임 점검 | ✅ 아래 목록 |
+| 18 | 새 토큰·컴포넌트 필요 여부 | ✅ 새 토큰 없음 (아래) |
+
+## 반영 결과 (2026-10-18, 캔버스 버전 28)
+
+- 고친 보드: Calendar, CalendarExpanded(같은 보드의 펼친 상태), InviteCreate, Connected, ConnectedDialog(같은 보드), Anniversaries, Memo, PinnedAll, AddEvent(AddEventMemo), Menu(MenuGuest), ColorSettings
+- 새 보드: InviteCreateCooldown, AddEventMemoDate, MenuSolo, Notifications, NotificationsRead, NotificationsEmpty, NotificationSettings, NotificationSettingsMixed, EventDetail, EventDetailPartner, EventDetailDialog, MemoDetail, MemoDetailPartner, MemoDetailDialog, V04Flow(화면 흐름 화살표)
+- 바뀐 화면 ID: SCR-CAL-01, SCR-CAL-02, SCR-COUPLE-02, SCR-COUPLE-04, SCR-ANNIV-01, SCR-MEMO-01, SCR-MEMO-02, SCR-MEMO-03, SCR-MEMO-04, SCR-SET-01, SCR-SET-02, SCR-SET-03, SCR-NOTI-01
+- 확인만: SCR-COUPLE-03 변경 없음, SCR-START-01 "공지사항" 그대로
+- 그리지 않은 것: 16번 코드 만료 화면 (사용자 답을 기다림)
+
+### 17. 쓰이지 않게 된 토큰·컴포넌트 (지우지 않음)
+
+| 항목 | 이전 쓰임 | 지금 |
+| --- | --- | --- |
+| `new-600` (#c9481a) | 메모 NEW 배지 | 어느 화면에도 안 씀 |
+| `info-700` (#1f55b5) | 메모 읽음 표시 | 어느 화면에도 안 씀 |
+| 검색 아이콘 | 메모 목록 앱바 | 어느 화면에도 안 씀 |
+| 체크리스트 진행 표시("체크리스트 · 2/5 완료") | 메모 목록·고정 메모 | 없앰 |
+| [직접 고르기] 점선 버튼 | 우리 색상 | 없앰 (점선 버튼 모양은 [날짜 추가]에서 계속 씀) |
+| `warning-700` (#a8411a) | 설명상 "핀 3개 초과" 주의 문구 | 지금 어느 화면에도 안 씀 (이번 변경과 무관, 참고) |
+
+### 18. 새 토큰·컴포넌트
+
+새 색은 만들지 않았어요. 아래는 기존 토큰을 조합해 보드에 그린 모양이고, 디자인 시스템 컴포넌트로 등록하지는 않았어요.
+
+- 안 읽음 점(알림 버튼, 알림 목록): `brand-500`, 지름 8. 알림 버튼 점은 흰 테두리 2
+- 안 읽은 알림 행: 배경 `brand-50`, 아이콘 원 `brand-100` + `brand-700`. 읽은 행은 `surface-0`, 아이콘 원 `surface-100` + `ink-600`
+- 메모 날짜 칩(작성일과 구분): 달력 아이콘 + 날짜, 배경 `surface-100`(카드 위에서는 `surface-0`), 글자 `ink-700`
+- 일정 알림 선택 칩: 메모 정렬 칩과 같은 모양(선택 `ink-900` 채움)
+
