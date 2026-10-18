@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-10-18 · 캔버스 버전 28 · PRD v0.4 |
+| 마지막 반영 | 2026-10-18 · 캔버스 버전 30 · PRD v0.4 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -19,6 +19,7 @@
 | ConnectGuest.dc.html | SCR-COUPLE-01 (게스트) | SCR-COUPLE-01--guest.png |
 | InviteCreate.dc.html | SCR-COUPLE-02 | SCR-COUPLE-02.png |
 | InviteCreateCooldown.dc.html | SCR-COUPLE-02 (재요청 대기) | SCR-COUPLE-02--cooldown.png |
+| InviteCreateRenewed.dc.html | SCR-COUPLE-02 (만료 후 자동 재발급) | SCR-COUPLE-02--renewed.png |
 | InviteEnter.dc.html | SCR-COUPLE-03 | SCR-COUPLE-03.png |
 | Connected.dc.html | SCR-COUPLE-04 | SCR-COUPLE-04.png |
 | ConnectedDialog.dc.html | SCR-COUPLE-04 (가져오지 않기 확인) | SCR-COUPLE-04--drop-dialog.png |
