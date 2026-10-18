@@ -190,7 +190,7 @@
 - 부분 UNIQUE (creator_user_id) WHERE used_at IS NULL AND revoked_at IS NULL: 사용자당 유효한 코드는 하나
 - 서비스: 입력한 코드는 공백을 없애고 대문자로 바꾼 뒤 비교한다 (FR-COUPLE-01.AC4). 그래서 DB에는 대문자만 있다
 - 서비스(재요청 간격): 같은 `creator_user_id`의 가장 최근 `created_at` + 60초가 지나야 새 코드를 발급한다. 새 컬럼은 없다 (FR-COUPLE-01.AC3)
-- 서비스(재요청): 새 코드를 발급하는 같은 트랜잭션에서 이전 코드의 `revoked_at`을 기록한다. 이전 코드는 그 즉시 쓸 수 없다
+- 서비스(재요청): 새 코드를 만드는 같은 트랜잭션에서, 그 사용자의 사용되지 않은(`used_at IS NULL`) 이전 코드 전부의 `revoked_at`을 기록한다. 시간이 지나 만료됐어도 `revoked_at`이 null이면 포함한다. 그래야 위 부분 UNIQUE와 충돌하지 않고, 이전 코드는 그 즉시 쓸 수 없다
 - 무차별 대입 방어는 DB-08
 
 **invite_code_attempts** — 초대코드 입력 시도 기록 (NFR-SEC-03)
@@ -325,6 +325,14 @@
 - 7일 지난 `invite_code_attempts`, 30일 지난 사용·만료·무효 초대코드 삭제
 - 만료되거나 무효화된 `auth_sessions` 삭제
 - `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2)
+
+### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
+
+`notifications.space_id`는 `ON DELETE CASCADE`이므로 공간이 지워지면 그 공간의 알림도 30일이 되기 전에 함께 지워진다. 사라진 공간을 가리키는 알림을 남기지 않으려는 의도한 동작이고, 연결 해제 때 알림을 지우는 이유(PRD Q-09)와 같다.
+
+- 커플 연결 뒤 개인 공간이 지워질 때(가져오지 않기를 고른 경우 포함): 그 개인 공간의 `space_id`를 가진 알림도 함께 지워진다.
+- 탈퇴로 개인 공간이 지워질 때(4.3의 3단계): 그 개인 공간의 알림도 함께 지워진다. 사용자 본인의 알림은 4.3의 4단계에서도 지운다.
+- `purge_at` 이후 정리 작업이 커플 공간을 지울 때도 같다 (4.4). 해제 시점에 이미 지웠으므로 남은 알림은 없다.
 - 어떤 사용자도 참조하지 않는 프로필 사진 파일 삭제
 
 ---

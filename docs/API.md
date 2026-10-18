@@ -100,7 +100,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /memos?view=&cursor=&size= | 고정되지 않은 메모 목록. `view` = `newest`(기본), `oldest`, `favorites`. 커서는 (created_at, id). 각 항목에 `memoDate`(없으면 null) 포함 | R-01, R-06 | FR-MEMO-01 |
 | GET | /memos/pinned | 고정 메모 전체, 최근 고정순. 앱은 3개만 보여주고 4개 이상이면 "더보기". 각 항목에 `memoDate` 포함 | R-01 | FR-MEMO-05 |
-| GET | /memos/dated?from=&to= | 날짜 범위(최대 3개월)에 `memoDate`가 있는 메모. 캘린더용. 각 항목에 `memoDate` 포함 | R-01 | FR-CAL-01.AC2 |
+| GET | /memos/dated?from=&to= | 날짜 범위(최대 3개월)에 `memoDate`가 있는 메모. 캘린더용. 각 항목에 `memoDate` 포함. `from` > `to`이거나 범위가 3개월을 넘으면 400 `VALIDATION_FAILED` | R-01 | FR-CAL-01.AC2 |
 | POST | /memos | 메모 생성 `{title, body, memoDate, notifyPartner}`. `memoDate`는 `YYYY-MM-DD` 또는 생략·null. 제목, 본문 중 하나 이상 필수 | R-01 | FR-MEMO-02, FR-NOTI-04 |
 | GET | /memos/{id} | 메모 상세 (요청자의 즐겨찾기 여부, `memoDate` 포함) | R-01, R-06 | FR-MEMO-03 |
 | PATCH | /memos/{id} | 제목, 본문, 메모 날짜 수정 `{title, body, memoDate}`. `memoDate: null`이면 날짜 제거 | R-03 | FR-MEMO-03 |
@@ -149,12 +149,12 @@
 
 ### 4.4 커플 연결과 기록 가져오기 (FR-COUPLE-01~03, 06)
 
-1. A가 `POST /invite-codes`를 호출한다. 서버는 A의 가장 최근 코드 `created_at` + 60초가 지났는지 먼저 본다. 안 지났으면 429 `INVITE_REISSUE_TOO_SOON`과 `retryAfterSeconds`를 돌려준다. 지났으면 A의 기존 유효 코드를 즉시 무효화(`revoked_at`)하고, 6자리 새 코드(`expires_at` = 지금 + 10분)를 만들어 `{code, expiresAt, reissueAvailableAt}`(= 생성 + 60초)을 돌려준다. 앱은 `GET /invite-codes/current`로 남은 시간과 `reissueAvailableAt`을 다시 읽을 수 있다 (FR-COUPLE-01).
+1. A가 `POST /invite-codes`를 호출한다. 서버는 A의 가장 최근 코드 `created_at` + 60초가 지났는지 먼저 본다. 안 지났으면 429 `INVITE_REISSUE_TOO_SOON`과 `retryAfterSeconds`를 돌려준다. 지났으면 같은 트랜잭션에서 A의 사용되지 않은 이전 코드 모두(만료됐어도 `used_at`과 `revoked_at`이 null인 것 포함)에 `revoked_at`을 기록하고(부분 UNIQUE `creator_user_id` WHERE `used_at IS NULL AND revoked_at IS NULL`을 지키기 위해), 6자리 새 코드(`expires_at` = 지금 + 10분)를 만들어 `{code, expiresAt, reissueAvailableAt}`(= 생성 + 60초)을 돌려준다. 앱은 `GET /invite-codes/current`로 남은 시간과 `reissueAvailableAt`을 다시 읽을 수 있다 (FR-COUPLE-01).
 2. B가 `POST /couple/join`으로 코드를 보낸다. 서버는 `code`의 공백을 제거하고 대문자로 바꾼 뒤 비교한다 (FR-COUPLE-01.AC4). 먼저 최근 1시간 실패가 10회 이상인지 본다 (NFR-SEC-03). 시도는 성공·실패 모두 `invite_code_attempts`에 남긴다.
 3. 코드 행을 잠그고 검사한다: 존재, 미만료, 미사용, 미무효, 만든 사람이 B가 아님, A와 B 모두 MEMBER이고 개인 공간에 있음. 실패마다 다른 오류 코드를 돌려준다 (FR-COUPLE-02.AC2, 5장).
 4. **복구 확인**: `purge_at`이 지나지 않았고 이전 구성원이 정확히 A와 B인 UNLINKED 커플 공간이 있으면, 그 공간을 다시 ACTIVE로 바꾸고 두 사람의 `space_members.left_at`과 공간의 `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06). 없으면 새 커플 공간과 구성원(A 주황, B 파랑, 함께 보라)을 만든다.
 5. A와 B의 개인 공간 소속에 `left_at`을 기록하고 코드를 사용 처리한다. 개인 공간 자체는 아직 지우지 않는다 (가져오기 대기).
-6. 응답에 `restored`와, 개인 공간에 데이터가 있으면 `importPending: true`를 넣는다. A에게 연결 완료 알림을 만들고(`COUPLE_LINKED`) 푸시를 보낸다 (7장).
+6. 응답에 `restored`와, 개인 공간에 데이터가 있으면 `importPending: true`를 넣는다. A와 B 두 사람 각자에게 `notifications`(`COUPLE_LINKED`, `space_id` null) 행을 만들고, 두 사람 모두에게 푸시를 보낸다 (PRD 8장, 7장).
 7. 두 사람은 각자 `POST /couple/import`로 고른다. `import: true`면 자기 개인 공간의 `events`, `anniversaries`, `memos`의 `space_id`를 커플 공간으로 바꾼 뒤 개인 공간을 지운다. `false`면 개인 공간을 지운다 (FR-COUPLE-03).
 8. 앱을 다시 열었을 때 가져오기 대기 중인 개인 공간(소속에 `left_at`이 있는 PERSONAL 공간)이 남아 있으면 다시 묻는다.
 
@@ -177,7 +177,7 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과, 종료가 시작보다 이름 | FR-CAL-02.AC3, NFR-LIMIT-01 |
+| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과, 종료가 시작보다 이름, 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`) | FR-CAL-02.AC3, NFR-LIMIT-01, FR-CAL-01.AC2 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰 만료 (앱이 refresh 후 재시도) | |
 | 401 | SESSION_INVALID | refresh 토큰 만료·무효 (시작 화면으로) | |
@@ -223,7 +223,7 @@
 | 일정 알림 | 1분마다 | `fire_at <= now`이고 `sent_at`이 없는 `event_reminders`마다 `notifications`(`EVENT_REMINDER`) 행을 만들고 `sent_at` 기록. 사용자의 `event_reminder` 설정이 켜져 있을 때만 푸시 | FR-CAL-05 |
 | 기념일 알림 | 매시 정각 | 각 사용자의 시간대로 지금이 오전 9시인 사용자에게, 오늘이 기념일(자동·직접)이면 `notifications`(`ANNIVERSARY`) 행을 만들고 설정이 켜져 있을 때만 푸시 | D-32 |
 | 상대 활동 알림 | 즉시 | 커플 공간에서 `notifyPartner = true`로 일정·메모를 만들었을 때(`PARTNER_CREATED`), 메모를 고정했을 때(`MEMO_PINNED`) 상대의 `notifications` 행을 만들고, 상대의 `partner_created`, `memo_pinned` 설정이 켜져 있을 때만 푸시 | D-27, D-35 |
-| 연결·해제 알림 | 즉시 | `notifications`(`COUPLE_LINKED`, `COUPLE_UNLINKED`) 행을 만들고 설정과 관계없이 항상 푸시 | PRD 8장 |
+| 연결·해제 알림 | 즉시 | 연결 완료: 두 사람 각자에게 `notifications`(`COUPLE_LINKED`, `space_id` null) 행을 만들고 두 사람 모두에게 푸시. 해제: 상대에게만 `notifications`(`COUPLE_UNLINKED`, `space_id` null) 행을 만들고 푸시. 둘 다 설정과 관계없이 항상 푸시 | PRD 8장 |
 | 알림 목록 정리 | 매일 03:00 KST | `created_at`이 30일 지난 `notifications` 삭제. ERD의 정리 작업이 하며 API는 별도로 지우지 않는다 | FR-NOTI-05.AC2, ERD DB-07 |
 
 단일 서버 인스턴스를 가정한다 (ERD DB-03). 서버를 여러 대로 늘리면 스케줄러 중복 실행 방지(예: ShedLock)가 필요하다.
