@@ -54,7 +54,7 @@ docs/PRD.md  ──(단일 출처)──┬──> docs/ERD.md (+ docs/erd/erd.h
 
 | 명령 | 하는 일 |
 | --- | --- |
-| `/prd-sync` | PRD 변경을 ERD, API, SCREENS, 디자인 변경 요청서에 반영하고 PR을 연다 (에이전트 팀) |
+| `/prd-sync` | PRD 변경을 ERD, API, SCREENS, 디자인 변경 요청서에 반영하고 PR을 연다 (에이전트 팀). claude.ai 프로젝트 채팅에서 실행하면 디자인 캔버스·화면 이미지까지 같은 PR에 반영한다 |
 | `/design-sync` | (claude.ai 프로젝트 채팅 전용) 요청서대로 디자인 캔버스를 고치고 화면 이미지·tokens.json·SCREENS.md PR과 Android 이슈를 만든다 |
 | `npm run render:design` | 디자인 캔버스 보드를 화면 PNG로 만든다 (`/design-sync`가 사용) |
 | `bash scripts/sync-main.sh` | GitHub에서 머지된 최신 문서를 받는다. Claude 세션을 열 때 자동 실행된다 (작업 중인 변경은 건드리지 않음) |
