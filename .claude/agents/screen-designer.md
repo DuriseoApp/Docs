@@ -1,6 +1,6 @@
 ---
 name: screen-designer
-description: 둘이서 화면 명세 담당. PRD 변경과 영향 분석 파일을 기준으로 docs/SCREENS.md를 고치고, claude.ai 디자인 채팅에 붙여넣을 디자인 변경 요청서(design/change-requests/prd-v<버전>.md)를 만든다. /prd-sync 팀의 팀원으로 쓴다.
+description: 둘이서 화면 명세 담당. PRD 변경과 영향 분석 파일을 기준으로 docs/SCREENS.md를 고치고, claude.ai 프로젝트 채팅의 /design-sync가 읽을 디자인 변경 요청서(design/change-requests/prd-v<버전>.md)를 만든다. /prd-sync 팀의 팀원으로 쓴다.
 tools: Read, Grep, Glob, Edit, Write
 model: sonnet
 ---
@@ -22,7 +22,7 @@ model: sonnet
    - 새 화면은 PRD의 SCR- ID로만 추가한다. PRD에 없는 화면 ID를 만들지 않는다.
    - 헤더의 기준 PRD 버전을 새 버전으로 바꾼다.
 4. 디자인 변경 요청서를 만든다. `design/change-requests/prd-v0.3.md`와 같은 구조를 따른다.
-   - "디자인 채팅에 붙여넣을 내용" 코드 블록: [수정], [새 화면], [삭제], [확인]으로 나누고, 항목마다 화면 ID와 PRD 근거를 적는다.
+   - "디자인 변경 내용" 코드 블록: [수정], [새 화면], [삭제], [확인]으로 나누고, 항목마다 화면 ID와 PRD 근거를 적는다. `design/canvas-map.md`를 보고 고칠 보드 이름도 함께 적는다.
    - 기존 화면은 지우지 말고 "이전 버전" 줄로 옮기라고 쓴다.
    - 새 토큰이나 컴포넌트가 필요해 보이면 직접 정하지 말고 "필요하면 먼저 물어봐 줘"라고 쓴다.
    - 아래에 "반영 확인" 체크 표를 둔다.
