@@ -12,13 +12,16 @@
 ```
 docs/PRD.md  ──(단일 출처)──┬──> docs/ERD.md (+ docs/erd/erd.html → docs/ERD.png)
                             ├──> docs/API.md
-                            └──> docs/SCREENS.md ──> design/change-requests/*.md ──(사람)──> claude.ai 디자인
-                                                                                              │
-              design/screens/*.png, design/tokens.json, docs/SCREENS.md  <──(/design-handoff)──┘
+                            └──> docs/SCREENS.md ──> design/change-requests/*.md
+                                                              │ (claude.ai 프로젝트 채팅 /design-sync)
+                                                              ▼
+                                           claude.ai 디자인 캔버스 수정
+                                                              │
+              design/screens/*.png, design/tokens.json, docs/SCREENS.md <── 같은 /design-sync가 PR
 ```
 
 - PRD가 단일 출처다. ERD, API, SCREENS는 PRD에서 파생된다. 파생 문서와 PRD가 다르면 PRD가 맞다.
-- 디자인 원본은 claude.ai 디자인 채팅에 있다. 이 레포에서는 디자인을 직접 그리지 않고, 변경 요청서를 만들고 결과를 받아온다.
+- 디자인 원본은 claude.ai 디자인 캔버스에 있다(`design/canvas-map.md`). 맥 터미널에서는 디자인을 고칠 수 없으므로 변경 요청서만 만들고, 캔버스 수정과 이미지 갱신은 claude.ai 프로젝트 채팅의 `/design-sync`가 한다.
 - 파생 문서의 헤더에는 기준 PRD 버전(`PRD v0.3` 형식)을 적는다. PRD 버전이 바뀌면 파생 문서 헤더도 같이 바꾼다.
 
 ## ID 규칙
@@ -52,6 +55,8 @@ docs/PRD.md  ──(단일 출처)──┬──> docs/ERD.md (+ docs/erd/erd.h
 | 명령 | 하는 일 |
 | --- | --- |
 | `/prd-sync` | PRD 변경을 ERD, API, SCREENS, 디자인 변경 요청서에 반영하고 PR을 연다 (에이전트 팀) |
-| `/design-handoff` | 수정된 디자인을 화면 이미지, tokens.json, SCREENS.md로 가져와 PR을 연다 |
+| `/design-sync` | (claude.ai 프로젝트 채팅 전용) 요청서대로 디자인 캔버스를 고치고 화면 이미지·tokens.json·SCREENS.md PR과 Android 이슈를 만든다 |
+| `npm run render:design` | 디자인 캔버스 보드를 화면 PNG로 만든다 (`/design-sync`가 사용) |
+| `bash scripts/sync-main.sh` | GitHub에서 머지된 최신 문서를 받는다. Claude 세션을 열 때 자동 실행된다 (작업 중인 변경은 건드리지 않음) |
 | `bash scripts/check-ids.sh` | 문서 간 ID와 PRD 버전이 맞는지 검사한다 |
 | `npm run render:erd` | `docs/erd/erd.html`로 `docs/ERD.png`를 다시 만든다 |

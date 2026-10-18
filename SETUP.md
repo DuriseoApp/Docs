@@ -83,8 +83,8 @@ claude
 
 ## 6. 그다음
 
-1. `design/change-requests/prd-v0.3.md`의 내용을 디자인 채팅에 붙여넣어 디자인을 v0.3에 맞춰요.
-2. 디자인 화면을 이미지로 내보내 `design/inbox/`에 넣고 `/design-handoff`.
+1. 디자인은 claude.ai 프로젝트 채팅에서 "디자인 반영해줘"로 맞춰요 (v0.3 요청서는 반영 완료).
+2. 맥에서 `npm install`을 다시 하면 디자인 렌더링 도구도 함께 설치돼요 (선택).
 3. Android·Server 레포 `CLAUDE.md`에 README의 "다른 레포에서 이 문서 보기" 내용을 넣어요 (개발 단계에서 함께 세팅해요).
 
 ## 문제가 생기면

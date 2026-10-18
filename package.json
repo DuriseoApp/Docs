@@ -2,13 +2,16 @@
   "name": "duriseo-docs",
   "private": true,
   "type": "module",
-  "description": "둘이서 기획 문서 도구 (ERD 이미지 렌더링)",
+  "description": "둘이서 기획 문서 도구 (ERD·디자인 화면 이미지 렌더링)",
   "scripts": {
     "render:erd": "node scripts/render.mjs docs/erd/erd.html docs/ERD.png",
     "render:screen": "node scripts/render.mjs",
-    "check": "bash scripts/check-ids.sh"
+    "check": "bash scripts/check-ids.sh",
+    "render:design": "node scripts/render-design.mjs"
   },
   "devDependencies": {
-    "playwright": "1.48.2"
+    "playwright": "1.48.2",
+    "@fontsource/ibm-plex-sans-kr": "5.1.0",
+    "@fontsource/ibm-plex-mono": "5.1.0"
   }
 }

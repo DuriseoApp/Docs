@@ -77,8 +77,8 @@ if [ -f docs/SCREENS.md ]; then
   else
     echo "  ✓ PRD의 모든 화면이 SCREENS.md에 있음"
   fi
-  not_designed="$(grep -cE '^- \*\*디자인\*\*: (미반영|변경 요청됨)' docs/SCREENS.md)"
-  [ "$not_designed" -gt 0 ] && warn "디자인이 아직 반영되지 않은 화면 ${not_designed}개 (/design-handoff 필요)"
+  not_designed="$(grep -cE '^- \*\*디자인\*\*: (미반영|변경 요청됨|디자인 없음)' docs/SCREENS.md)"
+  [ "$not_designed" -gt 0 ] && warn "디자인이 아직 반영되지 않은 화면 ${not_designed}개 (디자인 필요)"
 fi
 
 echo ""

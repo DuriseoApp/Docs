@@ -17,15 +17,15 @@ Docs/
 ├── design/
 │   ├── design-system.md       디자인 원칙·말투·컴포넌트
 │   ├── tokens.json            색·글꼴·간격 값 (Android·iOS 테마의 원본)
-│   ├── screens/               화면 이미지 SCR-*.png (핸드오프로 채움)
-│   ├── change-requests/       디자인 채팅에 보낼 변경 요청서
-│   └── inbox/                 디자인에서 내보낸 원본을 넣는 곳 (git 제외)
+│   ├── screens/               화면 이미지 SCR-*.png (/design-sync가 채움)
+│   ├── canvas-map.md          디자인 캔버스 보드 ↔ 화면 ID 대응표
+│   └── change-requests/       디자인 변경 요청서 (/prd-sync가 만들고 /design-sync가 반영)
 ├── sync/                      PRD 버전별 영향 분석 기록
-├── scripts/                   check-ids.sh (정합성 검사), render.mjs (HTML → PNG)
+├── scripts/                   check-ids.sh (정합성 검사), render.mjs (ERD → PNG), render-design.mjs (디자인 보드 → PNG)
 └── .claude/
     ├── settings.json          에이전트 팀 켜기, 권한
     ├── agents/                팀원 4명 정의
-    └── skills/                /prd-sync, /design-handoff
+    └── skills/                /prd-sync (맥), /design-sync (claude.ai 프로젝트 채팅)
 ```
 
 ## 기획팀 (에이전트 팀)
@@ -47,16 +47,26 @@ cd Duriseo/Docs && claude
 
 > 캘린더에 반복 일정을 넣고 싶어        ← 리드와 의논, 리드가 PRD 수정
 > /prd-sync                              ← 영향 분석 표가 나옴
-> 진행                                   ← 팀원 3명 병렬 작업 → 검수 → PR
+> start                                  ← 팀원 3명 병렬 작업 → 검수 → PR
 ```
 
 GitHub에서 PR을 보고 머지해요. PR에 디자인 변경 요청서가 있으면 다음 단계로 가요.
 
 ### 디자인을 바꿀 때
 
-1. `design/change-requests/prd-v<버전>.md`의 "디자인 채팅에 붙여넣을 내용"을 claude.ai 디자인 채팅에 붙여넣어요.
-2. 디자인이 끝나면 화면을 이미지로 내보내 `design/inbox/`에 넣어요 (가능하면 bundle.css도).
-3. `/design-handoff` → PR을 보고 머지해요.
+`/prd-sync` PR에 디자인 변경 요청서가 있으면, 머지한 뒤:
+
+1. claude.ai 프로젝트 "둘이서" 채팅에서 **"디자인 반영해줘"**
+2. Claude가 디자인 캔버스를 고치고, 화면 PNG·tokens.json·SCREENS.md를 갱신해 PR을 올리고, Android 레포에 이슈를 만들어요.
+3. 캔버스에서 바뀐 디자인을 보고, PR을 머지해요.
+
+### 최신 문서 받기 (자동)
+
+Claude를 열 때마다 `scripts/sync-main.sh`가 GitHub에서 머지된 최신 문서를 받아요. `git pull`을 직접 할 필요가 없어요.
+
+- main이고 작업 중인 변경이 없으면 최신으로 받아요.
+- 작업 브랜치가 이미 머지됐으면 main으로 옮기고 최신으로 받아요.
+- 작업 중이면 아무것도 건드리지 않고 알려만 줘요.
 
 ### 점검
 
@@ -68,9 +78,9 @@ GitHub에서 PR을 보고 머지해요. PR에 디자인 변경 요청서가 있�
 | 언제 | 할 일 |
 | --- | --- |
 | PRD 의논 | 무엇을 바꿀지 정하기 |
-| `/prd-sync` 중간 | 영향 분석 표를 보고 "진행" |
+| `/prd-sync` 중간 | 영향 분석 표를 보고 "start" |
 | PR | 확인하고 머지 (에이전트는 머지하지 않아요) |
-| 디자인 | 요청서를 디자인 채팅에 붙여넣기, 결과 이미지 내보내기 |
+| 디자인 | claude.ai 프로젝트 채팅에서 "디자인 반영해줘", 결과 확인 후 PR 머지 |
 
 ## 다른 레포에서 이 문서 보기
 
