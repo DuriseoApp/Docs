@@ -12,6 +12,8 @@
       "Edit(design/**)",
       "Edit(sync/**)",
       "Bash(bash scripts/check-ids.sh)",
+      "Bash(bash scripts/sync-main.sh)",
+      "Bash(npm run render:design *)",
       "Bash(npm run render:erd)",
       "Bash(npm run render:screen *)",
       "Bash(git status)",
@@ -47,6 +49,15 @@
       "Bash(gh pr merge*)",
       "Read(./.env)",
       "Read(./.env.*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sync-main.sh\"" }
+        ]
+      }
     ]
   }
 }
