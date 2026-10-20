@@ -123,7 +123,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | user_id | uuid | not null, FK users ON DELETE CASCADE | 받는 사람. 알림은 받는 사람 각자의 것이며 상대에게 보이지 않는다 (FR-NOTI-05.AC4) |
-| space_id | uuid | null, FK spaces ON DELETE CASCADE | 콘텐츠 알림은 그 공간, 연결·해제 알림은 null (Q-09) |
+| space_id | uuid | null, FK spaces ON DELETE CASCADE | 콘텐츠 알림은 그 공간, 연결·해제 알림은 null (PRD D-45) |
 | type | varchar(30) | not null, CHECK in (`EVENT_REMINDER`, `PARTNER_CREATED`, `MEMO_PINNED`, `ANNIVERSARY`, `COUPLE_LINKED`, `COUPLE_UNLINKED`) | PRD 8장 알림 종류 |
 | title | varchar(100) | not null | 푸시 제목과 같음 |
 | body | varchar(200) | null | 푸시 본문과 같음 |
@@ -308,7 +308,7 @@
 
 - 커플 공간은 `status = UNLINKED`, `unlinked_at` = 해제 시각, `purge_at` = 해제 시각 + 30일 (PRD D-06)
 - 두 구성원의 `space_members.left_at`을 기록하고, 그 공간의 `event_reminders`를 삭제한다
-- 해제한 공간의 `space_id`를 가진 `notifications`를 두 사람 모두 삭제한다 (PRD Q-09). 이 처리 뒤에 만드는 `COUPLE_UNLINKED` 알림은 `space_id`가 null이라 지워지지 않는다
+- 해제한 공간의 `space_id`를 가진 `notifications`를 두 사람 모두 삭제한다 (PRD D-45). 이 처리 뒤에 만드는 `COUPLE_UNLINKED` 알림은 `space_id`가 null이라 지워지지 않는다
 - `purge_at` 전에 같은 두 사람이 다시 연결하면 공간을 ACTIVE로 되돌리고 `left_at`, `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06)
 
 ### 4.3 탈퇴 (익명화)
@@ -328,7 +328,7 @@
 
 ### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
 
-`notifications.space_id`는 `ON DELETE CASCADE`이므로 공간이 지워지면 그 공간의 알림도 30일이 되기 전에 함께 지워진다. 사라진 공간을 가리키는 알림을 남기지 않으려는 의도한 동작이고, 연결 해제 때 알림을 지우는 이유(PRD Q-09)와 같다.
+`notifications.space_id`는 `ON DELETE CASCADE`이므로 공간이 지워지면 그 공간의 알림도 30일이 되기 전에 함께 지워진다. 사라진 공간을 가리키는 알림을 남기지 않으려는 의도한 동작이고, 연결 해제 때 알림을 지우는 이유(PRD D-45)와 같다. 대상 일정·메모가 지워져도 알림 행은 지우지 않는다(`target_id`는 FK가 아님, PRD D-43).
 
 - 커플 연결 뒤 개인 공간이 지워질 때(가져오지 않기를 고른 경우 포함): 그 개인 공간의 `space_id`를 가진 알림도 함께 지워진다.
 - 탈퇴로 개인 공간이 지워질 때(4.3의 3단계): 그 개인 공간의 알림도 함께 지워진다. 사용자 본인의 알림은 4.3의 4단계에서도 지운다.

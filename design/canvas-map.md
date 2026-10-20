@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-10-18 · 캔버스 버전 30 · PRD v0.4 |
+| 마지막 반영 | 2026-10-18 · 캔버스 버전 32 · PRD v0.4 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 

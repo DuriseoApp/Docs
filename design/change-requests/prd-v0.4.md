@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.4
 
-> 상태: 반영 완료 (2026-10-18, 캔버스 버전 30)
+> 상태: 반영 완료 (2026-10-18, 캔버스 버전 32)
 > 기준 문서: 둘이서 PRD v0.4 (`docs/PRD.md`), `docs/SCREENS.md`
 > 작성일: 2026-10-18
 
@@ -120,7 +120,7 @@ PRD가 v0.4로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지우�
 - 새 보드: InviteCreateCooldown, AddEventMemoDate, MenuSolo, Notifications, NotificationsRead, NotificationsEmpty, NotificationSettings, NotificationSettingsMixed, EventDetail, EventDetailPartner, EventDetailDialog, MemoDetail, MemoDetailPartner, MemoDetailDialog, V04Flow(화면 흐름 화살표)
 - 바뀐 화면 ID: SCR-CAL-01, SCR-CAL-02, SCR-COUPLE-02, SCR-COUPLE-04, SCR-ANNIV-01, SCR-MEMO-01, SCR-MEMO-02, SCR-MEMO-03, SCR-MEMO-04, SCR-SET-01, SCR-SET-02, SCR-SET-03, SCR-NOTI-01
 - 확인만: SCR-COUPLE-03 변경 없음, SCR-START-01 "공지사항" 그대로
-- 16번 코드 만료: 사용자가 "자동으로 새 코드 만들기"로 정함 (PRD D-42, FR-COUPLE-01 AC5). 캔버스 버전 30에 InviteCreateRenewed 보드(새 코드 + "시간이 지나 새 코드를 만들었어요. 새 코드를 다시 보내 주세요." 안내 + 1분 재요청 대기) 추가
+- 16번 코드 만료: 사용자가 "자동으로 새 코드 만들기"로 정함 (PRD D-42, FR-COUPLE-01 AC5). 캔버스 버전 32에 InviteCreateRenewed 보드(새 코드 + "시간이 지나 새 코드를 만들었어요. 새 코드를 다시 보내 주세요." 안내 + 1분 재요청 대기) 추가
 
 ### 17. 쓰이지 않게 된 토큰·컴포넌트 (지우지 않음)
 
@@ -135,7 +135,7 @@ PRD가 v0.4로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지우�
 
 ### 18. 새 토큰·컴포넌트
 
-새 색은 만들지 않았어요. 아래 모양은 기존 토큰 조합이고, 사용자 결정으로 디자인 시스템에 컴포넌트로 등록했어요 (2026-10-18, 디자인 시스템 버전 8: Badge의 `dr-unread`, Chip의 `dr-date-chip`, 새 NotificationItem `dr-noti`). 알림 행 메타 글자는 `brand-50` 위 대비 때문에 `ink-500` 대신 `ink-600`으로 맞췄어요.
+새 색은 만들지 않았어요. 아래 모양은 기존 토큰 조합이고, 사용자 결정으로 디자인 시스템에 컴포넌트로 등록했어요 (2026-10-18, 디자인 시스템 버전 9: Badge의 `dr-unread`, Chip의 `dr-date-chip`, 새 NotificationItem `dr-noti`). 알림 행 메타 글자는 `brand-50` 위 대비 때문에 `ink-500` 대신 `ink-600`으로 맞췄어요.
 
 - 안 읽음 점(알림 버튼, 알림 목록): `brand-500`, 지름 8. 알림 버튼 점은 흰 테두리 2
 - 안 읽은 알림 행: 배경 `brand-50`, 아이콘 원 `brand-100` + `brand-700`. 읽은 행은 `surface-0`, 아이콘 원 `surface-100` + `ink-600`
