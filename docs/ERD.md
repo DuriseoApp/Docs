@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.3 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.4 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17
+> 작성일: 2026-10-17 (갱신: 2026-10-18)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -16,7 +16,7 @@
 | --- | --- |
 | DB | PostgreSQL 16, 마이그레이션은 Flyway (`db/migration/V{n}__{설명}.sql`) |
 | 기본 키 | 모든 테이블 UUID (애플리케이션에서 UUIDv7 생성, 시간순 정렬 가능) |
-| 시간 | 일시는 `timestamptz`(UTC), 종일 일정·기념일·사귄 날은 `date` (NFR-TIME-01) |
+| 시간 | 일시는 `timestamptz`(UTC), 종일 일정·기념일·처음 만난 날·메모 날짜는 `date` (NFR-TIME-01) |
 | 사용자 시간대 | `users.time_zone`(IANA, 기본 `Asia/Seoul`)에 저장하고 앱 실행 시 갱신. 오전 9시 알림 계산에 쓴다 |
 | 삭제 | 콘텐츠는 물리 삭제(hard delete). 보관이 필요한 것은 공간 단위(`spaces.purge_at`)와 사용자 익명화로만 다룬다 (4장) |
 | 열거형 | `varchar` + `CHECK` 제약으로 저장한다 (PostgreSQL enum 타입은 변경이 어려워 쓰지 않음) |
@@ -28,7 +28,7 @@
 
 ## 2. 테이블 한눈에 보기
 
-14개 테이블이 세 영역으로 나뉜다. 관계도는 `ERD.png`를 본다.
+15개 테이블이 세 영역으로 나뉜다 (삭제된 `memo_checklist_items` 제외). 관계도는 `ERD.png`를 본다.
 
 | 영역 | 테이블 | 역할 |
 | --- | --- | --- |
@@ -37,6 +37,7 @@
 | | auth_sessions | refresh 토큰 |
 | | devices | FCM 푸시 토큰 |
 | | notification_settings | 알림 종류별 켜기·끄기 |
+| | notifications | 받은 알림 목록 (30일 보관) |
 | 공간 | spaces | 개인 공간 또는 커플 공간 |
 | | space_members | 사용자의 공간 소속 (활성 소속은 1개) |
 | | invite_codes | 커플 연결용 초대코드 |
@@ -45,7 +46,7 @@
 | | event_reminders | 사용자별 일정 알림 |
 | | anniversaries | 직접 기념일 |
 | | memos | 메모 (고정 핀 포함) |
-| | memo_checklist_items | 메모 체크리스트 항목 |
+| | memo_checklist_items | 삭제됨 (PRD v0.4) |
 | | memo_favorites | 사용자별 즐겨찾기 |
 
 ---
@@ -116,6 +117,27 @@
 
 연결·해제 알림은 끌 수 없으므로 컬럼이 없다.
 
+**notifications** — 받은 알림 목록 (FR-NOTI-05, PRD D-39, 8장)
+
+| 컬럼 | 타입 | 제약 | 설명 |
+| --- | --- | --- | --- |
+| id | uuid | PK | |
+| user_id | uuid | not null, FK users ON DELETE CASCADE | 받는 사람. 알림은 받는 사람 각자의 것이며 상대에게 보이지 않는다 (FR-NOTI-05.AC4) |
+| space_id | uuid | null, FK spaces ON DELETE CASCADE | 콘텐츠 알림은 그 공간, 연결·해제 알림은 null (PRD D-45) |
+| type | varchar(30) | not null, CHECK in (`EVENT_REMINDER`, `PARTNER_CREATED`, `MEMO_PINNED`, `ANNIVERSARY`, `COUPLE_LINKED`, `COUPLE_UNLINKED`) | PRD 8장 알림 종류 |
+| title | varchar(100) | not null | 푸시 제목과 같음 |
+| body | varchar(200) | null | 푸시 본문과 같음 |
+| target_type | varchar(20) | null, CHECK in (`EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS`) | 누르면 이동할 대상 (FR-NOTI-03) |
+| target_id | uuid | null | `target_type`이 가리키는 행의 ID |
+| read_at | timestamptz | null | 읽은 시각. null이면 안 읽음 (FR-NOTI-05.AC3) |
+| created_at | timestamptz | not null | |
+
+- INDEX (user_id, created_at DESC): 알림 목록 조회
+- 부분 INDEX (user_id) WHERE read_at IS NULL: 안 읽음 점과 개수 조회 (FR-CAL-01.AC4)
+- 서비스: 알림이 생기면 받는 사람마다 이 행을 먼저 만들고, 그 종류의 설정(`notification_settings`)이 켜져 있을 때만 푸시를 보낸다. 연결·해제 알림은 항상 푸시한다. 설정을 꺼도 행은 남는다 (DB-07)
+- 서비스: 조회·읽음 처리는 `user_id`가 요청자일 때만. 아니면 404 (DB-05)
+- `target_id`는 FK가 아니다. 대상 일정·메모가 삭제돼도 알림 기록은 30일까지 남는다
+
 ### 3.2 공간
 
 **spaces** — 개인 공간 또는 커플 공간 (PRD D-29)
@@ -125,7 +147,7 @@
 | id | uuid | PK | |
 | type | varchar(10) | not null, CHECK in (`PERSONAL`, `COUPLE`) | |
 | status | varchar(10) | not null, default `ACTIVE`, CHECK in (`ACTIVE`, `UNLINKED`) | 개인 공간은 항상 `ACTIVE` |
-| start_date | date | null | 사귄 날. 커플 공간만 (FR-COUPLE-04) |
+| start_date | date | null | 처음 만난 날. 커플 공간만 (FR-COUPLE-04) |
 | together_color | varchar(20) | null | '함께' 사람 색의 팔레트 키. 커플 공간만 (FR-CAL-04) |
 | unlinked_at | timestamptz | null | 연결 해제 시각 |
 | purge_at | timestamptz | null | 이 시각이 지나면 정리 작업이 공간을 삭제한다. 연결 해제 시 `unlinked_at` + 30일, 구성원이 탈퇴하면 탈퇴 시각 + 90일로 늦춘다 (PRD D-06, D-36) |
@@ -157,15 +179,19 @@
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | uuid | PK | |
-| code | char(8) | not null, UNIQUE | 영문 대문자 + 숫자, 0·O·1·I 제외 (32자 집합) |
+| code | char(6) | not null, UNIQUE | 문자 집합 31자: 영문 대문자 A–Z 중 O·I·L 제외 23자 + 숫자 2–9 8자. 대문자로 저장한다 (PRD D-05, FR-COUPLE-01) |
 | creator_user_id | uuid | not null, FK users ON DELETE CASCADE | |
-| expires_at | timestamptz | not null | 생성 + 24시간 (PRD D-05) |
+| expires_at | timestamptz | not null | 생성 + 10분 (PRD D-05) |
 | used_at | timestamptz | null | |
 | used_by_user_id | uuid | null, FK users ON DELETE SET NULL | |
-| revoked_at | timestamptz | null | 재발급으로 무효화된 시각 |
+| revoked_at | timestamptz | null | 재요청으로 만료된 시각 (FR-COUPLE-01.AC3) |
 | created_at | timestamptz | not null | |
 
 - 부분 UNIQUE (creator_user_id) WHERE used_at IS NULL AND revoked_at IS NULL: 사용자당 유효한 코드는 하나
+- 서비스: 입력한 코드는 공백을 없애고 대문자로 바꾼 뒤 비교한다 (FR-COUPLE-01.AC4). 그래서 DB에는 대문자만 있다
+- 서비스(재요청 간격): 같은 `creator_user_id`의 가장 최근 `created_at` + 60초가 지나야 새 코드를 발급한다. 새 컬럼은 없다 (FR-COUPLE-01.AC3)
+- 서비스(재요청): 새 코드를 만드는 같은 트랜잭션에서, 그 사용자의 사용되지 않은(`used_at IS NULL`) 이전 코드 전부의 `revoked_at`을 기록한다. 시간이 지나 만료됐어도 `revoked_at`이 null이면 포함한다. 그래야 위 부분 UNIQUE와 충돌하지 않고, 이전 코드는 그 즉시 쓸 수 없다
+- 무차별 대입 방어는 DB-08
 
 **invite_code_attempts** — 초대코드 입력 시도 기록 (NFR-SEC-03)
 
@@ -241,28 +267,17 @@
 | author_id | uuid | not null, FK users RESTRICT | |
 | title | varchar(50) | null | |
 | body | varchar(5000) | null | |
+| memo_date | date | null | 메모 날짜(선택). 시간 없이 시간대 없는 날짜로 저장 (NFR-TIME-01, PRD D-38). 있으면 캘린더 그 날에도 보인다 (FR-MEMO-02.AC4) |
 | pinned_at | timestamptz | null | 고정 시각. null이면 고정 안 됨 (PRD D-18, D-21) |
 | pinned_by | uuid | null, FK users RESTRICT | |
 | created_at, updated_at | timestamptz | not null | |
 
 - INDEX (space_id, created_at DESC): 최신순·오래된순 목록
 - 부분 INDEX (space_id, pinned_at DESC) WHERE pinned_at IS NOT NULL: 고정 영역, 최근 고정순
-- 서비스: 제목, 본문, 체크리스트 항목 중 하나 이상 필수 (FR-MEMO-02)
+- 부분 INDEX (space_id, memo_date) WHERE memo_date IS NOT NULL: 캘린더 날짜 범위 조회 (FR-CAL-01)
+- 서비스: 제목, 본문 중 하나 이상 필수 (FR-MEMO-02)
 
-**memo_checklist_items** — 체크리스트 항목 (FR-MEMO-04)
-
-| 컬럼 | 타입 | 제약 | 설명 |
-| --- | --- | --- | --- |
-| id | uuid | PK | |
-| memo_id | uuid | not null, FK memos ON DELETE CASCADE | |
-| content | varchar(200) | not null | 작성자만 수정 |
-| position | smallint | not null | 0부터 시작하는 순서 |
-| checked | boolean | not null, default false | 공간의 누구나 변경 (PRD D-22) |
-| checked_by | uuid | null | 마지막으로 체크를 바꾼 사람 |
-| checked_at | timestamptz | null | |
-
-- INDEX (memo_id, position)
-- 서비스: 메모당 100개 이하 (NFR-LIMIT-01)
+**memo_checklist_items** — 삭제됨 (PRD v0.4). 체크리스트가 범위 밖이 됨 (PRD D-19, FR-MEMO-04)
 
 **memo_favorites** — 사용자별 즐겨찾기 (PRD D-24)
 
@@ -287,11 +302,13 @@
 | 게스트 시작, 신규 소셜 로그인 | users, notification_settings, spaces(PERSONAL), space_members(주황) |
 | 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라), space_members 2개(만든 사람 주황, 입력한 사람 파랑) |
 | 연결 해제 | 두 사람 각자 spaces(PERSONAL), space_members(주황) |
+| 알림이 생길 때 (PRD 8장) | 받는 사람마다 notifications. 푸시 설정을 꺼도 만든다 (DB-07) |
 
 ### 4.2 연결 해제와 보관
 
 - 커플 공간은 `status = UNLINKED`, `unlinked_at` = 해제 시각, `purge_at` = 해제 시각 + 30일 (PRD D-06)
 - 두 구성원의 `space_members.left_at`을 기록하고, 그 공간의 `event_reminders`를 삭제한다
+- 해제한 공간의 `space_id`를 가진 `notifications`를 두 사람 모두 삭제한다 (PRD D-45). 이 처리 뒤에 만드는 `COUPLE_UNLINKED` 알림은 `space_id`가 null이라 지워지지 않는다
 - `purge_at` 전에 같은 두 사람이 다시 연결하면 공간을 ACTIVE로 되돌리고 `left_at`, `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06)
 
 ### 4.3 탈퇴 (익명화)
@@ -299,7 +316,7 @@
 1. 커플 공간에 있으면 4.2로 연결 해제한다.
 2. 이 사용자가 속했던 UNLINKED 커플 공간의 `purge_at`을 탈퇴 시각 + 90일로 늦춘다. 이미 그보다 늦으면 그대로 둔다 (PRD D-36).
 3. 개인 공간과 가져오기 대기 중인 개인 공간을 지운다. 콘텐츠는 CASCADE로 함께 지워진다.
-4. 사용자를 익명화한다: `deleted_at` 기록, 닉네임 "탈퇴한 사용자", 프로필 사진 파일과 `profile_image_key` 삭제, `social_accounts`, `auth_sessions`, `devices`, `notification_settings`, `memo_favorites`, `event_reminders`, 유효한 `invite_codes` 삭제. `users` 행 자체는 남겨 보관 중인 커플 공간의 작성자 참조를 유지한다.
+4. 사용자를 익명화한다: `deleted_at` 기록, 닉네임 "탈퇴한 사용자", 프로필 사진 파일과 `profile_image_key` 삭제, `social_accounts`, `auth_sessions`, `devices`, `notification_settings`, `notifications`, `memo_favorites`, `event_reminders`, 유효한 `invite_codes` 삭제. `users` 행 자체는 남겨 보관 중인 커플 공간의 작성자 참조를 유지한다.
 
 ### 4.4 매일 정리 작업 (03:00 KST)
 
@@ -307,6 +324,15 @@
 - `deleted_at`이 있고 더 이상 어떤 공간에서도 참조되지 않는 사용자 행 삭제
 - 7일 지난 `invite_code_attempts`, 30일 지난 사용·만료·무효 초대코드 삭제
 - 만료되거나 무효화된 `auth_sessions` 삭제
+- `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2)
+
+### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
+
+`notifications.space_id`는 `ON DELETE CASCADE`이므로 공간이 지워지면 그 공간의 알림도 30일이 되기 전에 함께 지워진다. 사라진 공간을 가리키는 알림을 남기지 않으려는 의도한 동작이고, 연결 해제 때 알림을 지우는 이유(PRD D-45)와 같다. 대상 일정·메모가 지워져도 알림 행은 지우지 않는다(`target_id`는 FK가 아님, PRD D-43).
+
+- 커플 연결 뒤 개인 공간이 지워질 때(가져오지 않기를 고른 경우 포함): 그 개인 공간의 `space_id`를 가진 알림도 함께 지워진다.
+- 탈퇴로 개인 공간이 지워질 때(4.3의 3단계): 그 개인 공간의 알림도 함께 지워진다. 사용자 본인의 알림은 4.3의 4단계에서도 지운다.
+- `purge_at` 이후 정리 작업이 커플 공간을 지울 때도 같다 (4.4). 해제 시점에 이미 지웠으므로 남은 알림은 없다.
 - 어떤 사용자도 참조하지 않는 프로필 사진 파일 삭제
 
 ---
@@ -315,12 +341,14 @@
 
 | ID | 결정 | 이유 |
 | --- | --- | --- |
-| DB-01 | 자동 기념일은 저장하지 않고 사귄 날로 계산 | 사귄 날이 바뀌면 다시 계산만 하면 되고, 저장된 값과 어긋날 일이 없음 |
+| DB-01 | 자동 기념일은 저장하지 않고 처음 만난 날로 계산 | 처음 만난 날이 바뀌면 다시 계산만 하면 되고, 저장된 값과 어긋날 일이 없음 |
 | DB-02 | refresh 토큰은 사용할 때마다 교체. 회원 30일, 게스트 365일 만료 | 게스트는 토큰을 잃으면 계정을 영영 잃으므로 길게 둠 (PRD D-02) |
 | DB-03 | MVP는 서버 인스턴스 1대를 가정 (스케줄러, 오입력 횟수 제한이 DB 기반) | 운영 단순화. 확장 시 분산 잠금 필요 |
 | DB-04 | 탈퇴한 사용자는 익명화(soft delete)하고, 속했던 커플 공간은 90일 보관 후 삭제 | 버그로 인한 손실이 생겨도 운영자가 복구할 수 있도록 (PRD D-36). 익명화로 작성자 참조도 유지됨 |
 | DB-05 | 다른 공간의 리소스 요청은 403이 아니라 404 | 리소스 존재 여부를 노출하지 않음 |
 | DB-06 | 일정 대상은 `is_together` 불리언 하나로 저장 | 상대를 대상으로 지정할 수 없어(PRD D-34) 대상은 '작성자 본인' 또는 '함께' 둘뿐 |
+| DB-07 | 알림 목록은 푸시와 별개로 저장하고 30일 뒤 삭제 | 푸시를 끈 종류도 목록에는 남기고(PRD D-39), 개인정보(일정·메모 제목) 보관을 30일로 제한 (NFR-PRIV-02, Q-03) |
+| DB-08 | 초대코드는 31자 집합 6자리(약 8.9억 조합) + 10분 만료 + 1시간 10회 오입력 제한으로 무차별 대입을 막음 | 코드가 짧아진 만큼 유효 시간과 시도 횟수로 보완 (PRD D-05, NFR-SEC-03) |
 
 ---
 
@@ -331,19 +359,23 @@
 | FR-AUTH-01~05 | users, social_accounts, auth_sessions, notification_settings |
 | FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3) |
 | FR-AUTH-07 프로필 | users.nickname, users.profile_image_key |
-| FR-COUPLE-01~02, 06 | invite_codes, invite_code_attempts, spaces, space_members |
+| FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at), invite_code_attempts, spaces, space_members |
 | FR-COUPLE-03 | events, anniversaries, memos (space_id 이동) |
 | FR-COUPLE-04 | spaces.start_date |
 | FR-COUPLE-05 | spaces.status, unlinked_at, purge_at, space_members.left_at |
 | FR-CAL-01~03 | events |
+| FR-CAL-01 날짜 있는 메모 | memos.memo_date |
+| FR-CAL-01.AC4 안 읽음 점 | notifications.read_at |
 | FR-CAL-04 사람 색 | space_members.color, spaces.together_color |
 | FR-CAL-05 일정 알림 | event_reminders |
 | FR-ANNIV-01~04 | spaces.start_date(자동), anniversaries(직접) |
 | FR-MEMO-01~03 | memos |
-| FR-MEMO-04 | memo_checklist_items |
+| FR-MEMO-02 메모 날짜 | memos.memo_date |
+| FR-MEMO-04 | 삭제됨 (PRD v0.4) |
 | FR-MEMO-05 | memos.pinned_at, pinned_by |
 | FR-MEMO-06 | memo_favorites |
 | FR-NOTI-01~03 | devices, notification_settings |
+| FR-NOTI-05 알림 목록 | notifications |
 
 ---
 

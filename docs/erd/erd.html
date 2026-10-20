@@ -73,7 +73,7 @@
 <div id="root">
   <h1>둘이서 ERD (MVP v0.1)</h1>
   <div class="sub">모든 콘텐츠는 공간에 속하고, 사용자는 활성 공간 하나에 속한다</div>
-  <div class="meta">PostgreSQL 16 · 14개 테이블 · 기준 문서 PRD v0.3 · 2026-10-17</div>
+  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.4 · 2026-10-18</div>
 
   <div class="zones">
     <!-- 계정 -->
@@ -131,6 +131,19 @@
               <div class="row"><span></span><span class="n">anniversary</span><span class="t">bool</span></div>
             </div>
           </div>
+          <div class="card" id="notifs">
+            <div class="head"><div class="tname">notifications</div><div class="tdesc">받은 알림 목록 (30일 보관)</div></div>
+            <div class="rows">
+              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">user_id</span><span class="t"><b>→ users</b></span></div>
+              <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b> · null</span></div>
+              <div class="row"><span></span><span class="n">type</span><span class="t">EVENT_REMINDER …</span></div>
+              <div class="row"><span></span><span class="n">title · body</span><span class="t">100자 · 200자</span></div>
+              <div class="row"><span></span><span class="n">target_type · target_id</span><span class="t">EVENT · MEMO …</span></div>
+              <div class="row"><span></span><span class="n">read_at</span><span class="t">null이면 안 읽음</span></div>
+            </div>
+            <div class="note">space_id → spaces는 선 생략<br>해제 시 그 공간의 알림 삭제</div>
+          </div>
         </div>
       </div>
     </div>
@@ -146,7 +159,7 @@
               <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
               <div class="row"><span></span><span class="n">type</span><span class="t">PERSONAL · COUPLE</span></div>
               <div class="row"><span></span><span class="n">status</span><span class="t">ACTIVE · UNLINKED</span></div>
-              <div class="row"><span></span><span class="n">start_date</span><span class="t">사귄 날 · date</span></div>
+              <div class="row"><span></span><span class="n">start_date</span><span class="t">처음 만난 날 · date</span></div>
               <div class="row"><span></span><span class="n">together_color</span><span class="t">'함께' 색</span></div>
               <div class="row"><span></span><span class="n">unlinked_at</span><span class="t">timestamptz · null</span></div>
               <div class="row"><span></span><span class="n">purge_at</span><span class="t">삭제 예정 시각</span></div>
@@ -166,13 +179,13 @@
             <div class="note">부분 UNIQUE (user_id) WHERE left_at IS NULL<br>→ 사용자당 활성 공간 1개</div>
           </div>
           <div class="card" id="invites">
-            <div class="head"><div class="tname">invite_codes</div><div class="tdesc">커플 연결 초대코드 (24시간, 1회용)</div></div>
+            <div class="head"><div class="tname">invite_codes</div><div class="tdesc">커플 연결 초대코드 (10분, 1회용)</div></div>
             <div class="rows">
               <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
-              <div class="row"><span></span><span class="n">code</span><span class="t">char(8) · UQ</span></div>
+              <div class="row"><span></span><span class="n">code</span><span class="t">char(6) · UQ</span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">creator_user_id</span><span class="t"><b>→ users</b></span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">used_by_user_id</span><span class="t"><b>→ users</b></span></div>
-              <div class="row"><span></span><span class="n">expires_at</span><span class="t">생성 +24시간</span></div>
+              <div class="row"><span></span><span class="n">expires_at</span><span class="t">생성 +10분</span></div>
               <div class="row"><span></span><span class="n">used_at · revoked_at</span><span class="t">null</span></div>
             </div>
           </div>
@@ -239,18 +252,9 @@
               <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">author_id</span><span class="t"><b>→ users</b></span></div>
               <div class="row"><span></span><span class="n">title · body</span><span class="t">50자 · 5,000자</span></div>
+              <div class="row"><span></span><span class="n">memo_date</span><span class="t">date · null</span></div>
               <div class="row"><span></span><span class="n">pinned_at</span><span class="t">null이면 고정 안 됨</span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">pinned_by</span><span class="t"><b>→ users</b></span></div>
-            </div>
-          </div>
-          <div class="card" id="checklist">
-            <div class="head"><div class="tname">memo_checklist_items</div><div class="tdesc">체크리스트 (체크는 둘 다, 내용은 작성자)</div></div>
-            <div class="rows">
-              <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
-              <div class="row"><span class="k fk">FK</span><span class="n">memo_id</span><span class="t"><b>→ memos</b></span></div>
-              <div class="row"><span></span><span class="n">content</span><span class="t">200자</span></div>
-              <div class="row"><span></span><span class="n">position</span><span class="t">smallint</span></div>
-              <div class="row"><span></span><span class="n">checked · checked_by</span><span class="t">bool · uuid</span></div>
             </div>
           </div>
           <div class="card" id="favorites">
@@ -349,6 +353,7 @@
   leftLoop('users', 'sessions', 'many', 0, 14);
   leftLoop('users', 'devices', 'many', 0, 14);
   leftLoop('users', 'notif', 'one', 0, 14);
+  leftLoop('users', 'notifs', 'many', 0, 14);
 
   // users → 공간 영역 (줄기: 계정·공간 사이)
   const U = box('users'), SP = box('spaces');
@@ -377,7 +382,6 @@
   rightLoop('events', 'reminders', 0, 18, 1);
 
   // memos → 자식들 (오른쪽)
-  rightLoop('memos', 'checklist', 0, 18, 1);
   rightLoop('memos', 'favorites', 0, 18, 0);
 
   document.body.setAttribute('data-ready', '1');
