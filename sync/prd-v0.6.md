@@ -125,3 +125,7 @@
 | --- | --- | --- | --- |
 | 1 | 수정 필요 | 0 | Major 3(지난 기념일 개수, 빈 대기 공간과 importPending, /auth/switch 트랜잭션 재조회), Minor 12 → 리드 결정(위 3.2 "검수 1차" 행)으로 api·data·screen이 수정. SCR-COUPLE-03 오류 화면과 재연결 복구 시트는 이번 그리기 범위 밖(사용자 목록에 없음) |
 | 2 | 수정 필요 | 0 | Major 1(ERD의 빈 개인 공간 삭제 대상이 B만) → data가 A·B 모두로, 위치를 4.1로. Minor: 범위 조회는 자르기로(리드 결정 변경, api), 로그아웃 확인 버튼을 `danger-700` 채움으로(토큰 규칙, 캔버스 버전 38), 오류 색 표기 `danger-600`, 기록 없음 시트의 닫기 버튼은 기존 닫기 아이콘 버튼 모양이라 새 컴포넌트 아님 |
+
+## 7. PR 뒤 추가 (2026-10-22)
+
+- 사용자 결정: API 응답 형식. 성공 봉투 없음, 목록은 `{items, nextCursor}`(페이지 없으면 `{items}`), 내용 없는 성공은 204, 오류 객체 `{code, message, details, traceId}`, `details` 규칙, 500 `INTERNAL_ERROR`. `docs/API.md` 1.1에 넣었다 (PRD 변경 없음)

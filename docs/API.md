@@ -2,7 +2,7 @@
 
 > 기준 문서: 둘이서 PRD v0.6 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-22)
+> 작성일: 2026-10-17 (갱신: 2026-10-22, 응답 형식 1.1 추가)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 요청·응답의 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -10,7 +10,7 @@
 
 ## 1. 공통 규약
 
-**응답은 성공이면 리소스 JSON을 그대로, 실패면 `{"code": "…", "message": "…"}`를 돌려준다.** 앱은 `code`로 분기하고, `message`는 로그용이다. 사용자에게 보이는 문구는 앱이 `code`에 맞춰 디자인 시스템의 말투(해요체)로 쓴다.
+**응답은 성공이면 봉투 없이 리소스를 그대로, 실패면 오류 객체를 돌려준다. 성공·실패는 HTTP 상태 코드로 구분한다.** 앱은 오류의 `code`로 분기하고, `message`는 로그용이다. 사용자에게 보이는 문구는 앱이 `code`에 맞춰 디자인 시스템의 말투(해요체)로 쓴다.
 
 - 모든 경로는 `/api/v1` 아래에 있다
 - `/auth/guest`, `/auth/social`, `/auth/refresh`를 빼면 access 토큰(`Authorization: Bearer …`)이 필요하다. `POST /auth/switch`도 게스트의 access 토큰이 필요하다
@@ -19,8 +19,48 @@
 - access 토큰 1시간, refresh 토큰은 회원 30일·게스트 365일, 사용할 때마다 교체 (PRD D-73, NFR-SEC-01, ERD DB-02). 로그인이 만료된 기기에는 푸시를 보내지 않는다 (R-16, 7장). 교체는 같은 세션 행의 토큰 해시와 만료를 갱신하는 것이라 `sid`는 로그인부터 로그아웃까지 바뀌지 않는다. 이전 refresh 토큰을 다시 보내면 401 `SESSION_INVALID`다
 - **한 계정은 한 기기에서만 로그인한다 (PRD D-51).** access 토큰에는 발급한 `auth_sessions.id`가 `sid` 클레임으로 들어 있다. 서버는 서명·만료 검사 뒤 요청마다 그 세션이 무효인지 본다. 무효인 이유가 `REPLACED`(다른 기기 로그인으로 끊김)면 401 `SESSION_REPLACED`, 그 밖의 무효(로그아웃, 탈퇴, 만료)면 401 `SESSION_INVALID`를 돌려준다
 - 앱은 401 `SESSION_REPLACED`를 받으면 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동한다 (FR-AUTH-02.AC3). `SESSION_INVALID`는 안내 없이 SCR-START-01로 보낸다. 이전 기기의 access 토큰이 이미 만료됐다면 `POST /auth/refresh`가 같은 기준으로 `SESSION_REPLACED`를 돌려주므로 안내는 그때 뜬다
-- 입력 길이 제한은 NFR-LIMIT-01을 따르고, 넘으면 400 `VALIDATION_FAILED`와 필드 이름을 돌려준다
-- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`)
+- 입력 길이 제한은 NFR-LIMIT-01을 따르고, 넘으면 400 `VALIDATION_FAILED`이며 필드 이름은 `details.fields`에 담는다 (1.1)
+- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 응답 모양은 1.1
+
+
+### 1.1 응답 형식
+
+`{success, data, error}` 같은 성공 봉투는 두지 않는다. 성공 여부는 HTTP 상태가 이미 알려 주고, 401 `SESSION_REPLACED` 같은 처리를 상태 코드에 걸어 두었기 때문이다. 오류를 200으로 돌려주지 않는다.
+
+| 경우 | 상태 | 본문 |
+| --- | --- | --- |
+| 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
+| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
+| 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/dated`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
+| 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
+| 모든 오류 (4xx, 5xx) | 5장의 상태 | 오류 객체 (아래) |
+
+- 최상위는 항상 객체다. 배열을 그대로 돌려주지 않는다 (나중에 필드를 더해도 앱이 깨지지 않게).
+- 값이 없는 필드는 빼지 않고 `null`로 보낸다.
+
+**오류 객체**
+
+```json
+{
+  "code": "VALIDATION_FAILED",
+  "message": "nickname: max 10",
+  "details": { "fields": [ { "field": "nickname", "reason": "TOO_LONG" } ] },
+  "traceId": "8f2c1d…"
+}
+```
+
+| 필드 | 뜻 |
+| --- | --- |
+| `code` | 5장의 오류 코드. 앱은 이것으로만 분기한다 |
+| `message` | 개발자용 설명. 로그에만 쓰고 화면에 보여주지 않는다. 바뀔 수 있다 |
+| `details` | 코드마다 추가 정보. 없으면 `null`. 아래 표에 정한 것만 넣는다 |
+| `traceId` | 요청 하나를 가리키는 ID. 서버 로그에서 이 값으로 찾는다. 응답 헤더 `X-Trace-Id`에도 같은 값을 넣는다. |
+
+| `code` | `details` |
+| --- | --- |
+| `VALIDATION_FAILED`, `DATE_OUT_OF_RANGE` | `{"fields": [{"field": "<요청 필드 이름>", "reason": "<이유>"}]}`. `reason`은 `REQUIRED`(필수값 없음), `TOO_LONG`(길이 초과), `INVALID`(형식·값이 틀림: 종료가 시작보다 이름, 미래의 처음 만난 날, 조회 범위 3개월 초과 등), `OUT_OF_RANGE`(1950-01-01 ~ 2050-12-31 밖) |
+| `INVITE_REISSUE_TOO_SOON`, `INVITE_RATE_LIMITED` | `{"retryAfterSeconds": 18}` |
+| 그 밖의 코드 | `null` |
 
 ---
 
@@ -82,7 +122,7 @@
 | GET | /space | 현재 공간 상세 (구성원, 사람 색, 처음 만난 날) | 로그인 | FR-SET-01 |
 | PATCH | /space | 처음 만난 날 변경 `{startDate}`. 요청자의 시간대(`users.time_zone`) 기준 오늘보다 뒤의 날짜는 400 `VALIDATION_FAILED`, 1950-01-01보다 앞의 날짜는 400 `DATE_OUT_OF_RANGE` | R-08, R-15 | FR-COUPLE-04.AC3, D-74 |
 | PATCH | /space/colors | 사람 색 변경 `{members: [{userId, color}], together}` | R-08 | FR-CAL-04 |
-| POST | /invite-codes | 초대코드 생성·재요청. 응답 `{code, expiresAt, reissueAvailableAt}`. 재요청하면 이전 코드는 즉시 만료. 마지막 발급 후 60초 안이면 429 `INVITE_REISSUE_TOO_SOON` (응답에 `retryAfterSeconds`) | R-09 | FR-COUPLE-01 |
+| POST | /invite-codes | 초대코드 생성·재요청. 응답 `{code, expiresAt, reissueAvailableAt}`. 재요청하면 이전 코드는 즉시 만료. 마지막 발급 후 60초 안이면 429 `INVITE_REISSUE_TOO_SOON` (`details.retryAfterSeconds`) | R-09 | FR-COUPLE-01 |
 | GET | /invite-codes/current | 내 유효한 초대코드와 남은 시간. 응답에 `reissueAvailableAt` 포함 (이 시각 전에는 재요청 불가) | R-09 | FR-COUPLE-01 |
 | POST | /couple/join | 초대코드로 연결 `{code}`. 서버는 `code`의 공백을 제거하고 대문자로 바꿔서 비교한다. 응답에 `restored`, `importPending`. 커밋 뒤 두 사람 기기에 SYNC `SPACE`/`LINKED`를 보낸다 (4.4, 6장) | R-09 | FR-COUPLE-01.AC4, FR-COUPLE-02, 06 |
 | POST | /couple/import | 기록 가져오기 결정 `{import: boolean}`. 결정하기 전에는 `GET /me`의 `importPending`이 계속 true라서 앱은 연결 완료 시트를 닫을 수 없고, 다음 실행 때 시트를 다시 띄운다 (4.4). 가져오기 대기 중인 개인 공간이 없으면(해제와 겹친 경우 포함) 409 `NO_IMPORT_PENDING` | 가져오기 대기 중인 본인 | FR-COUPLE-03 |
@@ -171,7 +211,7 @@
 
 ### 4.4 커플 연결과 기록 가져오기 (FR-COUPLE-01~03, 06)
 
-1. A가 `POST /invite-codes`를 호출한다. 서버는 A의 가장 최근 코드 `created_at` + 60초가 지났는지 먼저 본다. 안 지났으면 429 `INVITE_REISSUE_TOO_SOON`과 `retryAfterSeconds`를 돌려준다. 지났으면 같은 트랜잭션에서 A의 사용되지 않은 이전 코드 모두(만료됐어도 `used_at`과 `revoked_at`이 null인 것 포함)에 `revoked_at`을 기록하고(부분 UNIQUE `creator_user_id` WHERE `used_at IS NULL AND revoked_at IS NULL`을 지키기 위해), 6자리 새 코드(`expires_at` = 지금 + 10분)를 만들어 `{code, expiresAt, reissueAvailableAt}`(= 생성 + 60초)을 돌려준다. 앱은 `GET /invite-codes/current`로 남은 시간과 `reissueAvailableAt`을 다시 읽을 수 있다 (FR-COUPLE-01). 코드가 만료되면 앱이 SCR-COUPLE-02를 보고 있는 동안(또는 다시 들어왔을 때) 같은 `POST /invite-codes`를 호출해 새 코드를 받는다. 만료 시점에는 마지막 발급 후 10분이 지났으므로 429가 나지 않는다. 서버에 따로 자동 발급 작업은 두지 않는다 (FR-COUPLE-01.AC5, D-42).
+1. A가 `POST /invite-codes`를 호출한다. 서버는 A의 가장 최근 코드 `created_at` + 60초가 지났는지 먼저 본다. 안 지났으면 429 `INVITE_REISSUE_TOO_SOON`과 `details.retryAfterSeconds`를 돌려준다. 지났으면 같은 트랜잭션에서 A의 사용되지 않은 이전 코드 모두(만료됐어도 `used_at`과 `revoked_at`이 null인 것 포함)에 `revoked_at`을 기록하고(부분 UNIQUE `creator_user_id` WHERE `used_at IS NULL AND revoked_at IS NULL`을 지키기 위해), 6자리 새 코드(`expires_at` = 지금 + 10분)를 만들어 `{code, expiresAt, reissueAvailableAt}`(= 생성 + 60초)을 돌려준다. 앱은 `GET /invite-codes/current`로 남은 시간과 `reissueAvailableAt`을 다시 읽을 수 있다 (FR-COUPLE-01). 코드가 만료되면 앱이 SCR-COUPLE-02를 보고 있는 동안(또는 다시 들어왔을 때) 같은 `POST /invite-codes`를 호출해 새 코드를 받는다. 만료 시점에는 마지막 발급 후 10분이 지났으므로 429가 나지 않는다. 서버에 따로 자동 발급 작업은 두지 않는다 (FR-COUPLE-01.AC5, D-42).
 2. B가 `POST /couple/join`으로 코드를 보낸다. 서버는 `code`의 공백을 제거하고 대문자로 바꾼 뒤 비교한다 (FR-COUPLE-01.AC4). 먼저 최근 1시간 실패가 10회 이상인지 본다 (NFR-SEC-03). 시도는 성공·실패 모두 `invite_code_attempts`에 남긴다.
 3. 코드 행을 잠그고 검사한다: 존재, 미만료, 미사용, 미무효, 만든 사람이 B가 아님, A와 B 모두 MEMBER이고 개인 공간에 있음. 실패마다 다른 오류 코드를 돌려준다 (FR-COUPLE-02.AC2, 5장). 재요청·자동 재발급으로 무효가 된 코드(`revoked_at` 있음)는 만료와 같은 `INVITE_EXPIRED`로 응답한다 (PRD D-47).
 4. **복구 확인**: `purge_at`이 지나지 않았고 이전 구성원이 정확히 A와 B인 UNLINKED 커플 공간이 있으면, 그 공간을 다시 ACTIVE로 바꾸고 두 사람의 `space_members.left_at`과 공간의 `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06). 없으면 새 커플 공간과 구성원(A 주황, B 파랑, 함께 보라)을 만든다.
@@ -247,8 +287,9 @@
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
 | 413 | IMAGE_TOO_LARGE | 프로필 사진 10MB 초과 | NFR-FILE-01 |
 | 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님 | NFR-FILE-01 |
-| 429 | INVITE_RATE_LIMITED | 1시간 내 초대코드 오입력 10회 | NFR-SEC-03 |
-| 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청. 응답에 `retryAfterSeconds` | FR-COUPLE-01.AC3 |
+| 429 | INVITE_RATE_LIMITED | 1시간 내 초대코드 오입력 10회. `details.retryAfterSeconds`에 다시 입력할 수 있을 때까지 남은 초 | NFR-SEC-03 |
+| 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청. `details.retryAfterSeconds` | FR-COUPLE-01.AC3 |
+| 500 | INTERNAL_ERROR | 서버 내부 오류. `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다 | 1.1 |
 
 ---
 
