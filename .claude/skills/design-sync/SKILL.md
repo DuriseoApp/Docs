@@ -63,6 +63,7 @@ PRD가 바뀌면 맥의 `/prd-sync`가 디자인 변경 요청서를 만든다. 
    node scripts/render-design.mjs <받은 project 폴더> <dc-runtime.js> design/screens "Main.dc.html=SCR-START-01.png,..."
    ```
 4. **바뀌거나 새로 생긴 이미지는 직접 열어 본다.** 잘림, 겹침, 화면 밖으로 밀린 요소가 있으면 캔버스를 고쳐 다시 게시하고 다시 렌더링한다.
+5. **보드 원본을 레포에 복사한다.** 1번에서 받은 `project/` 아래 `.dc.html`과 `canvas.json`을 `design/source/`에 그대로 덮어쓴다 (`*_v1`, `*_v2` 같은 이전 버전 보드도 포함). 맥의 개발 에이전트는 캔버스를 열 수 없으므로 정확한 크기·간격·색은 이 원본에서 읽는다. `support.js`(런타임)는 복사하지 않는다.
 
 ## 6. 토큰과 명세
 

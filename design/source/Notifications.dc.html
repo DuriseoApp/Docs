@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>알림 목록</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Calendar.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">알림</h1>
+<span style="width: 48px" aria-hidden="true"></span>
+</header>
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="flex-grow: 1; padding: 0 32px 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 36px; background: #F5F3F7; color: #8E8996; display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></span>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5B5666">최근 30일 동안 받은 알림이 없어요</p>
+</div>
+</sc-if>
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 0 0 28px; display: flex; flex-direction: column">
+<p style="margin: 0; padding: 0 20px 8px; font-size: 13px; color: #5B5666">최근 30일 알림이에요. 누르면 관련 화면으로 가요.</p>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{items}}" as="n" hint-placeholder-count="6">
+<li>
+<a href="{{n.href}}" onClick="{{n.read}}" aria-label="{{n.aria}}" style="{{n.rowStyle}}">
+<span style="{{n.iconStyle}}"><sc-if value="{{n.is_bell}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></sc-if><sc-if value="{{n.is_cal}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></sc-if><sc-if value="{{n.is_memo}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12.5A.5.5 0 0 1 5.5 20V4a.5.5 0 0 1 .5-.5z"></path><path d="M15 3.5V8h4M9 12h6M9 16h4"></path></svg></sc-if><sc-if value="{{n.is_pin}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1.5H7V13l3-3z"></path><path d="M12 14.5V20"></path></svg></sc-if><sc-if value="{{n.is_link}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></sc-if><sc-if value="{{n.is_person}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg></sc-if></span>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">{{n.typeLabel}} · {{n.time}}</span>
+<span style="font-size: 15px; font-weight: {{n.titleWeight}}; color: #1C1A22; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{n.title}}</span>
+<span style="font-size: 14px; line-height: 1.5; color: #5B5666; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{n.body}}</span>
+</span>
+<span style="width: 8px; flex-shrink: 0; padding-top: 8px; display: flex; justify-content: center"><sc-if value="{{n.unread}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 4px; background: {{accent}}"></span></sc-if></span>
+</a>
+</li>
+</sc-for>
+</ul>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"view":{"editor":"enum","options":["mixed","read","empty","withdrawn"],"default":"mixed","section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const s = this.state || {};
+    const view = this.props.view || 'mixed';
+    // 종류별 아이콘은 디자인 시스템의 기존 아이콘만 쓴다 (알림 종, 달력, 메모, 핀, 링크, 사람)
+    const TYPE = {
+      EVENT_REMINDER: { label: '일정 알림', icon: 'bell', href: 'EventDetail.dc.html' },
+      PARTNER_EVENT: { label: '상대 일정 추가', icon: 'cal', href: 'EventDetail.dc.html' },
+      PARTNER_MEMO: { label: '상대 메모 추가', icon: 'memo', href: 'MemoDetail.dc.html' },
+      MEMO_PINNED: { label: '메모 고정', icon: 'pin', href: 'MemoDetail.dc.html' },
+      ANNIVERSARY: { label: '기념일', icon: 'cal', href: 'Anniversaries.dc.html' },
+      COUPLE_LINKED: { label: '연결', icon: 'link', href: 'ConnectionInfo.dc.html' },
+      COUPLE_UNLINKED: { label: '연결 해제', icon: 'person', href: 'ConnectionInfo.dc.html' }
+    };
+    // 문구는 PRD 8장 "알림 문구" 표 (D-46)
+    const LIST = [
+      { id: 1, type: 'PARTNER_EVENT', time: '방금', unread: true, title: '[상대 이름]님이 일정을 추가했어요', body: '10월 17일 (토) · 1박 2일 여행' },
+      { id: 2, type: 'EVENT_REMINDER', time: '오후 1:00', unread: true, title: '치과 예약', body: '1시간 뒤 · 오후 2:00' },
+      { id: 3, type: 'MEMO_PINNED', time: '오전 9:15', unread: true, title: '[상대 이름]님이 메모를 고정했어요', body: '여행 숙소 후보 정리했어' },
+      { id: 4, type: 'PARTNER_MEMO', time: '오전 9:12', title: '[상대 이름]님이 메모를 남겼어요', body: '여행 숙소 후보 정리했어' },
+      { id: 5, type: 'ANNIVERSARY', time: '10월 6일', title: '오늘은 200일이에요', body: '함께한 지 D+200' },
+      { id: 8, type: 'ANNIVERSARY', time: '10월 5일', title: '오늘은 [기념일 이름]이에요', body: '3번째 맞는 날이에요' },
+      { id: 6, type: 'EVENT_REMINDER', time: '10월 3일', title: '주말 브런치', body: '1시간 뒤 · 오전 11:00' },
+      { id: 7, type: 'COUPLE_LINKED', time: '9월 20일', title: '[상대 이름]님과 연결됐어요', body: '이제 캘린더와 메모를 함께 써요' }
+    ];
+    const readMap = s.readMap || {};
+    // 상대가 탈퇴하면 커플 공간 알림은 지워지고 연결·해제 알림만 남는다 (PRD D-45, D-53)
+    const WITHDRAWN = [
+      { id: 21, type: 'COUPLE_UNLINKED', time: '방금', unread: true, title: '[상대 이름]님이 탈퇴해 연결이 해제됐어요', body: '함께 쓴 기록은 더 이상 볼 수 없어요' },
+      { id: 22, type: 'COUPLE_LINKED', time: '9월 20일', title: '[상대 이름]님과 연결됐어요', body: '이제 캘린더와 메모를 함께 써요' }
+    ];
+    const list = view === 'empty' ? [] : (view === 'withdrawn' ? WITHDRAWN : LIST);
+    const items = list.map((x) => {
+      const t = TYPE[x.type];
+      const unread = (view === 'mixed' || view === 'withdrawn') && !!x.unread && !readMap[x.id];
+      const out = {
+        href: t.href,
+        typeLabel: t.label,
+        time: x.time,
+        title: x.title,
+        body: x.body,
+        unread,
+        aria: (unread ? '안 읽음, ' : '') + t.label + ', ' + x.time,
+        titleWeight: unread ? 700 : 500,
+        rowStyle: 'display: flex; align-items: flex-start; gap: 14px; padding: 14px 20px; text-decoration: none; color: #1C1A22; border-bottom: 1px solid #EEEBF1; background: ' + (unread ? '#F3F0FD' : '#FFFFFF'),
+        iconStyle: 'width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; display: flex; align-items: center; justify-content: center; ' + (unread ? 'background: #ECE6FC; color: #4A2FC0' : 'background: #F5F3F7; color: #5B5666'),
+        read: () => this.setState({ readMap: { ...readMap, [x.id]: true } })
+      };
+      ['bell', 'cal', 'memo', 'pin', 'link', 'person'].forEach((k) => { out['is_' + k] = t.icon === k; });
+      return out;
+    });
+    return { accent, items, isEmpty: items.length === 0, hasItems: items.length > 0 };
+  }
+}
+</script>
+</body>
+</html>

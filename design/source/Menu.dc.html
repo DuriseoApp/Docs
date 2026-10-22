@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>전체 메뉴</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<main style="width: 390px; height: {{mainH}}px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">전체 메뉴</h1>
+<a href="Calendar.dc.html" aria-label="닫기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</a>
+</header>
+<div style="flex-grow: 1; padding: 4px 20px 0; display: flex; flex-direction: column; gap: 24px">
+<sc-if value="{{isGuest}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="guestTitle" style="padding: 18px; border-radius: 20px; background: #FDF1E8; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A3A12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v5.5M12 16.2v.3"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="guestTitle" style="margin: 0; font-size: 15px; font-weight: 700; color: #8A3A12">게스트로 사용 중이에요</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #8A3A12">앱을 삭제하거나 기기를 바꾸면 데이터를 복구할 수 없어요.</p>
+</div>
+</div>
+<a href="Account.dc.html" style="height: 48px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">로그인해서 기록 지키기</a>
+</section>
+</sc-if>
+
+<sc-if value="{{isCouple}}" hint-placeholder-val="{{ true }}">
+<section aria-label="우리 프로필" style="padding: 22px 16px 16px; border-radius: 24px; background: #F5F3F7; display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start">
+<a href="ProfileEdit.dc.html" aria-label="내 프로필 수정: [내 이름]" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: #1C1A22">
+<span style="position: relative; width: 72px; height: 72px">
+<span style="{{meAvatarStyle}}">나</span>
+<span style="position: absolute; right: -4px; bottom: -4px; width: 28px; height: 28px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 0 0 2px #F5F3F7, 0 1px 3px rgba(28, 26, 34, 0.12); display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+</span>
+</span>
+<span style="font-size: 16px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">[내 이름]</span>
+<span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5B5666"><span style="{{meTagDot}}"></span>나</span>
+</a>
+<div style="padding-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px" aria-label="함께한 지 D+[N]">
+<svg width="34" height="22" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="#E0612F"></circle><circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path></svg>
+<span style="font-size: 14px; font-weight: 700; color: #4A2FC0">D+[N]</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span style="{{partnerAvatarStyle}}" aria-hidden="true">너</span>
+<span style="font-size: 16px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">[상대 이름]</span>
+<span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5B5666"><span style="{{partnerTagDot}}"></span>상대</span>
+</div>
+</div>
+<p style="margin: 0; text-align: center; font-size: 13px; color: #5B5666">[처음 만난 날]부터 함께하고 있어요</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<a href="ProfileEdit.dc.html" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">내 프로필 수정</a>
+<button type="button" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 14px; font-weight: 600">처음 만난 날 수정</button>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{isAlone}}" hint-placeholder-val="{{ false }}">
+<section aria-label="내 프로필" style="padding: 22px 16px 16px; border-radius: 24px; background: #F5F3F7; display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr); align-items: start">
+<a href="ProfileEdit.dc.html" aria-label="내 프로필 수정: [내 이름]" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: #1C1A22">
+<span style="position: relative; width: 72px; height: 72px">
+<span style="{{meAvatarStyle}}">나</span>
+<span style="position: absolute; right: -4px; bottom: -4px; width: 28px; height: 28px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 0 0 2px #F5F3F7, 0 1px 3px rgba(28, 26, 34, 0.12); display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+</span>
+</span>
+<span style="font-size: 16px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">[내 이름]</span>
+<span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5B5666"><span style="{{meTagDot}}"></span>나</span>
+</a>
+<div style="height: 72px; display: flex; align-items: center; justify-content: center" aria-hidden="true">
+<svg width="48" height="4" viewBox="0 0 48 4"><path d="M2 2h44" stroke="#B3AEBB" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 8"></path></svg>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span aria-hidden="true" style="box-sizing: border-box; width: 72px; height: 72px; border-radius: 36px; border: 2px dashed #B3AEBB; display: flex; align-items: center; justify-content: center; color: #8E8996">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</span>
+<span style="font-size: 16px; font-weight: 600; color: #5B5666">아직 없음</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<a href="ProfileEdit.dc.html" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">내 프로필 수정</a>
+<a href="{{connectHref}}" style="height: 44px; border-radius: 12px; background: {{accent}}; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">상대와 연결하기</a>
+</div>
+</section>
+</sc-if>
+
+<section aria-labelledby="decoTitle" style="display: flex; flex-direction: column">
+<h2 id="decoTitle" style="margin: 0 0 2px; font-size: 13px; font-weight: 600; color: #77727F">꾸미기</h2>
+<a href="ColorSettings.dc.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 14px; font-size: 16px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.1-.9-1.5-.9-2.5 0-.9.7-1.6 1.6-1.6h2.1a3.9 3.9 0 0 0 3.9-3.9C20.5 6.6 16.7 3.5 12 3.5z"></path><circle cx="7.8" cy="11" r="1.2" fill="currentColor" stroke="none"></circle><circle cx="11" cy="7.4" r="1.2" fill="currentColor" stroke="none"></circle><circle cx="15.4" cy="8.3" r="1.2" fill="currentColor" stroke="none"></circle></svg>
+우리 색상
+</span>
+<span style="display: flex; align-items: center; gap: 10px">
+<span style="display: flex; gap: 4px" aria-label="현재 색상: 나, 상대, 함께">
+<span style="{{meDot}}"></span><span style="{{partnerDot}}"></span><span style="{{togetherDot}}"></span>
+</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</span>
+</a>
+</section>
+
+<section aria-labelledby="setTitle" style="display: flex; flex-direction: column">
+<h2 id="setTitle" style="margin: 0 0 2px; font-size: 13px; font-weight: 600; color: #77727F">설정</h2>
+<a href="NotificationSettings.dc.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 14px; font-size: 16px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>알림 설정</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
+<a href="ConnectionInfo.dc.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 14px; font-size: 16px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>연결 정보</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #77727F">{{connLabel}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
+</a>
+<a href="Account.dc.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 14px; font-size: 16px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>계정</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; {{accountStyle}}">{{accountLabel}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
+</a>
+</section>
+
+<section aria-labelledby="etcTitle" style="display: flex; flex-direction: column">
+<h2 id="etcTitle" style="margin: 0 0 2px; font-size: 13px; font-weight: 600; color: #77727F">정보</h2>
+<a href="#help" style="height: 52px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22; font-size: 16px; font-weight: 500">문의하기<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></a>
+<a href="#terms" style="height: 52px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22; font-size: 16px; font-weight: 500">이용약관 · 개인정보처리방침<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></a>
+<a href="#oss" style="height: 52px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #1C1A22; font-size: 16px; font-weight: 500">오픈소스 라이선스<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></a>
+</section>
+
+<sc-if value="{{notGuest}}" hint-placeholder-val="{{ true }}">
+<div style="border-top: 1px solid #EEEBF1">
+<a href="Main.dc.html" style="height: 52px; display: flex; align-items: center; text-decoration: none; color: #B42335; font-size: 15px; font-weight: 600">로그아웃</a>
+</div>
+</sc-if>
+</div>
+
+<footer aria-label="앱 정보" style="flex-shrink: 0; margin: 8px 20px 28px; padding: 20px 16px; border-radius: 20px; background: #F7F6F9; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<svg width="36" height="25" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="#E0612F"></circle><circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path></svg>
+<span style="font-size: 14px; font-weight: 700">둘이서</span>
+<span style="font-size: 13px; color: #5B5666">버전 1.0.0 (100)</span>
+<sc-if value="{{isLatest}}" hint-placeholder-val="{{ true }}">
+<span style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #5B5666">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+최신 버전을 사용하고 있어요
+</span>
+</sc-if>
+<sc-if value="{{hasUpdate}}" hint-placeholder-val="{{ false }}">
+<a href="#update" style="margin-top: 4px; height: 36px; padding: 0 14px; border-radius: 999px; background: #ECE6FC; color: #4A2FC0; text-decoration: none; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"></path></svg>
+새 버전 1.1.0 업데이트
+</a>
+</sc-if>
+</footer>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"updateAvailable":{"editor":"boolean","default":false,"section":"상태"},"guest":{"editor":"boolean","default":false,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const me = this.props.meColor ?? '#E0612F';
+    const partner = this.props.partnerColor ?? '#2F6FDB';
+    const together = this.props.togetherColor ?? '#6D4AE0';
+    const hasUpdate = !!this.props.updateAvailable;
+    const onColor = (hex) => {
+      const h = String(hex || '').replace('#', '');
+      if (h.length !== 6) return '#FFFFFF';
+      const lin = (v) => { const c = parseInt(v, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(h.slice(0, 2)) + 0.7152 * lin(h.slice(2, 4)) + 0.0722 * lin(h.slice(4, 6));
+      return L > 0.2 ? '#1C1A22' : '#FFFFFF';
+    };
+    const big = (c) => 'width: 72px; height: 72px; border-radius: 36px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center';
+    const dot = (c, n) => 'width: ' + n + 'px; height: ' + n + 'px; border-radius: ' + (n / 2) + 'px; flex-shrink: 0; background: ' + c;
+    return {
+      meAvatarStyle: big(me),
+      partnerAvatarStyle: big(partner),
+      meTagDot: dot(me, 8),
+      partnerTagDot: dot(partner, 8),
+      meDot: dot(me, 14),
+      partnerDot: dot(partner, 14),
+      togetherDot: dot(together, 14),
+      hasUpdate,
+      isLatest: !hasUpdate,
+      accent: this.props.accent ?? '#6D4AE0',
+      isCouple: !this.props.guest && !this.props.solo,
+      isAlone: !!this.props.guest || !!this.props.solo,
+      connectHref: this.props.guest ? 'ConnectGuest.dc.html' : 'Connect.dc.html',
+      isGuest: !!this.props.guest,
+      notGuest: !this.props.guest,
+      mainH: this.props.guest ? 1200 : 1080,
+      connLabel: this.props.solo ? '혼자 사용 중' : '연결됨',
+      accountLabel: this.props.guest ? '게스트 · 로그인하기' : 'Google 로그인',
+      accountStyle: this.props.guest ? 'color: #4A2FC0; font-weight: 600' : 'color: #77727F'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>연결 정보</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Menu.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">연결 정보</h1>
+<span style="width: 48px" aria-hidden="true"></span>
+</header>
+
+<div style="flex-grow: 1; min-height: 0; padding: 8px 20px 28px; display: flex; flex-direction: column; gap: 20px">
+
+<sc-if value="{{justDisconnected}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; padding: 12px 14px; border-radius: 12px; background: #F5F3F7; font-size: 13px; line-height: 1.6; color: #1C1A22">연결을 해제했어요. 이제 혼자 사용하고 있어요.</p>
+</sc-if>
+
+<section aria-label="연결 상태" style="padding: 24px 16px 20px; border-radius: 24px; background: #F5F3F7; display: flex; flex-direction: column; align-items: center; gap: 16px">
+<div style="width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); align-items: start">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span style="{{meAvatarStyle}}" aria-hidden="true">나</span>
+<span style="font-size: 15px; font-weight: 700">[내 이름]</span>
+</div>
+<div style="height: 56px; display: flex; align-items: center; justify-content: center" aria-hidden="true">
+<sc-if value="{{isConnected}}" hint-placeholder-val="{{ true }}">
+<svg width="40" height="28" viewBox="22 32 64 44"><circle cx="44" cy="54" r="20" fill="#E0612F"></circle><circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path></svg>
+</sc-if>
+<sc-if value="{{isSolo}}" hint-placeholder-val="{{ false }}">
+<svg width="56" height="4" viewBox="0 0 56 4"><path d="M2 2h52" stroke="#B3AEBB" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 8"></path></svg>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<sc-if value="{{isConnected}}" hint-placeholder-val="{{ true }}">
+<span style="{{partnerAvatarStyle}}" aria-hidden="true">너</span>
+<span style="font-size: 15px; font-weight: 700">[상대 이름]</span>
+</sc-if>
+<sc-if value="{{isSolo}}" hint-placeholder-val="{{ false }}">
+<span aria-hidden="true" style="box-sizing: border-box; width: 56px; height: 56px; border-radius: 28px; border: 2px dashed #B3AEBB; display: flex; align-items: center; justify-content: center; color: #8E8996">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</span>
+<span style="font-size: 15px; font-weight: 600; color: #5B5666">아직 없음</span>
+</sc-if>
+</div>
+</div>
+<sc-if value="{{isConnected}}" hint-placeholder-val="{{ true }}">
+<span style="display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; background: #ECE6FC; color: #4A2FC0; font-size: 13px; font-weight: 700">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+연결됨
+</span>
+</sc-if>
+<sc-if value="{{isSolo}}" hint-placeholder-val="{{ false }}">
+<span style="padding: 4px 12px; border-radius: 999px; background: #FFFFFF; color: #5B5666; font-size: 13px; font-weight: 600">혼자 사용 중</span>
+</sc-if>
+</section>
+
+<sc-if value="{{isConnected}}" hint-placeholder-val="{{ true }}">
+<dl style="margin: 0; display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #EEEBF1"><dt style="font-size: 14px; color: #5B5666">연결한 날</dt><dd style="margin: 0; font-size: 15px; font-weight: 600">2026년 10월 12일</dd></div>
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #EEEBF1"><dt style="font-size: 14px; color: #5B5666">처음 만난 날</dt><dd style="margin: 0; font-size: 15px; font-weight: 600">[처음 만난 날]</dd></div>
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #EEEBF1"><dt style="font-size: 14px; color: #5B5666">함께한 지</dt><dd style="margin: 0; font-size: 15px; font-weight: 600; color: #4A2FC0">D+[N]</dd></div>
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between"><dt style="font-size: 14px; color: #5B5666">함께 쓰는 것</dt><dd style="margin: 0; font-size: 15px; font-weight: 600">캘린더 · 메모</dd></div>
+</dl>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">연결을 해제하면 두 사람 모두 빈 화면에서 다시 시작해요. 함께 쓴 기록은 30일 동안 보관되고, 그 안에 둘이 다시 연결하면 그대로 돌아와요.</p>
+<button type="button" onClick="{{openDialog}}" style="height: 52px; border-radius: 16px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #B42335; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">연결 해제</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isSolo}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: #5B5666; text-align: center">상대를 초대하면 캘린더와 메모를 함께 쓸 수 있어요.<br>혼자 쓴 기록은 연결할 때 가져올지 고를 수 있어요.</p>
+<sc-if value="{{noCode}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{makeCode}}" style="box-sizing: border-box; min-height: 88px; padding: 18px 20px; border: 0; border-radius: 20px; background: {{accent}}; color: #FFFFFF; font-family: inherit; text-align: left; display: flex; align-items: center; gap: 14px; cursor: pointer">
+<span style="width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, 0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2a2 2 0 0 0 0 3v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15.5v-2a2 2 0 0 0 0-3z"></path><path d="M12 9.5v5M9.5 12h5"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 17px; font-weight: 700">초대코드 만들기</span>
+<span style="font-size: 13px; color: rgba(255, 255, 255, 0.88)">코드를 만들어 상대에게 보내요</span>
+</span>
+</button>
+</sc-if>
+<sc-if value="{{hasCode}}" hint-placeholder-val="{{ false }}">
+<section aria-label="내 초대코드" style="padding: 20px; border-radius: 20px; background: #F5F3F7; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<span style="font-size: 13px; font-weight: 600; color: #5B5666">내 초대코드</span>
+<div style="display: flex; gap: 8px" aria-label="초대코드 K7Q29X">
+<sc-for list="{{chars}}" as="ch" hint-placeholder-count="6">
+<span style="width: 40px; height: 52px; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 500">{{ch.c}}</span>
+</sc-for>
+</div>
+<span style="font-size: 12px; color: #5B5666">24시간 동안 유효 · 23시간 59분 남음</span>
+<div style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" onClick="{{copy}}" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+<button type="button" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 14px; font-weight: 600">공유하기</button>
+</div>
+<span style="font-size: 12px; color: #5B5666">상대가 코드를 입력하면 바로 연결돼요</span>
+</section>
+</sc-if>
+<a href="InviteEnter.dc.html" style="box-sizing: border-box; min-height: 64px; padding: 0 18px; border-radius: 20px; border: 1px solid #E6E2EA; color: #1C1A22; text-decoration: none; display: flex; align-items: center; gap: 14px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5"></rect><path d="M7.5 10h.01M11 10h.01M14.5 10h.01M7.5 14h9"></path></svg>
+<span style="flex-grow: 1; font-size: 16px; font-weight: 600">받은 초대코드 입력하기</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B5666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
+</sc-if>
+</div>
+
+<sc-if value="{{dialogOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeDialog}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="dTitle" aria-describedby="dBody" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="dTitle" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">연결을 해제할까요?</h2>
+<p id="dBody" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">[상대 이름]님과 함께 쓴 캘린더와 메모가 두 사람 화면에서 모두 사라지고, 각자 처음부터 다시 시작해요. 30일 안에 둘이 다시 연결하면 그대로 복구돼요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeDialog}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Connect.dc.html" style="height: 48px; border-radius: 14px; background: #B42335; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">연결 해제</a>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"mode":{"editor":"enum","options":["connected","solo"],"default":"connected","section":"상태"},"dialogOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const me = this.props.meColor ?? '#E0612F';
+    const partner = this.props.partnerColor ?? '#2F6FDB';
+    const s = this.state || {};
+    const mode = s.mode || this.props.mode || 'connected';
+    const dialogOpen = s.dialogOpen !== undefined ? !!s.dialogOpen : !!this.props.dialogOpen;
+    const codeMade = !!s.codeMade;
+    const onColor = (hex) => {
+      const h = String(hex || '').replace('#', '');
+      if (h.length !== 6) return '#FFFFFF';
+      const lin = (v) => { const c = parseInt(v, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(h.slice(0, 2)) + 0.7152 * lin(h.slice(2, 4)) + 0.0722 * lin(h.slice(4, 6));
+      return L > 0.2 ? '#1C1A22' : '#FFFFFF';
+    };
+    const avatar = (c) => 'width: 56px; height: 56px; border-radius: 28px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center';
+    const isConnected = mode === 'connected';
+    return {
+      accent,
+      meAvatarStyle: avatar(me),
+      partnerAvatarStyle: avatar(partner),
+      isConnected,
+      isSolo: !isConnected,
+      dialogOpen: isConnected && dialogOpen,
+      justDisconnected: !!s.justDisconnected && !isConnected,
+      openDialog: () => this.setState({ dialogOpen: true }),
+      closeDialog: () => this.setState({ dialogOpen: false }),
+      disconnect: () => this.setState({ dialogOpen: false, mode: 'solo', justDisconnected: true }),
+      noCode: !codeMade,
+      hasCode: codeMade,
+      makeCode: () => this.setState({ codeMade: true }),
+      chars: 'K7Q29X'.split('').map((c) => ({ c })),
+      copyLabel: s.copied ? '복사됨' : '코드 복사',
+      copy: () => this.setState({ copied: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

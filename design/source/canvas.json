@@ -1,0 +1,680 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "AddEvent.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 작성 (SCR-MEMO-04와 같은 화면)",
+   "w": 390,
+   "x": 1880,
+   "y": 0
+  },
+  "AddEvent_v1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "05 일정 · 메모 추가 (v1)",
+   "w": 390,
+   "x": 1880,
+   "y": 2464
+  },
+  "AppIcons.dc.html": {
+   "h": 900,
+   "title": "앱 아이콘 시안",
+   "w": 1330,
+   "x": 1880,
+   "y": 1164
+  },
+  "Calendar.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-01 캘린더 홈",
+   "w": 390,
+   "x": 1410,
+   "y": 0
+  },
+  "CalendarExpanded.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-01 캘린더 홈 · 펼친 상태",
+   "w": 390,
+   "x": 1410,
+   "y": 964
+  },
+  "Calendar_v2.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "04 메인 · 쉐어 캘린더 (v2)",
+   "w": 390,
+   "x": 2350,
+   "y": 2464
+  },
+  "Calendar_v1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "04 메인 · 쉐어 캘린더 (v1)",
+   "w": 390,
+   "x": 1410,
+   "y": 2464
+  },
+  "ColorSettings.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-03 우리 색상",
+   "w": 390,
+   "x": 3290,
+   "y": 0
+  },
+  "Connect.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-01 연결 방법 선택",
+   "w": 390,
+   "x": 470,
+   "y": 0
+  },
+  "Connect_v1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "02 연결 방법 선택 (v1)",
+   "w": 390,
+   "x": 3760,
+   "y": 2464
+  },
+  "ConnectionInfo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 커플 관리 · 연결됨",
+   "w": 390,
+   "x": 3290,
+   "y": 1164
+  },
+  "ConnectionInfoDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 커플 관리 · 연결 해제 확인",
+   "w": 390,
+   "x": 3760,
+   "y": 1164
+  },
+  "ConnectionInfoSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 커플 관리 · 혼자 사용 중",
+   "w": 390,
+   "x": 4230,
+   "y": 1164
+  },
+  "Account.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 계정 · 게스트",
+   "w": 390,
+   "x": 4700,
+   "y": 1164
+  },
+  "InviteCreate.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-02 초대코드 만들기",
+   "w": 390,
+   "x": 940,
+   "y": 0
+  },
+  "InviteEnter.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-03 초대코드 입력하기",
+   "w": 390,
+   "x": 940,
+   "y": 964
+  },
+  "Main.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-START-01 시작 (로그인 · 게스트)",
+   "w": 390,
+   "x": 0,
+   "y": 0
+  },
+  "Main_v1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "01 로그인 (v1)",
+   "w": 390,
+   "x": 3290,
+   "y": 2464
+  },
+  "Memo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-01 메모 목록",
+   "w": 390,
+   "x": 2350,
+   "y": 0
+  },
+  "Menu.dc.html": {
+   "h": 1080,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 연결됨",
+   "w": 390,
+   "x": 2820,
+   "y": 0
+  },
+  "Menu_v1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "07 전체 메뉴 (v1)",
+   "w": 390,
+   "x": 2820,
+   "y": 2464
+  },
+  "ProfileEdit.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-04 프로필 수정",
+   "w": 390,
+   "x": 3760,
+   "y": 0
+  },
+  "ProfilePhotoSheet.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-04 프로필 사진 시트",
+   "w": 390,
+   "x": 4230,
+   "y": 0
+  },
+  "Connected.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-04 연결 완료 (v0.4)",
+   "w": 390,
+   "x": 4230,
+   "y": 2464
+  },
+  "Anniversaries.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-01 기념일 목록",
+   "w": 390,
+   "x": 1410,
+   "y": 3800
+  },
+  "AnniversaryEdit.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-02 직접 기념일 작성",
+   "w": 390,
+   "x": 1880,
+   "y": 3800
+  },
+  "PinnedAll.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-02 고정 메모 전체",
+   "w": 390,
+   "x": 3290,
+   "y": 3800
+  },
+  "ConnectGuest.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-01 연결 방법 선택 · 게스트",
+   "w": 390,
+   "x": 0,
+   "y": 3800
+  },
+  "ConnectedDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-04 연결 완료 · 가져오지 않기 확인 (v0.4)",
+   "w": 390,
+   "x": 4700,
+   "y": 2464
+  },
+  "AddEventMemo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-04 메모 작성",
+   "w": 390,
+   "x": 2350,
+   "y": 3800
+  },
+  "AddEventSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 작성 · 개인 공간",
+   "w": 390,
+   "x": 2820,
+   "y": 3800
+  },
+  "MenuGuest.dc.html": {
+   "h": 1200,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 게스트",
+   "w": 390,
+   "x": 3760,
+   "y": 3800
+  },
+  "AccountWithdraw.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 계정 · 탈퇴 확인",
+   "w": 390,
+   "x": 4230,
+   "y": 3800
+  },
+  "InviteCreateCooldown.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-02 초대코드 만들기 · 재요청 대기",
+   "w": 390,
+   "x": 0,
+   "y": 5600
+  },
+  "AddEventMemoDate.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-04 메모 작성 · 날짜 추가됨",
+   "w": 390,
+   "x": 470,
+   "y": 5600
+  },
+  "MenuSolo.dc.html": {
+   "h": 1080,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 혼자 사용 중",
+   "w": 390,
+   "x": 940,
+   "y": 5600
+  },
+  "Notifications.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-NOTI-01 알림 목록",
+   "w": 390,
+   "x": 1410,
+   "y": 5600
+  },
+  "NotificationsRead.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-NOTI-01 알림 목록 · 모두 읽음",
+   "w": 390,
+   "x": 1880,
+   "y": 5600
+  },
+  "NotificationsEmpty.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-NOTI-01 알림 목록 · 빈 상태",
+   "w": 390,
+   "x": 2350,
+   "y": 5600
+  },
+  "NotificationSettings.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-02 알림 설정",
+   "w": 390,
+   "x": 2820,
+   "y": 5600
+  },
+  "NotificationSettingsMixed.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-02 알림 설정 · 일부 꺼짐",
+   "w": 390,
+   "x": 3290,
+   "y": 5600
+  },
+  "EventDetail.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-02 일정 상세 · 내 일정",
+   "w": 390,
+   "x": 0,
+   "y": 6900
+  },
+  "EventDetailPartner.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-02 일정 상세 · 상대 일정",
+   "w": 390,
+   "x": 470,
+   "y": 6900
+  },
+  "EventDetailDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-02 일정 상세 · 삭제 확인",
+   "w": 390,
+   "x": 940,
+   "y": 6900
+  },
+  "MemoDetail.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-03 메모 상세 · 내 메모 (날짜 있음)",
+   "w": 390,
+   "x": 1410,
+   "y": 6900
+  },
+  "MemoDetailPartner.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-03 메모 상세 · 상대 메모 (날짜 없음)",
+   "w": 390,
+   "x": 1880,
+   "y": 6900
+  },
+  "MemoDetailDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-03 메모 상세 · 삭제 확인",
+   "w": 390,
+   "x": 2350,
+   "y": 6900
+  },
+  "V04Flow.dc.html": {
+   "h": 844,
+   "title": "PRD v0.4 화면 흐름 (알림 · 상세 · 알림 설정)",
+   "w": 1330,
+   "x": 2820,
+   "y": 6900
+  },
+  "InviteCreateRenewed.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-02 초대코드 만들기 · 만료 후 자동 재발급",
+   "w": 390,
+   "x": 3760,
+   "y": 5600
+  },
+  "CalendarSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-01 캘린더 홈 · 개인 공간",
+   "w": 390,
+   "x": 0,
+   "y": 8200
+  },
+  "CalendarAnniversary.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-01 캘린더 홈 · 기념일이 있는 날",
+   "w": 390,
+   "x": 470,
+   "y": 8200
+  },
+  "CalendarLinkedSheet.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-04 연결 완료 시트",
+   "w": 390,
+   "x": 940,
+   "y": 8200
+  },
+  "CalendarLinkedSheetDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-04 연결 완료 시트 · 가져오지 않기 확인",
+   "w": 390,
+   "x": 1410,
+   "y": 8200
+  },
+  "AddEventPartnerEdit.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 수정 · 상대가 함께 일정 수정",
+   "w": 390,
+   "x": 1880,
+   "y": 8200
+  },
+  "AnniversariesSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-01 기념일 목록 · 개인 공간",
+   "w": 390,
+   "x": 2350,
+   "y": 8200
+  },
+  "EventDetailMultiDay.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-02 일정 상세 · 여러 날 일정",
+   "w": 390,
+   "x": 2820,
+   "y": 8200
+  },
+  "MainSessionReplaced.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-START-01 시작 · 다른 기기 로그인으로 로그아웃",
+   "w": 390,
+   "x": 3290,
+   "y": 8200
+  },
+  "AddEventAllDay.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 작성 · 하루 종일",
+   "w": 390,
+   "x": 0,
+   "y": 9200
+  },
+  "AnniversariesSoloEmpty.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-01 기념일 목록 · 개인 공간 · 빈 상태",
+   "w": 390,
+   "x": 470,
+   "y": 9200
+  },
+  "NotificationsWithdrawn.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-NOTI-01 알림 목록 · 상대 탈퇴 후",
+   "w": 390,
+   "x": 940,
+   "y": 9200
+  },
+  "V05Flow.dc.html": {
+   "h": 844,
+   "title": "PRD v0.5 화면 흐름 (연결 · 기념일 · 다른 기기 로그인)",
+   "w": 1330,
+   "x": 1410,
+   "y": 9200
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-10-12T01:20:00Z",
+  "v": 1
+ },
+ "designSystems": [
+  {
+   "title": "둘이서",
+   "namespace": "duriseo",
+   "artifact": "https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj",
+   "version": "1792120656-925d",
+   "copiedAt": "2026-10-16T03:25:00Z"
+  }
+ ],
+ "launch": {
+  "view": "canvas"
+ },
+ "notes": {
+  "flowTitle": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "둘이서 — 로그인부터 메인까지",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "menuSubTitle": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "메뉴 › 연결 정보 · 계정",
+   "w": 240,
+   "x": 3290,
+   "y": 904
+  },
+  "v1Title": {
+   "kind": "title1",
+   "maxW": 3800,
+   "text": "이전 버전",
+   "w": 240,
+   "x": 1410,
+   "y": 2184
+  },
+  "v03Title": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "PRD v0.3 추가 화면",
+   "w": 240,
+   "x": 0,
+   "y": 3500
+  },
+  "v04Title": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "PRD v0.4 추가 화면",
+   "w": 240,
+   "x": 0,
+   "y": 5300
+  },
+  "v05Title": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "PRD v0.5 추가 화면",
+   "w": 240,
+   "x": 0,
+   "y": 7900
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Connect.dc.html",
+  "InviteCreate.dc.html",
+  "InviteEnter.dc.html",
+  "Calendar.dc.html",
+  "CalendarExpanded.dc.html",
+  "AddEvent.dc.html",
+  "Memo.dc.html",
+  "Menu.dc.html",
+  "ColorSettings.dc.html",
+  "ProfileEdit.dc.html",
+  "ProfilePhotoSheet.dc.html",
+  "ConnectionInfo.dc.html",
+  "ConnectionInfoDialog.dc.html",
+  "ConnectionInfoSolo.dc.html",
+  "Account.dc.html",
+  "AppIcons.dc.html",
+  "Calendar_v1.dc.html",
+  "AddEvent_v1.dc.html",
+  "Calendar_v2.dc.html",
+  "Menu_v1.dc.html",
+  "Main_v1.dc.html",
+  "Connect_v1.dc.html",
+  "Connected.dc.html",
+  "Anniversaries.dc.html",
+  "AnniversaryEdit.dc.html",
+  "PinnedAll.dc.html",
+  "ConnectGuest.dc.html",
+  "ConnectedDialog.dc.html",
+  "AddEventMemo.dc.html",
+  "AddEventSolo.dc.html",
+  "MenuGuest.dc.html",
+  "AccountWithdraw.dc.html",
+  "InviteCreateCooldown.dc.html",
+  "AddEventMemoDate.dc.html",
+  "MenuSolo.dc.html",
+  "Notifications.dc.html",
+  "NotificationsRead.dc.html",
+  "NotificationsEmpty.dc.html",
+  "NotificationSettings.dc.html",
+  "NotificationSettingsMixed.dc.html",
+  "EventDetail.dc.html",
+  "EventDetailPartner.dc.html",
+  "EventDetailDialog.dc.html",
+  "MemoDetail.dc.html",
+  "MemoDetailPartner.dc.html",
+  "MemoDetailDialog.dc.html",
+  "V04Flow.dc.html",
+  "InviteCreateRenewed.dc.html",
+  "CalendarSolo.dc.html",
+  "CalendarAnniversary.dc.html",
+  "CalendarLinkedSheet.dc.html",
+  "CalendarLinkedSheetDialog.dc.html",
+  "AddEventPartnerEdit.dc.html",
+  "AnniversariesSolo.dc.html",
+  "EventDetailMultiDay.dc.html",
+  "MainSessionReplaced.dc.html",
+  "AddEventAllDay.dc.html",
+  "AnniversariesSoloEmpty.dc.html",
+  "NotificationsWithdrawn.dc.html",
+  "V05Flow.dc.html"
+ ],
+ "pages": [],
+ "title": "커플 공유 앱 데모"
+}

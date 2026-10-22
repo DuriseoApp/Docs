@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>연결 방법 선택</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; padding: 0 8px">
+<a href="Main.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+</header>
+<div style="flex-grow: 1; padding: 16px 24px 0; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<svg width="164" height="56" viewBox="0 0 164 56" aria-hidden="true">
+<circle cx="28" cy="28" r="26" fill="#E0612F"></circle>
+<circle cx="136" cy="28" r="26" fill="#2F6FDB"></circle>
+<path d="M62 28h40" stroke="#B3AEBB" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 8"></path>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">상대방과 연결해 주세요</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5B5666">둘 중 한 명이 초대코드를 만들고,<br>다른 한 명이 입력하면 연결돼요.</p>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<a href="InviteCreate.dc.html" style="box-sizing: border-box; min-height: 152px; padding: 22px; border-radius: 24px; background: {{accent}}; color: #FFFFFF; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; gap: 20px">
+<span style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 48px; height: 48px; border-radius: 16px; background: rgba(255, 255, 255, 0.18); display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2a2 2 0 0 0 0 3v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15.5v-2a2 2 0 0 0 0-3z"></path><path d="M12 9.5v5M9.5 12h5"></path></svg>
+</span>
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 20px; font-weight: 700">초대코드 만들기</span>
+<span style="font-size: 14px; color: rgba(255, 255, 255, 0.88)">코드를 만들어 상대에게 보내요</span>
+</span>
+</a>
+<a href="InviteEnter.dc.html" style="box-sizing: border-box; min-height: 152px; padding: 22px; border-radius: 24px; background: #F5F3F7; color: #1C1A22; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; gap: 20px">
+<span style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5"></rect><path d="M7.5 10h.01M11 10h.01M14.5 10h.01M7.5 14h9"></path></svg>
+</span>
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B5666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 20px; font-weight: 700">초대코드 입력하기</span>
+<span style="font-size: 14px; color: #5B5666">상대에게 받은 코드를 입력해요</span>
+</span>
+</a>
+</div>
+</div>
+<div style="padding: 16px 24px 32px; display: flex; justify-content: center">
+<a href="Main.dc.html" style="padding: 12px; font-size: 14px; font-weight: 500">다른 계정으로 로그인</a>
+</div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#6D4AE0' };
+}
+}
+</script>
+</body>
+</html>

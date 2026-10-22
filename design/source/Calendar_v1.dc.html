@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쉐어 캘린더</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="display: flex" aria-hidden="true">
+<span style="width: 32px; height: 32px; border-radius: 16px; background: #E0612F; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #FFFFFF">나</span>
+<span style="width: 32px; height: 32px; border-radius: 16px; background: #2F6FDB; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px; box-shadow: 0 0 0 2px #FFFFFF">너</span>
+</div>
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 16px; font-weight: 700">우리 둘</span>
+<span style="font-size: 12px; font-weight: 500; color: #5B5666">함께한 지 D+[N]</span>
+</div>
+</div>
+<div style="display: flex">
+<button type="button" aria-label="알림" style="width: 48px; height: 48px; border: 0; background: transparent; color: #1C1A22; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>
+</button>
+<button type="button" aria-label="더보기" style="width: 48px; height: 48px; border: 0; background: transparent; color: #1C1A22; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18.5" r="1.6"></circle></svg>
+</button>
+</div>
+</header>
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px">
+<div style="display: flex; align-items: center; gap: 2px">
+<h1 style="margin: 0 6px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">2026년 10월</h1>
+<button type="button" aria-label="이전 달" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</button>
+<button type="button" aria-label="다음 달" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</button>
+</div>
+<div style="display: flex; gap: 10px; font-size: 12px; font-weight: 500; color: #5B5666">
+<span style="display: flex; align-items: center; gap: 4px"><span style="width: 7px; height: 7px; border-radius: 4px; background: #E0612F"></span>나</span>
+<span style="display: flex; align-items: center; gap: 4px"><span style="width: 7px; height: 7px; border-radius: 4px; background: #2F6FDB"></span>상대</span>
+<span style="display: flex; align-items: center; gap: 4px"><span style="width: 7px; height: 7px; border-radius: 4px; background: {{accent}}"></span>함께</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 8px; height: 28px; flex-shrink: 0; align-items: center; font-size: 12px; font-weight: 600; color: #77727F; text-align: center">
+<span style="color: #C93545">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 8px; flex-shrink: 0">
+<sc-for list="{{days}}" as="day" hint-placeholder-count="35">
+<button type="button" onClick="{{day.pick}}" disabled="{{day.out}}" aria-label="{{day.label}}" style="height: 52px; border: 0; background: transparent; padding: 4px 0 0; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: inherit; cursor: pointer">
+<span style="{{day.numStyle}}">{{day.n}}</span>
+<span style="display: flex; gap: 3px; height: 5px">
+<sc-for list="{{day.dots}}" as="dot" hint-placeholder-count="1"><span style="{{dot.style}}"></span></sc-for>
+</span>
+</button>
+</sc-for>
+</div>
+<section aria-label="선택한 날짜의 일정" style="flex-grow: 1; min-height: 0; margin-top: 8px; padding: 18px 20px 0; border-top: 1px solid #EEEBF1; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">{{selLabel}}</h2>
+<sc-if value="{{isToday}}" hint-placeholder-val="{{ true }}"><span style="padding: 2px 8px; border-radius: 999px; background: #1C1A22; color: #FFFFFF; font-size: 11px; font-weight: 600">오늘</span></sc-if>
+</div>
+<span style="font-size: 13px; color: #77727F">{{countLabel}}</span>
+</div>
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 28px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #77727F; font-size: 14px">
+<span>아직 일정이나 메모가 없어요</span>
+<a href="AddEvent.dc.html" style="font-weight: 600; color: #4A2FC0; text-decoration: none; padding: 10px">+ 이 날에 추가하기</a>
+</div>
+</sc-if>
+<ul style="list-style: none; margin: 0; padding: 0 0 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto">
+<sc-for list="{{items}}" as="item" hint-placeholder-count="3">
+<li style="display: flex; gap: 14px; padding: 14px 16px; border-radius: 16px; background: #F7F6F9; align-items: flex-start">
+<span style="width: 38px; flex-shrink: 0; padding-top: 1px; font-size: 13px; font-weight: 600; color: #5B5666">{{item.time}}</span>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 600">{{item.title}}</span>
+<sc-if value="{{item.hasMemo}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; line-height: 1.5; color: #5B5666">{{item.memo}}</span></sc-if>
+</div>
+<span style="flex-shrink: 0; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; {{item.chipStyle}}">{{item.whoLabel}}</span>
+</li>
+</sc-for>
+</ul>
+</section>
+<a href="AddEvent.dc.html" aria-label="일정 또는 메모 추가" style="position: absolute; right: 20px; bottom: 100px; width: 56px; height: 56px; border-radius: 18px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</a>
+<nav aria-label="주요 메뉴" style="height: 80px; flex-shrink: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #EEEBF1; background: #FFFFFF">
+<a href="Calendar.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #1C1A22; font-size: 12px; font-weight: 700">
+<span style="width: 56px; height: 30px; border-radius: 15px; background: #ECE6FC; color: #4A2FC0; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>
+캘린더
+</a>
+<a href="Memo.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #77727F; font-size: 12px; font-weight: 500">
+<span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12.5A.5.5 0 0 1 5.5 20V4a.5.5 0 0 1 .5-.5z"></path><path d="M15 3.5V8h4M9 12h6M9 16h4"></path></svg></span>
+메모
+</a>
+</nav>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const sel = (this.state && this.state.sel) ? this.state.sel : 12;
+    const TODAY = 12;
+    const WD = ['일', '월', '화', '수', '목', '금', '토'];
+    const WHO = {
+      me: { label: '나', color: '#E0612F', chip: 'background: #FDEEE7; color: #A8411A' },
+      partner: { label: '상대', color: '#2F6FDB', chip: 'background: #E8F0FC; color: #1F55B5' },
+      both: { label: '함께', color: accent, chip: 'background: #EFEBFC; color: #4A2FC0' }
+    };
+    const EV = {
+      3: [{ who: 'both', time: '11:00', title: '주말 브런치', memo: '' }],
+      9: [{ who: 'me', time: '19:00', title: '팀 회식', memo: '늦게 끝날 수도 있어요' }],
+      12: [
+        { who: 'partner', time: '14:00', title: '치과 예약', memo: '' },
+        { who: 'both', time: '19:30', title: '저녁 데이트', memo: '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' },
+        { who: 'me', time: '메모', title: '선물 리스트 정리하기', memo: '쉐어 메모장에 올려둘게' }
+      ],
+      17: [{ who: 'both', time: '종일', title: '1박 2일 여행', memo: '숙소 후보는 메모 핀 참고' }],
+      18: [{ who: 'both', time: '종일', title: '1박 2일 여행', memo: '' }],
+      21: [{ who: 'partner', time: '20:00', title: '운동', memo: '' }],
+      24: [
+        { who: 'partner', time: '12:00', title: '친구 결혼식', memo: '' },
+        { who: 'me', time: '12:00', title: '결혼식 같이 가기', memo: '' }
+      ],
+      31: [{ who: 'both', time: '18:00', title: '할로윈 파티', memo: '' }]
+    };
+    const raw = [];
+    for (let d = 27; d <= 30; d++) raw.push({ n: d, out: true });
+    for (let d = 1; d <= 31; d++) raw.push({ n: d, out: false });
+    const base = 'width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 15px; ';
+    const days = raw.map((d, i) => {
+      const col = i % 7;
+      const evs = d.out ? [] : (EV[d.n] || []);
+      let style;
+      if (d.out) style = base + 'color: #B3AEBB; font-weight: 400';
+      else if (d.n === sel) style = base + 'background: ' + accent + '; color: #FFFFFF; font-weight: 700';
+      else if (d.n === TODAY) style = base + 'box-shadow: inset 0 0 0 1.5px #1C1A22; color: ' + (col === 0 ? '#C93545' : '#1C1A22') + '; font-weight: 700';
+      else style = base + 'color: ' + (col === 0 ? '#C93545' : '#1C1A22') + '; font-weight: 500';
+      return {
+        n: d.n,
+        out: d.out,
+        numStyle: style,
+        label: (d.out ? '9월 ' : '10월 ') + d.n + '일' + (evs.length ? ', 일정 ' + evs.length + '개' : ''),
+        dots: evs.slice(0, 3).map((e) => ({ style: 'width: 5px; height: 5px; border-radius: 3px; background: ' + WHO[e.who].color })),
+        pick: d.out ? null : () => this.setState({ sel: d.n })
+      };
+    });
+    const items = (EV[sel] || []).map((e) => ({
+      time: e.time,
+      title: e.title,
+      memo: e.memo,
+      hasMemo: !!e.memo,
+      whoLabel: WHO[e.who].label,
+      chipStyle: WHO[e.who].chip
+    }));
+    return {
+      accent,
+      days,
+      items,
+      isEmpty: items.length === 0,
+      isToday: sel === TODAY,
+      selLabel: '10월 ' + sel + '일 (' + WD[(sel + 3) % 7] + ')',
+      countLabel: items.length ? items.length + '개' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

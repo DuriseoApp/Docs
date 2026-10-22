@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>내 프로필 수정</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Menu.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">내 프로필</h1>
+<sc-if value="{{canSave}}" hint-placeholder-val="{{ false }}">
+<a href="Menu.dc.html" style="height: 48px; padding: 0 14px; display: flex; align-items: center; text-decoration: none; color: #4A2FC0; font-size: 16px; font-weight: 700">저장</a>
+</sc-if>
+<sc-if value="{{cannotSave}}" hint-placeholder-val="{{ true }}">
+<span aria-disabled="true" style="height: 48px; padding: 0 14px; display: flex; align-items: center; color: #B3AEBB; font-size: 16px; font-weight: 700">저장</span>
+</sc-if>
+</header>
+
+<div style="flex-grow: 1; padding: 24px 24px 0; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<div style="position: relative; width: 112px; height: 112px">
+<sc-if value="{{isDefaultPhoto}}" hint-placeholder-val="{{ true }}">
+<span style="{{avatarStyle}}" role="img" aria-label="기본 프로필 이미지">나</span>
+</sc-if>
+<sc-if value="{{hasPhoto}}" hint-placeholder-val="{{ false }}">
+<span role="img" aria-label="선택한 프로필 사진" style="width: 112px; height: 112px; border-radius: 56px; background: #DDD7E5; display: flex; align-items: flex-end; justify-content: center; overflow: hidden">
+<svg width="84" height="84" viewBox="0 0 24 24" fill="#B3AEBB" aria-hidden="true"><circle cx="12" cy="9" r="4.2"></circle><path d="M3.5 23a8.5 8.5 0 0 1 17 0z"></path></svg>
+</span>
+</sc-if>
+<button type="button" onClick="{{openSheet}}" aria-label="프로필 사진 변경" style="position: absolute; right: -2px; bottom: -2px; width: 40px; height: 40px; border-radius: 20px; border: 0; background: #FFFFFF; box-shadow: 0 0 0 1px #E6E2EA, 0 1px 3px rgba(28, 26, 34, 0.12); color: #1C1A22; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="12.5" r="3.2"></circle></svg>
+</button>
+</div>
+<button type="button" onClick="{{openSheet}}" style="height: 40px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: #4A2FC0; cursor: pointer">사진 변경</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<label for="nameInput" style="font-size: 13px; font-weight: 600; color: #5B5666">이름</label>
+<span style="font-size: 12px; font-weight: 500; color: #77727F">{{countLabel}}</span>
+</div>
+<input id="nameInput" type="text" value="{{name}}" onChange="{{onName}}" aria-invalid="{{isError}}" aria-describedby="nameHelp" style="{{inputStyle}}">
+<span id="nameHelp" style="{{helpStyle}}">{{helpText}}</span>
+</div>
+
+<section aria-label="상대에게 보이는 모습" style="padding: 16px; border-radius: 20px; background: #F5F3F7; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">상대에게 이렇게 보여요</span>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #FFFFFF">
+<sc-if value="{{isDefaultPhoto}}" hint-placeholder-val="{{ true }}"><span style="{{smallAvatarStyle}}" aria-hidden="true">나</span></sc-if>
+<sc-if value="{{hasPhoto}}" hint-placeholder-val="{{ false }}">
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 18px; background: #DDD7E5; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; flex-shrink: 0"><svg width="28" height="28" viewBox="0 0 24 24" fill="#B3AEBB"><circle cx="12" cy="9" r="4.2"></circle><path d="M3.5 23a8.5 8.5 0 0 1 17 0z"></path></svg></span>
+</sc-if>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+<span style="font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{previewName}}</span>
+<span style="font-size: 12px; color: #5B5666">일정 · 메모 작성자로 표시돼요</span>
+</span>
+</div>
+</section>
+
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 2px">
+<span style="font-size: 13px; color: #5B5666">로그인 계정</span>
+<span style="font-size: 13px; font-weight: 600; color: #1C1A22">Google · [이메일 주소]</span>
+</div>
+</div>
+
+<sc-if value="{{sheetOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+<button type="button" onClick="{{closeSheet}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="dialog" aria-modal="true" aria-labelledby="sheetTitle" style="position: relative; padding: 8px 20px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column">
+<span style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF; margin-bottom: 14px" aria-hidden="true"></span>
+<h2 id="sheetTitle" style="margin: 0 0 6px; font-size: 17px; font-weight: 700">프로필 사진</h2>
+<button type="button" onClick="{{pickAlbum}}" style="height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 14px; font-family: inherit; font-size: 16px; font-weight: 500; color: #1C1A22; cursor: pointer">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M20.5 15.5l-4.5-4.5-8 8"></path></svg>
+앨범에서 선택
+</button>
+<button type="button" onClick="{{pickCamera}}" style="height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 14px; font-family: inherit; font-size: 16px; font-weight: 500; color: #1C1A22; cursor: pointer">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="12.5" r="3.2"></circle></svg>
+사진 찍기
+</button>
+<button type="button" onClick="{{pickDefault}}" style="height: 56px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 14px; font-family: inherit; font-size: 16px; font-weight: 500; color: #1C1A22; cursor: pointer">
+<span style="{{sheetAvatarStyle}}" aria-hidden="true">나</span>
+기본 이미지로 변경
+</button>
+<button type="button" onClick="{{closeSheet}}" style="margin-top: 12px; height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+</section>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"sheetOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const me = this.props.meColor ?? '#E0612F';
+    const s = this.state || {};
+    const ORIGINAL = '[내 이름]';
+    const MAX = 10;
+    const name = s.name !== undefined ? s.name : ORIGINAL;
+    const photo = s.photo || 'default';
+    const sheetOpen = s.sheetOpen !== undefined ? !!s.sheetOpen : !!this.props.sheetOpen;
+    const trimmed = name.trim();
+    const isError = trimmed.length === 0;
+    const changed = name !== ORIGINAL || photo !== 'default';
+    const onColor = (hex) => {
+      const h = String(hex || '').replace('#', '');
+      if (h.length !== 6) return '#FFFFFF';
+      const lin = (v) => { const c = parseInt(v, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(h.slice(0, 2)) + 0.7152 * lin(h.slice(2, 4)) + 0.0722 * lin(h.slice(4, 6));
+      return L > 0.2 ? '#1C1A22' : '#FFFFFF';
+    };
+    const circle = (n, fs) => 'width: ' + n + 'px; height: ' + n + 'px; border-radius: ' + (n / 2) + 'px; flex-shrink: 0; background: ' + me + '; color: ' + onColor(me) + '; font-size: ' + fs + 'px; font-weight: 700; display: flex; align-items: center; justify-content: center';
+    const inputBase = 'height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; background: #FFFFFF; font-family: inherit; font-size: 16px; color: #1C1A22; outline: none; ';
+    return {
+      name,
+      countLabel: name.length + ' / ' + MAX,
+      onName: (e) => this.setState({ name: String(e && e.target ? e.target.value : '').slice(0, MAX) }),
+      isError,
+      inputStyle: inputBase + (isError ? 'border: 1px solid #C93545; box-shadow: 0 0 0 1px #C93545' : 'border: 1px solid #D9D4DF'),
+      helpStyle: 'font-size: 12px; line-height: 16px; color: ' + (isError ? '#C93545' : '#5B5666'),
+      helpText: isError ? '이름을 한 글자 이상 입력해 주세요.' : '상대 화면과 캘린더에 이 이름으로 보여요. 최대 10자.',
+      previewName: trimmed || '이름 없음',
+      canSave: changed && !isError,
+      cannotSave: !(changed && !isError),
+      isDefaultPhoto: photo === 'default',
+      hasPhoto: photo !== 'default',
+      avatarStyle: circle(112, 40),
+      smallAvatarStyle: circle(36, 14),
+      sheetAvatarStyle: circle(22, 10),
+      sheetOpen,
+      openSheet: () => this.setState({ sheetOpen: true }),
+      closeSheet: () => this.setState({ sheetOpen: false }),
+      pickAlbum: () => this.setState({ photo: 'photo', sheetOpen: false }),
+      pickCamera: () => this.setState({ photo: 'photo', sheetOpen: false }),
+      pickDefault: () => this.setState({ photo: 'default', sheetOpen: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

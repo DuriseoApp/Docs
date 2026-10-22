@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>일정 · 메모 추가</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Calendar.dc.html" aria-label="닫기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">새로 추가</h1>
+<a href="Calendar.dc.html" style="height: 48px; padding: 0 14px; display: flex; align-items: center; text-decoration: none; color: #4A2FC0; font-size: 16px; font-weight: 700">저장</a>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 8px 20px 24px; display: flex; flex-direction: column; gap: 24px">
+<div role="tablist" aria-label="종류" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: #F5F3F7">
+<button type="button" role="tab" aria-selected="{{isEvent}}" onClick="{{pickEvent}}" style="height: 40px; border: 0; border-radius: 11px; font-family: inherit; font-size: 15px; {{tabEventStyle}}">일정</button>
+<button type="button" role="tab" aria-selected="{{isMemo}}" onClick="{{pickMemo}}" style="height: 40px; border: 0; border-radius: 11px; font-family: inherit; font-size: 15px; {{tabMemoStyle}}">메모</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="title" style="font-size: 13px; font-weight: 600; color: #5B5666">제목</label>
+<input id="title" type="text" placeholder="{{titlePlaceholder}}" style="height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #D9D4DF; font-family: inherit; font-size: 17px; color: #1C1A22; background: #FFFFFF">
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 600; color: #5B5666">누구의 {{kindWord}}인가요?</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{whos}}" as="w" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{w.on}}" onClick="{{w.pick}}" style="height: 46px; border-radius: 14px; font-family: inherit; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 6px; {{w.boxStyle}}">
+<span style="{{w.dotStyle}}"></span>{{w.label}}
+</button>
+</sc-for>
+</div>
+</div>
+<div style="border-radius: 16px; border: 1px solid #EEEBF1; display: flex; flex-direction: column">
+<button type="button" style="height: 56px; border: 0; background: transparent; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-family: inherit; font-size: 15px; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 12px; color: #5B5666"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>날짜</span>
+<span style="font-weight: 600">2026년 10월 12일 (월)</span>
+</button>
+<sc-if value="{{isEvent}}" hint-placeholder-val="{{ true }}">
+<div style="height: 56px; padding: 0 16px; border-top: 1px solid #EEEBF1; display: flex; align-items: center; justify-content: space-between; font-size: 15px">
+<span style="display: flex; align-items: center; gap: 12px; color: #5B5666"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>하루 종일</span>
+<button type="button" aria-label="하루 종일" aria-pressed="{{allDay}}" onClick="{{toggleAllDay}}" style="width: 52px; height: 32px; border: 0; border-radius: 16px; padding: 3px; display: flex; font-family: inherit; {{switchStyle}}">
+<span style="width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(28, 26, 34, 0.25)"></span>
+</button>
+</div>
+<sc-if value="{{showTime}}" hint-placeholder-val="{{ true }}">
+<button type="button" style="height: 56px; border: 0; border-top: 1px solid #EEEBF1; background: transparent; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-family: inherit; font-size: 15px; color: #1C1A22">
+<span style="padding-left: 32px; color: #5B5666">시간</span>
+<span style="font-weight: 600">오후 7:30 – 9:30</span>
+</button>
+</sc-if>
+<button type="button" style="height: 56px; border: 0; border-top: 1px solid #EEEBF1; background: transparent; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-family: inherit; font-size: 15px; color: #1C1A22">
+<span style="display: flex; align-items: center; gap: 12px; color: #5B5666"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>알림</span>
+<span style="font-weight: 600">1시간 전 · 둘 다</span>
+</button>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="memo" style="font-size: 13px; font-weight: 600; color: #5B5666">메모</label>
+<textarea id="memo" rows="4" placeholder="상대에게 남길 내용을 적어주세요" style="box-sizing: border-box; padding: 14px 16px; border-radius: 14px; border: 1px solid #D9D4DF; font-family: inherit; font-size: 15px; line-height: 1.6; color: #1C1A22; background: #FFFFFF; resize: none"></textarea>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #77727F">저장하면 상대방에게 알림이 가고, 캘린더에 바로 표시돼요.</p>
+</div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const s = this.state || {};
+    const kind = s.kind || 'event';
+    const who = s.who || 'both';
+    const allDay = !!s.allDay;
+    const isEvent = kind === 'event';
+    const on = 'background: #FFFFFF; color: #1C1A22; font-weight: 700; box-shadow: 0 1px 3px rgba(28, 26, 34, 0.12)';
+    const off = 'background: transparent; color: #5B5666; font-weight: 500';
+    const defs = [
+      { id: 'me', label: '나', color: '#E0612F', bg: '#FDEEE7' },
+      { id: 'partner', label: '상대', color: '#2F6FDB', bg: '#E8F0FC' },
+      { id: 'both', label: '함께', color: accent, bg: '#EFEBFC' }
+    ];
+    const whos = defs.map((d) => {
+      const sel = d.id === who;
+      return {
+        label: d.label,
+        on: sel,
+        pick: () => this.setState({ who: d.id }),
+        boxStyle: sel
+          ? 'border: 1.5px solid ' + d.color + '; background: ' + d.bg + '; color: #1C1A22; font-weight: 700'
+          : 'border: 1px solid #E6E2EA; background: #FFFFFF; color: #5B5666; font-weight: 500',
+        dotStyle: 'width: 8px; height: 8px; border-radius: 4px; background: ' + d.color
+      };
+    });
+    return {
+      isEvent,
+      isMemo: !isEvent,
+      kindWord: isEvent ? '일정' : '메모',
+      titlePlaceholder: isEvent ? '예) 저녁 데이트' : '예) 주말에 살 것',
+      tabEventStyle: isEvent ? on : off,
+      tabMemoStyle: isEvent ? off : on,
+      pickEvent: () => this.setState({ kind: 'event' }),
+      pickMemo: () => this.setState({ kind: 'memo' }),
+      whos,
+      allDay,
+      showTime: !allDay,
+      toggleAllDay: () => this.setState({ allDay: !allDay }),
+      switchStyle: allDay ? 'background: ' + accent + '; justify-content: flex-end' : 'background: #D9D4DF; justify-content: flex-start'
+    };
+  }
+}
+</script>
+</body>
+</html>

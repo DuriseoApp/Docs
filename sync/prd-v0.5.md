@@ -1,6 +1,6 @@
 # PRD v0.5 영향 분석
 
-> 상태: 승인 대기
+> 상태: 진행 중
 > 이전 버전: v0.4 → 새 버전: v0.5
 > 브랜치: sync/prd-v0.5
 > PR: (PR 완료 후 링크)
@@ -53,8 +53,9 @@
 | 종류 | 이름 | 정의 | 관련 ID |
 | --- | --- | --- | --- |
 | 컬럼 변경 | users.nickname | `varchar(10)` not null | D-56 |
-| 컬럼 추가 | auth_sessions.revoked_reason | `varchar(10)` null, CHECK in (`LOGOUT`, `ROTATED`, `REPLACED`, `WITHDRAWN`). `revoked_at`과 함께 기록. `REPLACED` = 다른 기기 로그인으로 끊김 | D-51 |
-| 서비스 규칙 | 로그인 (게스트 시작, 소셜 로그인, 게스트 연동) | 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고, 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다 | D-51 |
+| 컬럼 추가 | auth_sessions.revoked_reason | `varchar(10)` null, CHECK in (`LOGOUT`, `REPLACED`, `WITHDRAWN`). `revoked_at`과 함께 기록. `REPLACED` = 다른 기기 로그인으로 끊김 | D-51 |
+| 서비스 규칙 (리드 결정) | refresh 토큰 교체 | 새 세션 행을 만들지 않고 **같은 행**의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다. 그래서 `sid`(= 세션 id)는 로그인부터 로그아웃까지 변하지 않고, 갱신과 동시에 나간 요청이 끊기지 않는다. 이전 refresh 토큰을 다시 보내면 해시가 없어 401 `SESSION_INVALID` | DB-02, D-51 |
+| 서비스 규칙 | 로그인 (게스트 시작, 소셜 로그인. **게스트 연동은 같은 기기라 현재 세션을 그대로 쓰고 끊지 않는다** — 리드 결정) | 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고, 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다 | D-51 |
 | 서비스 규칙 | 로그아웃 | 현재 세션 `revoked_reason = LOGOUT`, 그 사용자의 `devices` 행을 모두 지운다 (한 기기 규칙이라 사용자 전체 = 그 기기) | D-50 |
 | 정리 작업 | 게스트 정리 (매일 03:00 KST) | `account_type = GUEST`이고 유효한(`revoked_at IS NULL AND expires_at > now`) `auth_sessions`가 하나도 없는 사용자를 4.3 탈퇴와 같이 처리한다. 게스트는 커플이 될 수 없으므로 개인 공간만 지우면 된다. 세션 정리보다 먼저 돈다 | Q-11 |
 | 테이블 변화 없음 | notifications | `COUPLE_UNLINKED` 타입을 탈퇴 해제에도 쓴다. 제목·본문만 다르다 (3.2 문구) | D-53 |

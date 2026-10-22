@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쉐어 캘린더</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<main onPointerDown="{{dragStart}}" onPointerUp="{{dragEnd}}" style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<sc-if value="{{isCouple}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="display: flex" aria-hidden="true">
+<span style="{{meAvatarStyle}}">나</span>
+<span style="{{partnerAvatarStyle}}">너</span>
+</div>
+<a href="Anniversaries.dc.html" aria-label="{{ddayAria}}" style="display: flex; flex-direction: column; text-decoration: none; color: #1C1A22">
+<span style="font-size: 16px; font-weight: 700">우리 둘</span>
+<span style="display: flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: #4A2FC0">{{ddayLabel}}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
+</a>
+</div>
+</sc-if>
+<sc-if value="{{solo}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px">
+<span aria-hidden="true" style="{{meAvatarStyle}}">나</span>
+<a href="AnniversariesSolo.dc.html" aria-label="나의 캘린더, 기념일 보기" style="display: flex; flex-direction: column; text-decoration: none; color: #1C1A22">
+<span style="font-size: 16px; font-weight: 700">나의 캘린더</span>
+<span style="display: flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: #4A2FC0">기념일<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
+</a>
+</div>
+</sc-if>
+<div style="display: flex">
+<a href="Notifications.dc.html" aria-label="{{bellLabel}}" style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>
+<sc-if value="{{hasUnread}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="position: absolute; top: 11px; right: 12px; width: 8px; height: 8px; border-radius: 4px; background: {{accent}}; box-shadow: 0 0 0 2px #FFFFFF"></span></sc-if>
+</a>
+<a href="Menu.dc.html" aria-label="전체 메뉴" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"></path></svg>
+</a>
+</div>
+</header>
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<div style="display: flex; align-items: center; gap: 2px">
+<h1 style="margin: 0 6px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">2026년 10월</h1>
+<button type="button" aria-label="이전 달" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</button>
+<button type="button" aria-label="다음 달" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</button>
+</div>
+<button type="button" onClick="{{toggle}}" aria-expanded="{{expanded}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="{{toggleIconPath}}"></path></svg>
+</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 8px; height: 28px; flex-shrink: 0; align-items: center; font-size: 12px; font-weight: 600; color: #77727F; text-align: center">
+<span style="color: #C93545">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+</div>
+<div data-drag="1" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 8px; flex-shrink: 0; touch-action: none">
+<sc-for list="{{days}}" as="day" hint-placeholder-count="35">
+<button type="button" onClick="{{day.pick}}" disabled="{{day.out}}" aria-label="{{day.label}}" style="{{day.cellStyle}}">
+<span style="{{day.numStyle}}">{{day.n}}</span>
+<sc-if value="{{day.showDots}}" hint-placeholder-val="{{ true }}">
+<span style="display: flex; align-items: center; gap: 3px; height: 6px; align-self: center">
+<sc-for list="{{day.dots}}" as="dot" hint-placeholder-count="1"><span style="{{dot.style}}"></span></sc-for>
+</span>
+</sc-if>
+<sc-if value="{{day.showBars}}" hint-placeholder-val="{{ false }}">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<sc-for list="{{day.bars}}" as="bar" hint-placeholder-count="1"><span style="{{bar.style}}">{{bar.title}}</span></sc-for>
+<sc-if value="{{day.hasMore}}" hint-placeholder-val="{{ false }}"><span style="padding: 0 3px; font-size: 10px; line-height: 12px; font-weight: 600; color: #5B5666; text-align: left">{{day.moreLabel}}</span></sc-if>
+</span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+<section aria-label="선택한 날짜의 일정" style="flex-grow: 1; min-height: 0; border-top: 1px solid #EEEBF1; display: flex; flex-direction: column">
+<button type="button" data-drag="1" onClick="{{toggle}}" aria-expanded="{{expanded}}" aria-label="{{toggleLabel}}" style="height: 24px; flex-shrink: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none">
+<span style="width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+</button>
+<div style="padding: 0 20px 10px; display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">{{selLabel}}</h2>
+<sc-if value="{{isToday}}" hint-placeholder-val="{{ true }}"><span style="padding: 2px 8px; border-radius: 999px; background: #1C1A22; color: #FFFFFF; font-size: 11px; font-weight: 600">오늘</span></sc-if>
+</div>
+<span style="font-size: 13px; color: #77727F">{{countLabel}}</span>
+</div>
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #77727F; font-size: 14px">
+<span>아직 일정이나 메모가 없어요</span>
+<a href="AddEvent.dc.html" style="font-weight: 600; color: #4A2FC0; text-decoration: none; padding: 10px">+ 이 날에 추가하기</a>
+</div>
+</sc-if>
+<sc-if value="{{collapsed}}" hint-placeholder-val="{{ true }}">
+<ul style="list-style: none; margin: 0; padding: 0 20px 88px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0">
+<sc-for list="{{items}}" as="item" hint-placeholder-count="3">
+<li style="display: flex">
+<a href="{{item.href}}" style="{{item.cardStyle}}">
+<span style="{{item.timeStyle}}">{{item.time}}</span>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 600">{{item.title}}</span>
+<sc-if value="{{item.hasMemo}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; line-height: 1.5; color: #5B5666">{{item.memo}}</span></sc-if>
+</div>
+<span style="flex-shrink: 0; display: flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E6E2EA; font-size: 12px; font-weight: 600; color: #1C1A22"><sc-if value="{{item.hasDot}}" hint-placeholder-val="{{ true }}"><span style="{{item.dotStyle}}"></span></sc-if>{{item.whoLabel}}</span>
+</a>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{expanded}}" hint-placeholder-val="{{ false }}">
+<ul style="list-style: none; margin: 0; padding: 0 20px 80px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0">
+<sc-for list="{{items}}" as="item" hint-placeholder-count="3">
+<li style="{{item.rowStyle}}">
+<span style="{{item.markStyle}}"></span>
+<span style="width: 34px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #5B5666">{{item.time}}</span>
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{item.title}}</span>
+<span style="flex-shrink: 0; font-size: 12px; font-weight: 600; color: #5B5666">{{item.whoLabel}}</span>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+</section>
+<a href="AddEvent.dc.html" aria-label="일정 또는 메모 추가" style="position: absolute; right: 20px; bottom: 24px; width: 56px; height: 56px; border-radius: 18px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</a>
+<sc-if value="{{linkedSheet}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(28, 26, 34, 0.48)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="sheetTitle" style="position: relative; box-sizing: border-box; padding: 10px 24px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 22px">
+<span aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+<h2 id="sheetTitle" style="margin: 4px 0 0; font-size: 22px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">[상대 이름]님과 연결됐어요</h2>
+<section aria-labelledby="sdTitle" style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span id="sdTitle" style="font-size: 13px; font-weight: 600; color: #5B5666">처음 만난 날</span>
+<button type="button" style="height: 32px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: #4A2FC0; cursor: pointer">나중에 하기</button>
+</div>
+<button type="button" style="height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #D9D4DF; background: #FFFFFF; font-family: inherit; font-size: 16px; color: #77727F; display: flex; align-items: center; justify-content: space-between">
+<span>날짜를 골라 주세요</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B5666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>
+</button>
+<span style="font-size: 12px; line-height: 16px; color: #5B5666">D-day와 기념일이 이 날을 1일로 계산돼요. 둘 중 누구든 나중에 바꿀 수 있어요.</span>
+</section>
+<section aria-labelledby="srTitle" style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span id="srTitle" style="font-size: 13px; font-weight: 600; color: #5B5666">혼자 쓴 기록</span>
+<span style="font-size: 14px; line-height: 1.5; color: #1C1A22">일정 [N]개, 기념일 [N]개, 메모 [N]개가 있어요.</span>
+</div>
+<div role="group" aria-label="혼자 쓴 기록 가져오기" style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" aria-pressed="{{isKeep}}" onClick="{{pickKeep}}" style="{{keepStyle}}"><span style="font-size: 15px; font-weight: 700; color: #1C1A22">가져오기</span><span style="font-size: 13px; color: #5B5666">함께 쓰는 캘린더와 메모로 옮겨요</span></button>
+<button type="button" aria-pressed="{{isDrop}}" onClick="{{pickDrop}}" style="{{dropStyle}}"><span style="font-size: 15px; font-weight: 700; color: #1C1A22">가져오지 않기</span><span style="font-size: 13px; color: #5B5666">혼자 쓴 기록은 삭제돼요</span></button>
+</div>
+<span style="font-size: 12px; line-height: 16px; color: #5B5666">내 기록만 정해요. 상대의 기록은 상대가 정해요.</span>
+</section>
+<button type="button" onClick="{{startSheet}}" style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">시작하기</button>
+</section>
+<sc-if value="{{sheetDialog}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeSheetDialog}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="dTitle" aria-describedby="dBody" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="dTitle" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">혼자 쓴 기록을 삭제할까요?</h2>
+<p id="dBody" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">가져오지 않으면 혼자 쓴 일정 [N]개, 기념일 [N]개, 메모 [N]개가 삭제되고 되돌릴 수 없어요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeSheetDialog}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Calendar.dc.html" style="height: 48px; border-radius: 14px; background: #B42335; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">삭제하고 시작</a>
+</div>
+</section>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"startExpanded":{"editor":"boolean","default":false,"section":"상태"},"unread":{"editor":"boolean","default":true,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"startSel":{"editor":"number","default":12,"section":"상태"},"linkedSheet":{"editor":"boolean","default":false,"section":"상태"},"sheetDialog":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const meColor = this.props.meColor ?? '#E0612F';
+    const partnerColor = this.props.partnerColor ?? '#2F6FDB';
+    const togetherColor = this.props.togetherColor ?? '#6D4AE0';
+    const s = this.state || {};
+    const expanded = s.expanded !== undefined ? !!s.expanded : !!this.props.startExpanded;
+    const onColor = (hex) => {
+      const h = String(hex || '').replace('#', '');
+      if (h.length !== 6) return '#FFFFFF';
+      const lin = (v) => { const c = parseInt(v, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(h.slice(0, 2)) + 0.7152 * lin(h.slice(2, 4)) + 0.0722 * lin(h.slice(4, 6));
+      return L > 0.2 ? '#1C1A22' : '#FFFFFF';
+    };
+    const avatar = (c, overlap) => 'width: 32px; height: 32px; border-radius: 16px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #FFFFFF' + (overlap ? '; margin-left: -8px' : '');
+    const solo = !!this.props.solo;
+    const linkedSheet = s.linkedSheet !== undefined ? !!s.linkedSheet : !!this.props.linkedSheet;
+    const sel = s.sel ? s.sel : (Number(this.props.startSel) || 12);
+    const TODAY = 12;
+    const WD = ['일', '월', '화', '수', '목', '금', '토'];
+    const WHO = {
+      me: { label: '나', color: meColor },
+      partner: { label: '상대', color: partnerColor },
+      both: { label: '함께', color: togetherColor }
+    };
+    const ALL_EV = {
+      3: [{ who: 'both', time: '11:00', title: '주말 브런치', memo: '' }],
+      9: [{ who: 'me', time: '19:00', title: '팀 회식', memo: '늦게 끝날 수도 있어요' }],
+      12: [
+        { who: 'partner', time: '14:00', title: '치과 예약', memo: '' },
+        { who: 'both', time: '19:30', title: '저녁 데이트', memo: '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' },
+        { who: 'me', time: '메모', title: '선물 리스트 정리하기', memo: '쉐어 메모장에 올려둘게' }
+      ],
+      // 순서: 종일·기념일 → 시간 순 일정 → 날짜가 있는 메모 (PRD FR-CAL-01)
+      16: [{ who: 'partner', time: '메모', title: '여행 숙소 후보 정리했어', memo: '세 곳 골라놨는데 주말 전까지 하나 골라줘!' }],
+      17: [
+        { who: 'both', time: '종일', title: '1박 2일 여행', memo: '숙소 후보는 메모 핀 참고' },
+        { who: 'partner', time: '메모', title: '여행 준비물', memo: '충전기, 여권 사본, 접이식 우산' }
+      ],
+      18: [{ who: 'both', time: '종일', title: '1박 2일 여행', memo: '' }],
+      21: [{ who: 'partner', time: '20:00', title: '운동', memo: '' }],
+      24: [
+        { who: 'partner', time: '12:00', title: '친구 결혼식', memo: '' },
+        { who: 'me', time: '12:00', title: '결혼식 같이 가기', memo: '' }
+      ],
+      31: [{ who: 'both', time: '18:00', title: '할로윈 파티', memo: '' }]
+    };
+    // 개인 공간에서는 내 일정·메모만 (PRD D-29)
+    const EV = {};
+    Object.keys(ALL_EV).forEach((k) => {
+      let list = solo ? ALL_EV[k].filter((e) => e.who === 'me') : ALL_EV[k];
+      if (solo && k === '12') list = [{ who: 'me', time: '07:30', title: '필라테스', memo: '' }].concat(list);
+      if (list.length) EV[k] = list;
+    });
+    // 기념일: 날짜 목록 맨 위, 달력에서는 브랜드 색 고리 (PRD D-65)
+    const ANN = solo
+      ? { 12: [{ name: '엄마 생신', sub: '내가 만든 기념일 · 매년', by: 'me' }], 28: [{ name: '이사한 날', sub: '내가 만든 기념일', by: 'me' }] }
+      : { 23: [{ name: '200일', sub: '자동 기념일', dday: 'D+200' }], 5: [{ name: '처음 손잡은 날', sub: '상대가 만든 기념일 · 매년', by: 'partner' }] };
+    const raw = [];
+    for (let d = 27; d <= 30; d++) raw.push({ n: d, out: true });
+    for (let d = 1; d <= 31; d++) raw.push({ n: d, out: false });
+    const size = expanded ? 26 : 34;
+    const base = 'width: ' + size + 'px; height: ' + size + 'px; border-radius: ' + (size / 2) + 'px; display: flex; align-items: center; justify-content: center; align-self: center; flex-shrink: 0; font-size: ' + (expanded ? 13 : 15) + 'px; ';
+    const cellCollapsed = 'height: 52px; border: 0; background: transparent; padding: 4px 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; font-family: inherit; cursor: pointer; overflow: hidden; transition: height 220ms ease';
+    const cellExpanded = 'height: 88px; border: 0; border-top: 1px solid #F1EEF4; background: transparent; padding: 4px 2px 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; font-family: inherit; cursor: pointer; overflow: hidden; transition: height 220ms ease';
+    const barStyle = (c) => 'display: block; height: 16px; border-radius: 4px; padding: 0 3px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 10px; line-height: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-align: left';
+    const ringStyle = 'box-sizing: border-box; width: 6px; height: 6px; border-radius: 3px; border: 1.5px solid ' + accent;
+    const annBarStyle = 'display: block; height: 16px; border-radius: 4px; padding: 0 3px; background: #F3F0FD; box-shadow: inset 0 0 0 1px ' + accent + '; color: #4A2FC0; font-size: 10px; line-height: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-align: left';
+    const cardBase = 'flex-grow: 1; min-width: 0; display: flex; gap: 14px; padding: 14px 16px; border-radius: 16px; align-items: flex-start; text-decoration: none; color: #1C1A22; ';
+    const timeBase = 'width: 38px; flex-shrink: 0; padding-top: 1px; font-size: 13px; font-weight: 600; ';
+    const days = raw.map((d, i) => {
+      const col = i % 7;
+      const evs = d.out ? [] : (EV[d.n] || []);
+      const anns = d.out ? [] : (ANN[d.n] || []);
+      let style;
+      if (d.out) style = base + 'color: #B3AEBB; font-weight: 400';
+      else if (d.n === sel) style = base + 'background: ' + accent + '; color: #FFFFFF; font-weight: 700';
+      else if (d.n === TODAY) style = base + 'box-shadow: inset 0 0 0 1.5px #1C1A22; color: ' + (col === 0 ? '#C93545' : '#1C1A22') + '; font-weight: 700';
+      else style = base + 'color: ' + (col === 0 ? '#C93545' : '#1C1A22') + '; font-weight: 500';
+      return {
+        n: d.n,
+        out: d.out,
+        numStyle: style,
+        cellStyle: expanded ? cellExpanded : cellCollapsed,
+        showDots: !expanded,
+        showBars: expanded,
+        label: (d.out ? '9월 ' : '10월 ') + d.n + '일' + (anns.length ? ', 기념일 ' + anns.map((a) => a.name).join(', ') : '') + (evs.length ? ', 일정·메모 ' + evs.length + '개: ' + evs.map((e) => WHO[e.who].label + ' ' + e.title).join(', ') : ''),
+        dots: anns.slice(0, 1).map(() => ({ style: ringStyle })).concat(evs.slice(0, 3 - Math.min(anns.length, 1)).map((e) => ({ style: 'width: 5px; height: 5px; border-radius: 3px; background: ' + WHO[e.who].color }))),
+        bars: anns.map((a) => ({ title: a.name, style: annBarStyle })).concat(evs.map((e) => ({ title: e.title, style: barStyle(WHO[e.who].color) }))).slice(0, 2),
+        hasMore: anns.length + evs.length > 2,
+        moreLabel: '+' + (anns.length + evs.length - 2),
+        pick: d.out ? null : () => this.setState({ sel: d.n })
+      };
+    });
+    const rowBase = 'height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 12px; ';
+    const annItems = (ANN[sel] || []).map((a) => ({
+      time: '기념일',
+      title: a.name,
+      memo: a.sub,
+      hasMemo: true,
+      href: solo ? 'AnniversariesSolo.dc.html' : 'Anniversaries.dc.html',
+      whoLabel: a.dday || WHO[a.by].label,
+      hasDot: !a.dday,
+      dotStyle: a.by ? 'width: 8px; height: 8px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[a.by].color : '',
+      cardStyle: cardBase + 'background: #F3F0FD',
+      timeStyle: timeBase + 'color: #4A2FC0',
+      rowStyle: rowBase + 'background: #F3F0FD',
+      markStyle: 'box-sizing: border-box; width: 8px; height: 8px; border-radius: 4px; flex-shrink: 0; border: 2px solid ' + accent
+    }));
+    const items = annItems.concat((EV[sel] || []).map((e) => ({
+      time: e.time,
+      title: e.title,
+      memo: e.memo,
+      hasMemo: !!e.memo,
+      href: e.time === '메모' ? 'MemoDetail.dc.html' : 'EventDetail.dc.html',
+      whoLabel: WHO[e.who].label,
+      hasDot: true,
+      dotStyle: 'width: 8px; height: 8px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[e.who].color,
+      cardStyle: cardBase + 'background: #F7F6F9',
+      timeStyle: timeBase + 'color: #5B5666',
+      rowStyle: rowBase + 'background: #F7F6F9',
+      markStyle: 'width: 8px; height: 8px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[e.who].color
+    })));
+    const choice = s.choice || (this.props.sheetDialog ? 'drop' : 'keep');
+    const sheetDialog = s.sheetDialog !== undefined ? !!s.sheetDialog : !!this.props.sheetDialog;
+    const pickBox = 'box-sizing: border-box; min-height: 60px; padding: 10px 16px; border-radius: 16px; background: #FFFFFF; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; cursor: pointer; ';
+    const setExpanded = (v) => this.setState({ expanded: v });
+    const hasUnread = this.props.unread !== false;
+    return {
+      accent,
+      meColor,
+      partnerColor,
+      togetherColor,
+      solo,
+      isCouple: !solo,
+      // 연결 직후에는 처음 만난 날이 없어 입력 안내가 보인다 (PRD FR-COUPLE-04)
+      ddayLabel: linkedSheet ? '처음 만난 날 입력하기' : '함께한 지 D+[N]',
+      ddayAria: linkedSheet ? '처음 만난 날 입력하기' : '기념일 보기, 함께한 지 D+[N]',
+      linkedSheet,
+      sheetDialog: linkedSheet && sheetDialog,
+      isKeep: choice === 'keep',
+      isDrop: choice === 'drop',
+      keepStyle: pickBox + (choice === 'keep' ? 'border: 2px solid #1C1A22' : 'border: 1px solid #E6E2EA'),
+      dropStyle: pickBox + (choice === 'drop' ? 'border: 2px solid #1C1A22' : 'border: 1px solid #E6E2EA'),
+      pickKeep: () => this.setState({ choice: 'keep' }),
+      pickDrop: () => this.setState({ choice: 'drop' }),
+      startSheet: () => (choice === 'drop' ? this.setState({ sheetDialog: true }) : this.setState({ linkedSheet: false })),
+      closeSheetDialog: () => this.setState({ sheetDialog: false }),
+      hasUnread,
+      bellLabel: hasUnread ? '알림, 안 읽은 알림 있음' : '알림',
+      expanded,
+      collapsed: !expanded,
+      toggle: () => setExpanded(!expanded),
+      toggleLabel: expanded ? '달력 작게 보기' : '달력 크게 보기',
+      toggleIconPath: expanded ? 'M9 13.5l3-3 3 3' : 'M9 10.5l3 3 3-3',
+      dragStart: (e) => {
+        const t = e && e.target;
+        this._dragY = (t && t.closest && t.closest('[data-drag]')) ? e.clientY : null;
+      },
+      dragEnd: (e) => {
+        if (this._dragY == null || !e) return;
+        const dy = e.clientY - this._dragY;
+        this._dragY = null;
+        if (dy > 40 && !expanded) setExpanded(true);
+        else if (dy < -40 && expanded) setExpanded(false);
+      },
+      meAvatarStyle: avatar(meColor, false),
+      partnerAvatarStyle: avatar(partnerColor, true),
+      days,
+      items,
+      isEmpty: items.length === 0,
+      isToday: sel === TODAY,
+      selLabel: '10월 ' + sel + '일 (' + WD[(sel + 3) % 7] + ')',
+      countLabel: items.length ? items.length + '개' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>
