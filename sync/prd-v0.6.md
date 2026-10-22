@@ -71,6 +71,7 @@
 | 규칙 (리드 결정, 검수 1차) | `/auth/switch` 트랜잭션 | 트랜잭션 안에서 `social_accounts`를 다시 조회하고 대상 회원 행을 잠근다. 없거나 탈퇴한 회원이면 롤백하고 404 `SOCIAL_NOT_REGISTERED` (게스트는 그대로) | D-67 |
 | 오류 코드 (리드 결정, 검수 1차) | NO_IMPORT_PENDING | 409. 가져오기 대기 중인 개인 공간이 없는데 `POST /couple/import`를 부름 (해제와 겹친 경우 포함) | FR-COUPLE-03, D-78 |
 | 오류 코드 (리드 결정, 검수 1차) | GUEST_NOT_ALLOWED 뜻 넓힘 | 403. 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름 | D-07, FR-AUTH-05 |
+| 권한 규칙 | R-17 | `/auth/logout`은 회원만. 게스트면 403 `GUEST_NOT_ALLOWED` (API 2장) | FR-AUTH-05 |
 | 규칙 (리드 결정, 검수 1차) | 날짜 범위 조회 | `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE` | D-74 |
 | 규칙 (리드 결정, 검수 1차) | Kakao 연결 끊기 시점 | 탈퇴(또는 게스트 삭제와 무관, 회원 탈퇴만) 트랜잭션이 커밋된 뒤 호출한다. 실패해도 되돌리지 않고 로그만 남긴다 | FR-AUTH-06.AC3 |
 | 앱 흐름 | `/auth/link` 409 `SOCIAL_ALREADY_USED` | 앱은 "이미 가입된 계정이에요" 다이얼로그와 [그 계정으로 로그인]을 보여주고, 확인 다이얼로그 뒤 같은 소셜 토큰으로 `POST /auth/switch` (소셜 SDK 토큰을 다시 받아도 됨) | D-67 |
