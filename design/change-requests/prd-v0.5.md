@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.5
 
-> 상태: 반영 완료 (2026-10-22, 캔버스 버전 34)
+> 상태: 반영 완료 (2026-10-22, 캔버스 버전 35)
 > 기준 문서: 둘이서 PRD v0.5 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.5.md`
 > 작성일: 2026-10-21
 
@@ -134,7 +134,7 @@ PRD가 v0.5로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지우�
 | 16 | 해요체 문구 점검 목록 | ✅ 아래 목록 |
 | 17 | 새 토큰·컴포넌트 필요 여부 | ✅ 아래 목록 |
 
-## 반영 결과 (2026-10-22, 캔버스 버전 33~34)
+## 반영 결과 (2026-10-22, 캔버스 버전 33~35)
 
 - 고친 보드: Main, Calendar(CalendarExpanded), EventDetail(EventDetailPartner, EventDetailDialog), AddEvent(AddEventSolo, AddEventMemo), Anniversaries, Memo, PinnedAll, Notifications(NotificationsRead). Connected·ConnectedDialog는 제목에 "(v0.4)"를 붙여 이전 버전 줄로 옮김
 - 새 보드: CalendarSolo, CalendarAnniversary, CalendarLinkedSheet, CalendarLinkedSheetDialog, EventDetailMultiDay, AddEventAllDay, AddEventPartnerEdit, AnniversariesSolo, AnniversariesSoloEmpty, MainSessionReplaced, NotificationsWithdrawn, V05Flow(화면 흐름 화살표)
