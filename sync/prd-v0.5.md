@@ -1,6 +1,6 @@
 # PRD v0.5 영향 분석
 
-> 상태: 검수 중
+> 상태: PR 완료 — https://github.com/DuriseoApp/Docs/pull/3 (Android 이슈: https://github.com/DuriseoApp/Android/issues/3)
 > 이전 버전: v0.4 → 새 버전: v0.5
 > 브랜치: sync/prd-v0.5
 > PR: (PR 완료 후 링크)
