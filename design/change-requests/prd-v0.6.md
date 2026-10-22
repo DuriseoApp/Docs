@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.6
 
-> 상태: 반영 완료 (2026-10-22, 캔버스 버전 37)
+> 상태: 반영 완료 (2026-10-22, 캔버스 버전 38)
 > 기준 문서: 둘이서 PRD v0.6 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.6.md`
 > 작성일: 2026-10-22
 
@@ -94,7 +94,7 @@ PRD가 v0.6으로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지�
    - 상대가 만든 '함께' 일정을 수정하는 모양은 v0.5의 AddEventPartnerEdit가 이미 있어. 다시 그리지 마.
 14. SCR-CAL-03 종료가 시작보다 이른 오류 (보드: AddEventError.dc.html) — PRD FR-CAL-02 AC3
    - 일정 작성(AddEvent.dc.html)에서 종료가 시작보다 이른 값을 넣고 저장을 눌렀을 때의 모양이야. 시작·종료 샘플 값은 종료가 시작보다 이르게 넣어 줘.
-   - 종료 행 바로 아래에 `danger-700` 글자로 "종료는 시작보다 뒤여야 해요."
+   - 종료 행 바로 아래에 `danger-700` 글자로 "종료는 시작보다 뒤여야 해요." (반영 때 입력 오류 토큰 `danger-600`으로 그림)
    - 나머지는 AddEvent와 같게.
 15. SCR-ANNIV-01 지난 기념일 펼침 (보드: AnniversariesPastOpen.dc.html) — PRD D-71, FR-ANNIV-04 AC3
    - 2번의 Anniversaries 보드에서 "지난 기념일 [N]개" 행을 펼친 모양이야 (화살표가 펼침 방향).
@@ -178,7 +178,7 @@ PRD가 v0.6으로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지�
 | 5 | SCR-SET-01 이미 가입된 계정 ① (AccountGuestExisting, 새 보드) | ✅ |
 | 6 | SCR-SET-01 이미 가입된 계정 ② (AccountGuestExistingConfirm, 새 보드) | ✅ [삭제하고 로그인] `danger-700` |
 | 7 | SCR-SET-01 계정 · 회원 (AccountMember, 새 보드) | ✅ "Google로 로그인 중" + 닉네임, 로그인 방식, 가입일, [로그아웃], [탈퇴하기] (버튼 이름을 게스트·PRD와 같게 "탈퇴하기"로) |
-| 8 | SCR-SET-01 로그아웃 확인 (MenuLogoutDialog, 새 보드) | ✅ [로그아웃] `brand-500` 채움 |
+| 8 | SCR-SET-01 로그아웃 확인 (MenuLogoutDialog, 새 보드) | ✅ [로그아웃] `danger-700` 채움 (tokens.json: 로그아웃은 파괴적 행동) |
 | 9 | SCR-COUPLE-02 "아직 연결되지 않았어요" (InviteCreateNotYet, 새 보드) | ✅ 스낵바 |
 | 10 | SCR-COUPLE-04 혼자 쓴 기록 없음 (CalendarLinkedSheetNoRecords, 새 보드) | ✅ 제목 오른쪽 닫기 버튼 |
 | 11 | SCR-CAL-01 커플 + 처음 만난 날 없음 (CalendarNoStartDate, 새 보드) | ✅ |
@@ -195,7 +195,7 @@ PRD가 v0.6으로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지�
 | 22 | SCR-CAL-03 읽기 전용 표시 확정 표시 확인 | ✅ AddEventPartnerEdit에 "제안" 표시는 없음 (확정 상태 그대로) |
 | 23 | 새 토큰·컴포넌트 필요 여부 | ✅ 새 토큰·컴포넌트 없음 |
 
-## 결과 (2026-10-22, 캔버스 버전 37)
+## 결과 (2026-10-22, 캔버스 버전 38)
 
 - 고친 보드: InviteEnter, Account, Menu, Calendar, AddEvent, Anniversaries, AnniversaryEdit, InviteCreate, Connect, ColorSettings (모두 상태 prop 추가, 기본 모습은 Anniversaries·Account·Connect 게스트만 바뀜)
 - 새 보드 18개: 위 표의 새 보드 + InviteEnterFilled, StartDateSheet(컴포넌트), MenuStartDateSheet
