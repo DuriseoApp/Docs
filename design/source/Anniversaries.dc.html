@@ -15,7 +15,7 @@ body{margin:0}
 a{color:#5B5666}a:hover{color:#1C1A22}
 </style>
 </helmet>
-<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<main style="width: 390px; height: {{mainH}}px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
 <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
 <a href="{{backHref}}" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
@@ -27,7 +27,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </header>
 
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 24px">
-<sc-if value="{{isCouple}}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{showTogether}}" hint-placeholder-val="{{ true }}">
 <section aria-label="함께한 날" style="padding: 22px 20px; border-radius: 24px; background: #F5F3F7; display: flex; align-items: center; gap: 16px">
 <svg width="56" height="38" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="{{meColor}}"></circle><circle cx="64" cy="54" r="20" fill="{{partnerColor}}"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="{{togetherColor}}"></path></svg>
 <div style="display: flex; flex-direction: column; gap: 2px">
@@ -35,6 +35,15 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <span style="font-size: 26px; line-height: 32px; font-weight: 700; color: #4A2FC0">D+189</span>
 <span style="font-size: 13px; color: #5B5666">처음 만난 날 2026년 4월 7일 (화)</span>
 </div>
+</section>
+</sc-if>
+<sc-if value="{{noStartDate}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="nsTitle" style="padding: 20px; border-radius: 24px; background: #F3F0FD; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="nsTitle" style="margin: 0; font-size: 17px; font-weight: 700">처음 만난 날을 정해 주세요</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">정하면 함께한 날과 100일, 1주년 같은 기념일을 자동으로 계산해요.</p>
+</div>
+<a href="MenuStartDateSheet.dc.html" style="align-self: flex-start; height: 44px; padding: 0 18px; border-radius: 12px; background: #6D4AE0; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center">처음 만난 날 입력</a>
 </section>
 </sc-if>
 
@@ -72,11 +81,38 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 </sc-if>
 
+<sc-if value="{{hasPast}}" hint-placeholder-val="{{ true }}">
+<section aria-label="지난 기념일" style="display: flex; flex-direction: column">
+<button type="button" onClick="{{togglePast}}" aria-expanded="{{pastOpen}}" style="height: 52px; padding: 0; border: 0; background: transparent; font-family: inherit; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #1C1A22">
+<span style="font-size: 15px; font-weight: 700">지난 기념일 <span style="font-weight: 600; color: #77727F">{{pastCount}}개</span></span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B5666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{pastIcon}}"></path></svg>
+</button>
+<sc-if value="{{pastOpen}}" hint-placeholder-val="{{ false }}">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{past}}" as="pt" hint-placeholder-count="2">
+<li style="display: flex">
+<a href="{{pt.href}}" aria-label="{{pt.aria}}" style="flex-grow: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #EEEBF1; text-decoration: none; color: #1C1A22">
+<span style="width: 48px; height: 52px; flex-shrink: 0; border-radius: 14px; background: #F7F6F9; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-size: 11px; font-weight: 600; color: #77727F">{{pt.month}}</span>
+<span style="font-size: 18px; line-height: 22px; font-weight: 700; color: #5B5666">{{pt.day}}</span>
+</span>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 600; color: #4A4553; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pt.name}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #77727F"><span style="{{pt.dotStyle}}"></span>{{pt.meta}}</span>
+</span>
+<sc-if value="{{pt.mine}}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8996" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M9 5l7 7-7 7"></path></svg></sc-if>
+</a>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+</section>
+</sc-if>
 <sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 12px; line-height: 1.6; color: #5B5666">{{footNote}}</p></sc-if>
 </div>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"solo":{"editor":"boolean","default":false,"section":"상태"},"empty":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"solo":{"editor":"boolean","default":false,"section":"상태"},"empty":{"editor":"boolean","default":false,"section":"상태"},"pastOpen":{"editor":"boolean","default":false,"section":"상태"},"noStartDate":{"editor":"boolean","default":false,"section":"상태"},"height":{"editor":"number","default":844,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const me = this.props.meColor ?? '#E0612F';
@@ -99,7 +135,23 @@ class Component extends DCLogic {
     ];
     const badge = (near) => 'flex-shrink: 0; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; ' + (near ? 'background: #ECE6FC; color: #4A2FC0' : 'background: #F5F3F7; color: #5B5666');
     const empty = solo && !!this.props.empty;
-    const LIST = empty ? [] : (solo ? SOLO : COUPLE);
+    // 처음 만난 날이 없는 커플: 자동 기념일 없음 (PRD FR-ANNIV-04 AC4)
+    const noStartDate = !solo && !!this.props.noStartDate;
+    const LIST = empty ? [] : (solo ? SOLO : (noStartDate ? COUPLE.filter((x) => !!x.by) : COUPLE));
+    // 지난 1회성 직접 기념일, 최근 순, 처음엔 접힘 (PRD D-71)
+    const PAST = solo
+      ? [{ m: '7월', d: 11, name: '자격증 시험', by: 'me' }]
+      : [{ m: '8월', d: 1, name: '제주 여행 출발', by: 'partner' }, { m: '6월', d: 14, name: '처음 같이 본 영화', by: 'me' }];
+    const st = this.state || {};
+    const pastOpen = st.pastOpen !== undefined ? !!st.pastOpen : !!this.props.pastOpen;
+    const past = empty ? [] : PAST.map((x) => ({
+      month: x.m, day: x.d, name: x.name,
+      mine: x.by === 'me',
+      href: x.by === 'me' ? 'AnniversaryEdit.dc.html' : '#',
+      aria: x.name + ', ' + x.m + ' ' + x.d + '일' + (x.by === 'me' ? ', 수정' : ''),
+      dotStyle: 'width: 7px; height: 7px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[x.by].color,
+      meta: solo ? '내가 만든 기념일' : WHO[x.by].by + ' 만든 기념일'
+    }));
     const items = LIST.map((x) => ({
       month: x.m,
       day: x.d,
@@ -113,6 +165,15 @@ class Component extends DCLogic {
     return {
       meColor: me, partnerColor: partner, togetherColor: together, items,
       isCouple: !solo,
+      showTogether: !solo && !noStartDate,
+      noStartDate,
+      past,
+      hasPast: past.length > 0,
+      pastCount: past.length,
+      pastOpen,
+      togglePast: () => this.setState({ pastOpen: !pastOpen }),
+      pastIcon: pastOpen ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6',
+      mainH: Number(this.props.height) || 844,
       isEmpty: empty,
       hasItems: !empty,
       backHref: solo ? 'CalendarSolo.dc.html' : 'Calendar.dc.html',

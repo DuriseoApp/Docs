@@ -85,9 +85,11 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 </sc-if>
 </div>
+<sc-if value="{{notGuest}}" hint-placeholder-val="{{ true }}">
 <div style="padding: 12px 24px 28px; display: flex; justify-content: center">
-<a href="Main.dc.html" style="padding: 12px; font-size: 14px; font-weight: 500">다른 계정으로 로그인</a>
+<a href="MenuLogoutDialog.dc.html" style="padding: 12px; font-size: 14px; font-weight: 500">다른 계정으로 로그인</a>
 </div>
+</sc-if>
 </main>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"guest":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>

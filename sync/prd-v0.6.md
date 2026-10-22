@@ -1,6 +1,6 @@
 # PRD v0.6 영향 분석
 
-> 상태: 승인 대기
+> 상태: 검수 중
 > 이전 버전: v0.5 → 새 버전: v0.6
 > 브랜치: sync/prd-v0.6
 > PR: (PR 완료 후 링크)
@@ -63,6 +63,16 @@
 | --- | --- | --- | --- |
 | 경로 | `POST /auth/switch` | 게스트 → 기존 회원 계정 로그인 `{provider, token}`. 권한: GUEST만(게스트 access 토큰). 4.2의 2단계처럼 소셜 토큰 검증(실패 401 `SOCIAL_TOKEN_INVALID`). 그 소셜 계정이 가입돼 있지 않으면 404 `SOCIAL_NOT_REGISTERED`(앱은 `/auth/link`로 연동하면 됨, 아무것도 바꾸지 않음). 성공하면 3.1 규칙대로 게스트 삭제 + 로그인, 응답은 `/auth/social`과 같음(`isNewUser: false`, 새 access·refresh 토큰). 앱은 `PUT /me/devices`를 다시 부르고 그 계정의 현재 상태로 이동 | D-67, FR-AUTH-03.AC3 |
 | 오류 코드 | SOCIAL_NOT_REGISTERED | 404. `/auth/switch`에서 그 소셜 계정으로 가입한 회원이 없음 | D-67 |
+| 오류 코드 (리드 결정) | GUEST_ONLY | 403. 게스트만 부를 수 있는 경로(`/auth/link`, `/auth/switch`)를 회원이 부름 | D-67, FR-AUTH-03 |
+| 규칙 (리드 결정) | 푸시 조건의 범위 | 유효 세션 조건(DB-14, API R-16)은 사용자에게 보이는 푸시에만 적용한다. 동기화 신호(SYNC)는 그대로 보낸다(기기 정리로 자연히 멈춤) | D-73 |
+| 규칙 (리드 결정) | D-78 되살리기 조건 | 해제할 때 그 사람의 가져오기 대기 중인 개인 공간(소속에 `left_at`이 있는 PERSONAL)이 남아 있으면 새로 만들지 않고 그 공간을 되살린다(ERD 4.2). 남아 있지 않으면 지금처럼 새 빈 개인 공간을 만든다 | D-78 |
+| 규칙 (리드 결정, 검수 1차) | 빈 개인 공간 | `/couple/join`에서 개인 공간에 혼자 쓴 기록이 없으면 그 개인 공간을 같은 트랜잭션에서 바로 지운다. 그래서 가져오기 대기 중인 개인 공간 = 기록이 있는 공간뿐이고, `importPending` = 그런 공간이 남아 있음 | D-78, FR-COUPLE-03 |
+| 응답 필드 (리드 결정, 검수 1차) | `GET /anniversaries/past`의 `totalCount` | 지난 1회성 직접 기념일의 전체 개수. 앱은 접힌 행 "지난 기념일 N개"에 쓰고, 0이면 행을 숨긴다 | D-71 |
+| 규칙 (리드 결정, 검수 1차) | `/auth/switch` 트랜잭션 | 트랜잭션 안에서 `social_accounts`를 다시 조회하고 대상 회원 행을 잠근다. 없거나 탈퇴한 회원이면 롤백하고 404 `SOCIAL_NOT_REGISTERED` (게스트는 그대로) | D-67 |
+| 오류 코드 (리드 결정, 검수 1차) | NO_IMPORT_PENDING | 409. 가져오기 대기 중인 개인 공간이 없는데 `POST /couple/import`를 부름 (해제와 겹친 경우 포함) | FR-COUPLE-03, D-78 |
+| 오류 코드 (리드 결정, 검수 1차) | GUEST_NOT_ALLOWED 뜻 넓힘 | 403. 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름 | D-07, FR-AUTH-05 |
+| 규칙 (리드 결정, 검수 1차) | 날짜 범위 조회 | `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE` | D-74 |
+| 규칙 (리드 결정, 검수 1차) | Kakao 연결 끊기 시점 | 탈퇴(또는 게스트 삭제와 무관, 회원 탈퇴만) 트랜잭션이 커밋된 뒤 호출한다. 실패해도 되돌리지 않고 로그만 남긴다 | FR-AUTH-06.AC3 |
 | 앱 흐름 | `/auth/link` 409 `SOCIAL_ALREADY_USED` | 앱은 "이미 가입된 계정이에요" 다이얼로그와 [그 계정으로 로그인]을 보여주고, 확인 다이얼로그 뒤 같은 소셜 토큰으로 `POST /auth/switch` (소셜 SDK 토큰을 다시 받아도 됨) | D-67 |
 | 오류 코드 | DATE_OUT_OF_RANGE | 400. 날짜가 1950-01-01 ~ 2050-12-31 밖. `POST/PATCH /events`, `POST/PATCH /memos`(memoDate), `POST/PATCH /anniversaries`, `PATCH /space`(startDate). 미래의 처음 만난 날은 기존대로 `VALIDATION_FAILED` | D-74 |
 | 경로 | `GET /anniversaries/upcoming?cursor=&size=` | 기념일 목록용. 요청자 시간대 기준 오늘(포함)부터 2050-12-31까지의 자동·직접 기념일 발생일을 날짜순으로. 매년 반복은 해마다 한 항목. 항목 `{anniversaryId(직접만, 자동은 null), kind(AUTO·CUSTOM), name, date, daysLeft(오늘 = 0), repeatsYearly, authorId(직접만)}`. 커서는 (date, kind, anniversaryId). 처음 만난 날이 없으면 AUTO 없음 | D-75, FR-ANNIV-04.AC1·AC4 |
@@ -112,3 +122,4 @@
 
 | 회차 | 판정 | Critical | 비고 |
 | --- | --- | --- | --- |
+| 1 | 수정 필요 | 0 | Major 3(지난 기념일 개수, 빈 대기 공간과 importPending, /auth/switch 트랜잭션 재조회), Minor 12 → 리드 결정(위 3.2 "검수 1차" 행)으로 api·data·screen이 수정. SCR-COUPLE-03 오류 화면과 재연결 복구 시트는 이번 그리기 범위 밖(사용자 목록에 없음) |

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PRD v0.6 화면 흐름</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<div style="position: relative; width: 1330px; height: 844px; background: #F7F6F9; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22; overflow: hidden">
+<svg width="1330" height="844" style="position: absolute; inset: 0" aria-hidden="true"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6D4AE0"></path></marker></defs><path d="M290 175 H352" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M610 175 H672" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M930 175 H992" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M165 236 V330 H352" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M610 330 H672" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M290 520 C330 520 320 620 352 620" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M290 618 H352" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M290 718 C330 718 320 640 352 640" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M835 572 V612" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M1150 558 V588" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path><path d="M1150 682 V708" fill="none" stroke="#6D4AE0" stroke-width="2" marker-end="url(#ah)"></path></svg>
+<h1 style="position: absolute; left: 40px; top: 32px; margin: 0; font-size: 22px; font-weight: 700">PRD v0.6 화면 흐름</h1>
+<h2 style="position: absolute; left: 40px; top: 96px; margin: 0; font-size: 16px; font-weight: 700">게스트 → 계정 연동 (D-67, D-68, D-79)</h2>
+<div style="position: absolute; left: 40px; top: 140px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-SET-01 계정 · 게스트</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">Google·카카오로 로그인</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">연동 시도</span>
+</div>
+<div style="position: absolute; left: 360px; top: 140px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">이미 가입된 계정</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">"이미 가입된 계정이에요"</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">[그 계정으로 로그인]</span>
+</div>
+<div style="position: absolute; left: 680px; top: 140px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">한 번 더 확인</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">"그 계정으로 로그인할까요?"</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">게스트 기록 삭제 · [삭제하고 로그인]</span>
+</div>
+<div style="position: absolute; left: 1000px; top: 140px; width: 290px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #6D4AE0; background: #ECE6FC; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">그 계정의 현재 상태</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">SCR-CAL-01</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">게스트 계정은 바로 삭제</span>
+</div>
+<div style="position: absolute; left: 360px; top: 290px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">가입 안 된 계정</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">연동 완료</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">기록 유지 · 닉네임이 "게스트"면 소셜 이름</span>
+</div>
+<div style="position: absolute; left: 680px; top: 290px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #6D4AE0; background: #ECE6FC; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">커플 연결 메뉴에서 시작했으면</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">SCR-COUPLE-01 (회원)</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">초대코드 만들기·입력하기</span>
+</div>
+<span style="position: absolute; left: 330px; top: 150px; font-size: 12px; font-weight: 600; color: #4A2FC0; background: #F7F6F9; padding: 0 4px">이미 회원</span>
+<span style="position: absolute; left: 176px; top: 300px; font-size: 12px; font-weight: 600; color: #4A2FC0; background: #F7F6F9; padding: 0 4px">처음 연결</span>
+<h2 style="position: absolute; left: 40px; top: 440px; margin: 0; font-size: 16px; font-weight: 700">처음 만난 날 (FR-COUPLE-04, D-74)</h2>
+<div style="position: absolute; left: 40px; top: 484px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-CAL-01 커플 · 처음 만난 날 없음</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">앱바 "처음 만난 날 입력하기 ›"</span>
+
+</div>
+<div style="position: absolute; left: 40px; top: 584px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-ANNIV-01 · 처음 만난 날 없음</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">[처음 만난 날 입력]</span>
+
+</div>
+<div style="position: absolute; left: 40px; top: 684px; width: 250px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-SET-01 전체 메뉴</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">[처음 만난 날 수정]</span>
+
+</div>
+<div style="position: absolute; left: 360px; top: 584px; width: 260px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #6D4AE0; background: #ECE6FC; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-SET-01</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">처음 만난 날 시트</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">1950년 1월 1일 ~ 오늘 · [저장] → D-day·자동 기념일 다시 계산</span>
+</div>
+<h2 style="position: absolute; left: 700px; top: 440px; margin: 0; font-size: 16px; font-weight: 700">지난 기념일 (D-71)</h2>
+<div style="position: absolute; left: 700px; top: 484px; width: 270px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-ANNIV-01</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">"지난 기념일 N개"</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">처음엔 접힘 · 펼치면 최근 순</span>
+</div>
+<div style="position: absolute; left: 700px; top: 620px; width: 270px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #6D4AE0; background: #ECE6FC; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-ANNIV-02</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">기념일 수정</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">내가 만든 기념일만 수정·삭제</span>
+</div>
+<span style="position: absolute; left: 845px; top: 580px; font-size: 12px; font-weight: 600; color: #4A2FC0; background: #F7F6F9; padding: 0 4px">내 기념일 누름</span>
+<h2 style="position: absolute; left: 1010px; top: 440px; margin: 0; font-size: 16px; font-weight: 700">다른 계정으로 로그인 (D-80)</h2>
+<div style="position: absolute; left: 1010px; top: 484px; width: 280px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-COUPLE-01 (회원)</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">"다른 계정으로 로그인"</span>
+
+</div>
+<div style="position: absolute; left: 1010px; top: 596px; width: 280px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #D9D4DF; background: #FFFFFF; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-SET-01</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">로그아웃 확인</span>
+<span style="font-size: 12px; line-height: 1.5; color: #5B5666">"로그아웃할까요?"</span>
+</div>
+<div style="position: absolute; left: 1010px; top: 716px; width: 280px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #6D4AE0; background: #ECE6FC; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">SCR-START-01</span>
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">시작 화면</span>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
