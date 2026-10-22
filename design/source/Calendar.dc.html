@@ -22,7 +22,7 @@ body{margin:0}
 <span style="{{meAvatarStyle}}">나</span>
 <span style="{{partnerAvatarStyle}}">너</span>
 </div>
-<a href="Anniversaries.dc.html" aria-label="{{ddayAria}}" style="display: flex; flex-direction: column; text-decoration: none; color: #1C1A22">
+<a href="{{ddayHref}}" aria-label="{{ddayAria}}" style="display: flex; flex-direction: column; text-decoration: none; color: #1C1A22">
 <span style="font-size: 16px; font-weight: 700">우리 둘</span>
 <span style="display: flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: #4A2FC0">{{ddayLabel}}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
 </a>
@@ -136,7 +136,12 @@ body{margin:0}
 <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(28, 26, 34, 0.48)"></div>
 <section role="dialog" aria-modal="true" aria-labelledby="sheetTitle" style="position: relative; box-sizing: border-box; padding: 10px 24px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 22px">
 <span aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
 <h2 id="sheetTitle" style="margin: 4px 0 0; font-size: 22px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">[상대 이름]님과 연결됐어요</h2>
+<sc-if value="{{noRecords}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{closeSheet}}" aria-label="닫기" style="width: 44px; height: 44px; margin: -4px -10px 0 0; flex-shrink: 0; border: 0; border-radius: 22px; background: transparent; color: #1C1A22; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</sc-if>
+</div>
 <section aria-labelledby="sdTitle" style="display: flex; flex-direction: column; gap: 8px">
 <div style="display: flex; align-items: center; justify-content: space-between">
 <span id="sdTitle" style="font-size: 13px; font-weight: 600; color: #5B5666">처음 만난 날</span>
@@ -148,6 +153,7 @@ body{margin:0}
 </button>
 <span style="font-size: 12px; line-height: 16px; color: #5B5666">D-day와 기념일이 이 날을 1일로 계산돼요. 둘 중 누구든 나중에 바꿀 수 있어요.</span>
 </section>
+<sc-if value="{{hasRecords}}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="srTitle" style="display: flex; flex-direction: column; gap: 8px">
 <div style="display: flex; flex-direction: column; gap: 2px">
 <span id="srTitle" style="font-size: 13px; font-weight: 600; color: #5B5666">혼자 쓴 기록</span>
@@ -159,6 +165,7 @@ body{margin:0}
 </div>
 <span style="font-size: 12px; line-height: 16px; color: #5B5666">내 기록만 정해요. 상대의 기록은 상대가 정해요.</span>
 </section>
+</sc-if>
 <button type="button" onClick="{{startSheet}}" style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">시작하기</button>
 </section>
 <sc-if value="{{sheetDialog}}" hint-placeholder-val="{{ false }}">
@@ -178,7 +185,7 @@ body{margin:0}
 </sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"startExpanded":{"editor":"boolean","default":false,"section":"상태"},"unread":{"editor":"boolean","default":true,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"startSel":{"editor":"number","default":12,"section":"상태"},"linkedSheet":{"editor":"boolean","default":false,"section":"상태"},"sheetDialog":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"startExpanded":{"editor":"boolean","default":false,"section":"상태"},"unread":{"editor":"boolean","default":true,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"startSel":{"editor":"number","default":12,"section":"상태"},"linkedSheet":{"editor":"boolean","default":false,"section":"상태"},"sheetDialog":{"editor":"boolean","default":false,"section":"상태"},"noRecords":{"editor":"boolean","default":false,"section":"상태"},"noStartDate":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const accent = this.props.accent ?? '#6D4AE0';
@@ -196,6 +203,9 @@ class Component extends DCLogic {
     };
     const avatar = (c, overlap) => 'width: 32px; height: 32px; border-radius: 16px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #FFFFFF' + (overlap ? '; margin-left: -8px' : '');
     const solo = !!this.props.solo;
+    // 처음 만난 날이 없는 커플: 앱바에 입력 안내, 자동 기념일 없음 (PRD FR-COUPLE-04 AC2, FR-ANNIV-04 AC4)
+    const noStartDate = !!this.props.noStartDate;
+    const noRecords = !!this.props.noRecords;
     const linkedSheet = s.linkedSheet !== undefined ? !!s.linkedSheet : !!this.props.linkedSheet;
     const sel = s.sel ? s.sel : (Number(this.props.startSel) || 12);
     const TODAY = 12;
@@ -237,7 +247,7 @@ class Component extends DCLogic {
     // 기념일: 날짜 목록 맨 위, 달력에서는 브랜드 색 고리 (PRD D-65)
     const ANN = solo
       ? { 12: [{ name: '엄마 생신', sub: '내가 만든 기념일 · 매년', by: 'me' }], 28: [{ name: '이사한 날', sub: '내가 만든 기념일', by: 'me' }] }
-      : { 23: [{ name: '200일', sub: '자동 기념일', dday: 'D+200' }], 5: [{ name: '처음 손잡은 날', sub: '상대가 만든 기념일 · 매년', by: 'partner' }] };
+      : Object.assign(noStartDate ? {} : { 23: [{ name: '200일', sub: '자동 기념일', dday: 'D+200' }] }, { 5: [{ name: '처음 손잡은 날', sub: '상대가 만든 기념일 · 매년', by: 'partner' }] });
     const raw = [];
     for (let d = 27; d <= 30; d++) raw.push({ n: d, out: true });
     for (let d = 1; d <= 31; d++) raw.push({ n: d, out: false });
@@ -316,8 +326,12 @@ class Component extends DCLogic {
       solo,
       isCouple: !solo,
       // 연결 직후에는 처음 만난 날이 없어 입력 안내가 보인다 (PRD FR-COUPLE-04)
-      ddayLabel: linkedSheet ? '처음 만난 날 입력하기' : '함께한 지 D+[N]',
-      ddayAria: linkedSheet ? '처음 만난 날 입력하기' : '기념일 보기, 함께한 지 D+[N]',
+      ddayLabel: (linkedSheet || noStartDate) ? '처음 만난 날 입력하기' : '함께한 지 D+[N]',
+      ddayAria: (linkedSheet || noStartDate) ? '처음 만난 날 입력하기' : '기념일 보기, 함께한 지 D+[N]',
+      ddayHref: noStartDate ? 'MenuStartDateSheet.dc.html' : 'Anniversaries.dc.html',
+      noRecords,
+      hasRecords: !noRecords,
+      closeSheet: () => this.setState({ linkedSheet: false }),
       linkedSheet,
       sheetDialog: linkedSheet && sheetDialog,
       isKeep: choice === 'keep',

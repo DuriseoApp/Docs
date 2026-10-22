@@ -38,7 +38,7 @@ body{margin:0}
 <h2 id="loginTitle" style="margin: 0 0 2px; font-size: 13px; font-weight: 600; color: #5B5666">로그인 연결</h2>
 <button type="button" onClick="{{linkGoogle}}" style="height: 54px; border-radius: 14px; border: 0; background: #1C1A22; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Google로 로그인</button>
 <button type="button" onClick="{{linkKakao}}" style="height: 54px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer">카카오로 로그인</button>
-<p style="margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: #5B5666">이미 둘이서에 가입된 계정으로는 연결할 수 없어요. 게스트 기록과 그 계정의 기록은 합쳐지지 않아요.</p>
+<p style="margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: #5B5666">이미 둘이서에 가입된 계정이면 그 계정으로 로그인할 수 있어요. 이때 게스트 기록은 옮겨지지 않고 삭제돼요.</p>
 </section>
 
 <div style="margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid #EEEBF1">
@@ -57,8 +57,8 @@ body{margin:0}
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
 </span>
 <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
-<span style="font-size: 16px; font-weight: 700">{{providerLabel}} 계정으로 로그인됨</span>
-<span style="font-size: 13px; color: #5B5666">[이메일 주소]</span>
+<span style="font-size: 16px; font-weight: 700">{{providerLabel}}로 로그인 중</span>
+<span style="font-size: 13px; color: #5B5666">[닉네임]</span>
 </span>
 </section>
 <dl style="margin: 0; display: flex; flex-direction: column">
@@ -66,8 +66,8 @@ body{margin:0}
 <div style="height: 52px; display: flex; align-items: center; justify-content: space-between"><dt style="font-size: 14px; color: #5B5666">가입일</dt><dd style="margin: 0; font-size: 15px; font-weight: 600">2026년 10월 12일</dd></div>
 </dl>
 <div style="margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid #EEEBF1">
-<a href="Main.dc.html" style="height: 52px; display: flex; align-items: center; text-decoration: none; color: #B42335; font-size: 15px; font-weight: 600">로그아웃</a>
-<button type="button" onClick="{{openWithdraw}}" style="height: 44px; padding: 0; border: 0; background: transparent; font-family: inherit; text-align: left; color: #77727F; font-size: 13px; font-weight: 500; cursor: pointer">회원 탈퇴</button>
+<button type="button" onClick="{{openLogout}}" style="height: 52px; padding: 0; border: 0; background: transparent; font-family: inherit; text-align: left; color: #B42335; font-size: 15px; font-weight: 600; cursor: pointer">로그아웃</button>
+<button type="button" onClick="{{openWithdraw}}" style="height: 44px; padding: 0; border: 0; background: transparent; font-family: inherit; text-align: left; color: #77727F; font-size: 13px; font-weight: 500; cursor: pointer">탈퇴하기</button>
 </div>
 </sc-if>
 </div>
@@ -85,9 +85,48 @@ body{margin:0}
 </section>
 </div>
 </sc-if>
+<sc-if value="{{existingOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeExisting}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exB" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="exT" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">이미 가입된 계정이에요</h2>
+<p id="exB" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">이 계정은 이미 둘이서에 가입돼 있어요. 그 계정으로 로그인하면 게스트로 쓴 기록은 옮겨지지 않아요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeExisting}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<button type="button" onClick="{{openExistingConfirm}}" style="height: 48px; border-radius: 14px; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; background: #6D4AE0; color: #FFFFFF">그 계정으로 로그인</button>
+</div>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{existingConfirmOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeExisting}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="excT" aria-describedby="excB" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="excT" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">그 계정으로 로그인할까요?</h2>
+<p id="excB" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">게스트로 쓴 기록은 모두 삭제돼요. 삭제한 기록은 되돌릴 수 없어요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeExisting}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Calendar.dc.html" style="height: 48px; border-radius: 14px; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; background: #B42335; color: #FFFFFF">삭제하고 로그인</a>
+</div>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{logoutOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeLogout}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="loT" aria-describedby="loB" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="loT" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">로그아웃할까요?</h2>
+<p id="loB" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">다시 로그인하면 기록을 그대로 볼 수 있어요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeLogout}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Main.dc.html" style="height: 48px; border-radius: 14px; border: 0; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; background: #B42335; color: #FFFFFF">로그아웃</a>
+</div>
+</section>
+</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"guest":{"editor":"boolean","default":true,"section":"상태"},"couple":{"editor":"boolean","default":true,"section":"상태"},"withdrawOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"guest":{"editor":"boolean","default":true,"section":"상태"},"couple":{"editor":"boolean","default":true,"section":"상태"},"withdrawOpen":{"editor":"boolean","default":false,"section":"상태"},"existingOpen":{"editor":"boolean","default":false,"section":"상태"},"existingConfirmOpen":{"editor":"boolean","default":false,"section":"상태"},"logoutOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const s = this.state || {};
@@ -95,6 +134,7 @@ class Component extends DCLogic {
     const link = (p) => this.setState({ provider: p, justLinked: true });
     const withdrawOpen = s.withdrawOpen !== undefined ? !!s.withdrawOpen : !!this.props.withdrawOpen;
     // 커플 공간이면 연결 해제 후 삭제, 개인 공간이면 바로 삭제 (PRD FR-AUTH-06)
+    const flag = (k) => s[k] !== undefined ? !!s[k] : !!this.props[k];
     const inCouple = !!provider && this.props.couple !== false;
     return {
       isGuest: !provider,
@@ -104,6 +144,13 @@ class Component extends DCLogic {
       linkGoogle: () => link('Google'),
       linkKakao: () => link('카카오'),
       withdrawOpen,
+      existingOpen: flag('existingOpen'),
+      existingConfirmOpen: flag('existingConfirmOpen'),
+      logoutOpen: flag('logoutOpen'),
+      openExistingConfirm: () => this.setState({ existingOpen: false, existingConfirmOpen: true }),
+      closeExisting: () => this.setState({ existingOpen: false, existingConfirmOpen: false }),
+      openLogout: () => this.setState({ logoutOpen: true }),
+      closeLogout: () => this.setState({ logoutOpen: false }),
       openWithdraw: () => this.setState({ withdrawOpen: true }),
       closeWithdraw: () => this.setState({ withdrawOpen: false }),
       withdrawBody: inCouple

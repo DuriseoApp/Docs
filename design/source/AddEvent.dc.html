@@ -108,9 +108,12 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <span style="padding-left: 32px; color: #5B5666">종료</span>
 <span style="display: flex; gap: 6px">
 <button type="button" aria-label="종료 날짜 {{endDate}}" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: #F5F3F7; font-family: inherit; font-size: 15px; font-weight: 600; color: #1C1A22; cursor: pointer">{{endDate}}</button>
-<sc-if value="{{showTime}}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="종료 시간 {{endTime}}" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: #F5F3F7; font-family: inherit; font-size: 15px; font-weight: 600; color: #1C1A22; cursor: pointer">{{endTime}}</button></sc-if>
+<sc-if value="{{showTime}}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="종료 시간 {{endTime}}" style="{{endTimeStyle}}">{{endTime}}</button></sc-if>
 </span>
 </div>
+<sc-if value="{{endError}}" hint-placeholder-val="{{ false }}">
+<p role="alert" style="margin: 0; padding: 0 16px 12px 48px; display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; font-weight: 600; color: #C93545"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v5.5M12 16.2v.3"></path></svg>종료는 시작보다 뒤여야 해요.</p>
+</sc-if>
 <button type="button" style="height: 56px; border: 0; border-top: 1px solid #EEEBF1; background: transparent; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-family: inherit; font-size: 15px; color: #1C1A22">
 <span style="display: flex; align-items: center; gap: 12px; color: #5B5666"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>내 알림</span>
 <span style="font-weight: 600; color: {{reminderColor}}">{{reminderLabel}}</span>
@@ -135,7 +138,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"kind":{"editor":"enum","options":["event","memo"],"default":"event","section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"memoDate":{"editor":"boolean","default":false,"section":"상태"},"partnerEdit":{"editor":"boolean","default":false,"section":"상태"},"allDay":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"kind":{"editor":"enum","options":["event","memo"],"default":"event","section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"memoDate":{"editor":"boolean","default":false,"section":"상태"},"partnerEdit":{"editor":"boolean","default":false,"section":"상태"},"allDay":{"editor":"boolean","default":false,"section":"상태"},"edit":{"editor":"boolean","default":false,"section":"상태"},"endError":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const accent = this.props.accent ?? '#6D4AE0';
@@ -146,6 +149,9 @@ class Component extends DCLogic {
     };
     const s = this.state || {};
     const kind = s.kind || this.props.kind || 'event';
+    // 내 일정 수정 (종류 탭·알림 스위치 없음, 대상은 바꿀 수 있음)
+    const edit = !!this.props.edit;
+    const endError = !!this.props.endError;
     const who = s.who || 'me';
     const solo = !!this.props.solo;
     const notify = s.notify !== undefined ? !!s.notify : true;
@@ -190,18 +196,21 @@ class Component extends DCLogic {
       pickMemo: () => this.setState({ kind: 'memo' }),
       whos,
       showWho: isEvent && !solo && !partnerEdit,
-      showNotify: !solo && !partnerEdit,
+      showNotify: !solo && !partnerEdit && !edit,
       partnerEdit,
-      showTabs: !partnerEdit,
-      headerTitle: partnerEdit ? '일정 수정' : '새로 추가',
-      titleValue: partnerEdit ? '저녁 데이트' : '',
-      memoValue: partnerEdit ? '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' : '',
+      showTabs: !partnerEdit && !edit,
+      headerTitle: (partnerEdit || edit) ? '일정 수정' : '새로 추가',
+      titleValue: partnerEdit ? '저녁 데이트' : (edit ? '팀 회식' : (endError ? '저녁 데이트' : '')),
+      memoValue: partnerEdit ? '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' : (edit ? '늦게 끝날 수도 있어요' : ''),
       togetherDot: 'width: 10px; height: 10px; border-radius: 5px; background: ' + colors.both,
       // 시작·종료 행 (PRD D-64). 종일이면 날짜만
-      startDate: '10월 12일 (월)',
-      endDate: '10월 12일 (월)',
-      startTime: '오후 7:30',
-      endTime: '오후 9:30',
+      startDate: edit ? '10월 9일 (금)' : '10월 12일 (월)',
+      endDate: edit ? '10월 9일 (금)' : '10월 12일 (월)',
+      startTime: edit ? '오후 7:00' : '오후 7:30',
+      endTime: edit ? '오후 10:00' : (endError ? '오후 6:00' : '오후 9:30'),
+      // 종료가 시작보다 이르면 저장되지 않고 오류 (PRD FR-CAL-02 AC3)
+      endError,
+      endTimeStyle: 'height: 36px; padding: 0 10px; border: 0; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; ' + (endError ? 'background: #FFFFFF; color: #C93545; box-shadow: inset 0 0 0 1.5px #C93545' : 'background: #F5F3F7; color: #1C1A22'),
       // 일정 알림 기본값은 없음 (PRD D-59)
       reminderLabel: '없음',
       reminderColor: '#5B5666',

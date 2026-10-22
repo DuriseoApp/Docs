@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-10-22 · 캔버스 버전 35 · PRD v0.5 |
+| 마지막 반영 | 2026-10-22 · 캔버스 버전 38 · PRD v0.6 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -66,11 +66,28 @@
 | NotificationsWithdrawn.dc.html | SCR-NOTI-01 (상대 탈퇴 후) | SCR-NOTI-01--withdrawn.png |
 | V04Flow.dc.html | 화면 흐름 (PRD v0.4: 알림 목록·상세·알림 설정) | flow-prd-v0.4.png |
 | V05Flow.dc.html | 화면 흐름 (PRD v0.5: 연결·기념일·다른 기기 로그인) | flow-prd-v0.5.png |
+| InviteEnterFilled.dc.html | SCR-COUPLE-03 (6자리 입력, 상대 카드 없음) | SCR-COUPLE-03--filled.png |
+| InviteCreateNotYet.dc.html | SCR-COUPLE-02 (아직 연결 전) | SCR-COUPLE-02--not-yet.png |
+| CalendarLinkedSheetNoRecords.dc.html | SCR-COUPLE-04 (혼자 쓴 기록 없음) | SCR-COUPLE-04--no-records.png |
+| CalendarNoStartDate.dc.html | SCR-CAL-01 (커플 · 처음 만난 날 없음) | SCR-CAL-01--no-start-date.png |
+| AddEventEdit.dc.html | SCR-CAL-03 (내 일정 수정) | SCR-CAL-03--edit.png |
+| AddEventError.dc.html | SCR-CAL-03 (종료가 시작보다 이름) | SCR-CAL-03--error.png |
+| AnniversariesPastOpen.dc.html | SCR-ANNIV-01 (지난 기념일 펼침) | SCR-ANNIV-01--past-open.png |
+| AnniversariesNoStartDate.dc.html | SCR-ANNIV-01 (커플 · 처음 만난 날 없음) | SCR-ANNIV-01--no-start-date.png |
+| AnniversaryEditSolo.dc.html | SCR-ANNIV-02 (개인 공간) | SCR-ANNIV-02--solo.png |
+| AnniversaryEditDialog.dc.html | SCR-ANNIV-02 (삭제 확인) | SCR-ANNIV-02--delete-dialog.png |
+| AccountGuestExisting.dc.html | SCR-SET-01 (계정 · 이미 가입된 계정) | SCR-SET-01--account-guest-existing.png |
+| AccountGuestExistingConfirm.dc.html | SCR-SET-01 (계정 · 그 계정으로 로그인 확인) | SCR-SET-01--account-guest-existing-confirm.png |
+| AccountMember.dc.html | SCR-SET-01 (계정 · 회원) | SCR-SET-01--account-member.png |
+| MenuLogoutDialog.dc.html | SCR-SET-01 (로그아웃 확인) | SCR-SET-01--logout-dialog.png |
+| MenuStartDateSheet.dc.html | SCR-SET-01 (처음 만난 날 시트) | SCR-SET-01--start-date-sheet.png |
+| ColorSettingsSolo.dc.html | SCR-SET-03 (개인 공간) | SCR-SET-03--solo.png |
+| V06Flow.dc.html | 화면 흐름 (PRD v0.6: 계정 연동·처음 만난 날·지난 기념일·다른 계정) | flow-prd-v0.6.png |
 
-이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면)
+이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림)
 
 보드 원본(`.dc.html`, `canvas.json`)은 `design/source/`에 있어요. `/design-sync`가 이미지와 함께 갱신해요.
 
 ## 디자인 없는 화면
 
-없음 (PRD v0.5 기준 모든 화면에 보드가 있어요)
+없음 (PRD v0.6 기준 모든 화면에 보드가 있어요)

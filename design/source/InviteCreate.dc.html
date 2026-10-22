@@ -15,7 +15,7 @@ body{margin:0}
 a{color:#5B5666}a:hover{color:#1C1A22}
 </style>
 </helmet>
-<main style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
 <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; padding: 0 8px">
 <a href="Connect.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
@@ -68,11 +68,14 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 </div>
 <div style="padding: 16px 24px 32px">
-<a href="Connected.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 16px; background: #1C1A22; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 700">연결 확인하기</a>
+<button type="button" onClick="{{check}}" style="width: 100%; height: 56px; border: 0; border-radius: 16px; background: #1C1A22; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">연결 확인하기</button>
 </div>
+<sc-if value="{{notYet}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 112px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; font-size: 14px; line-height: 1.5; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">아직 연결되지 않았어요</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"cooldown":{"editor":"boolean","default":false,"section":"상태"},"renewed":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"cooldown":{"editor":"boolean","default":false,"section":"상태"},"renewed":{"editor":"boolean","default":false,"section":"상태"},"notYet":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const copied = !!(this.state && this.state.copied);
@@ -91,7 +94,10 @@ class Component extends DCLogic {
       accent: this.props.accent ?? '#6D4AE0',
       chars: code.split('').map((c) => ({ c })),
       copyLabel: copied ? '복사됨' : '코드 복사',
-      copy: () => this.setState({ copied: true })
+      copy: () => this.setState({ copied: true }),
+      // [연결 확인하기]를 눌렀는데 아직 연결 전 (PRD D-48). 연결되면 캘린더 + 연결 완료 시트로
+      notYet: (this.state && this.state.notYet !== undefined) ? !!this.state.notYet : !!this.props.notYet,
+      check: () => this.setState({ notYet: true })
     };
   }
 }

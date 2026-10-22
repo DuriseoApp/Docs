@@ -544,6 +544,166 @@
    "w": 1330,
    "x": 1410,
    "y": 9200
+  },
+  "InviteEnterFilled.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-03 초대코드 입력하기 · 6자리 입력",
+   "w": 390,
+   "x": 0,
+   "y": 10500
+  },
+  "AccountGuestExisting.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 계정 · 이미 가입된 계정",
+   "w": 390,
+   "x": 470,
+   "y": 10500
+  },
+  "AccountGuestExistingConfirm.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 계정 · 그 계정으로 로그인 확인",
+   "w": 390,
+   "x": 940,
+   "y": 10500
+  },
+  "AccountMember.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 계정 · 회원",
+   "w": 390,
+   "x": 1410,
+   "y": 10500
+  },
+  "MenuLogoutDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 로그아웃 확인",
+   "w": 390,
+   "x": 1880,
+   "y": 10500
+  },
+  "MenuStartDateSheet.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 처음 만난 날 시트",
+   "w": 390,
+   "x": 2350,
+   "y": 10500
+  },
+  "StartDateSheet.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 처음 만난 날 시트 (컴포넌트)",
+   "w": 390,
+   "x": 2820,
+   "y": 10500
+  },
+  "InviteCreateNotYet.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-02 초대코드 만들기 · 아직 연결 전",
+   "w": 390,
+   "x": 3290,
+   "y": 10500
+  },
+  "CalendarLinkedSheetNoRecords.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-COUPLE-04 연결 완료 시트 · 혼자 쓴 기록 없음",
+   "w": 390,
+   "x": 3760,
+   "y": 10500
+  },
+  "CalendarNoStartDate.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-01 캘린더 홈 · 처음 만난 날 없음",
+   "w": 390,
+   "x": 4230,
+   "y": 10500
+  },
+  "AddEventEdit.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 수정 · 내 일정",
+   "w": 390,
+   "x": 0,
+   "y": 11464
+  },
+  "AddEventError.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-CAL-03 일정 작성 · 종료가 시작보다 이름",
+   "w": 390,
+   "x": 470,
+   "y": 11464
+  },
+  "AnniversariesPastOpen.dc.html": {
+   "h": 1000,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-01 기념일 목록 · 지난 기념일 펼침",
+   "w": 390,
+   "x": 940,
+   "y": 11464
+  },
+  "AnniversariesNoStartDate.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-01 기념일 목록 · 처음 만난 날 없음",
+   "w": 390,
+   "x": 1410,
+   "y": 11464
+  },
+  "AnniversaryEditSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-02 직접 기념일 작성 · 개인 공간",
+   "w": 390,
+   "x": 1880,
+   "y": 11464
+  },
+  "AnniversaryEditDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-ANNIV-02 기념일 수정 · 삭제 확인",
+   "w": 390,
+   "x": 2350,
+   "y": 11464
+  },
+  "ColorSettingsSolo.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-03 우리 색상 · 개인 공간",
+   "w": 390,
+   "x": 2820,
+   "y": 11464
+  },
+  "V06Flow.dc.html": {
+   "h": 844,
+   "title": "PRD v0.6 화면 흐름 (계정 연동 · 처음 만난 날 · 지난 기념일 · 다른 계정)",
+   "w": 1330,
+   "x": 3290,
+   "y": 11464
   }
  },
  "createdOnFiles": {
@@ -610,6 +770,14 @@
    "w": 240,
    "x": 0,
    "y": 7900
+  },
+  "v06Title": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "PRD v0.6 추가 화면",
+   "w": 240,
+   "x": 0,
+   "y": 10200
   }
  },
  "order": [
@@ -673,7 +841,25 @@
   "AddEventAllDay.dc.html",
   "AnniversariesSoloEmpty.dc.html",
   "NotificationsWithdrawn.dc.html",
-  "V05Flow.dc.html"
+  "V05Flow.dc.html",
+  "InviteEnterFilled.dc.html",
+  "AccountGuestExisting.dc.html",
+  "AccountGuestExistingConfirm.dc.html",
+  "AccountMember.dc.html",
+  "MenuLogoutDialog.dc.html",
+  "MenuStartDateSheet.dc.html",
+  "StartDateSheet.dc.html",
+  "InviteCreateNotYet.dc.html",
+  "CalendarLinkedSheetNoRecords.dc.html",
+  "CalendarNoStartDate.dc.html",
+  "AddEventEdit.dc.html",
+  "AddEventError.dc.html",
+  "AnniversariesPastOpen.dc.html",
+  "AnniversariesNoStartDate.dc.html",
+  "AnniversaryEditSolo.dc.html",
+  "AnniversaryEditDialog.dc.html",
+  "ColorSettingsSolo.dc.html",
+  "V06Flow.dc.html"
  ],
  "pages": [],
  "title": "커플 공유 앱 데모"

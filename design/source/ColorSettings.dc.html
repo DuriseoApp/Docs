@@ -27,7 +27,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <section aria-label="미리보기" style="padding: 16px; border-radius: 20px; background: #F5F3F7; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; align-items: center; justify-content: space-between">
 <span style="font-size: 12px; font-weight: 600; color: #5B5666">미리보기</span>
-<span style="display: flex" aria-hidden="true"><span style="{{meAvatar}}">나</span><span style="{{partnerAvatar}}">너</span></span>
+<span style="display: flex" aria-hidden="true"><span style="{{meAvatar}}">나</span><sc-if value="{{couple}}" hint-placeholder-val="{{ true }}"><span style="{{partnerAvatar}}">너</span></sc-if></span>
 </div>
 <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 8px 0; border-radius: 14px; background: #FFFFFF">
 <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
@@ -50,7 +50,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </section>
 <section aria-labelledby="targetTitle" style="display: flex; flex-direction: column; gap: 10px">
 <h2 id="targetTitle" style="margin: 0; font-size: 13px; font-weight: 600; color: #5B5666">바꿀 대상</h2>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="{{targetGrid}}">
 <sc-for list="{{targets}}" as="t" hint-placeholder-count="3">
 <button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.boxStyle}}">
 <span style="{{t.circleStyle}}">{{t.letter}}</span>
@@ -74,13 +74,13 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </sc-if>
 </section>
 <div style="display: flex; flex-direction: column; gap: 6px">
-<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">바꾼 색상은 두 사람 화면에 똑같이 적용돼요.</p>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">{{applyNote}}</p>
 <button type="button" onClick="{{reset}}" style="align-self: flex-start; height: 44px; padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: #5B5666; text-decoration: underline">기본 색으로 되돌리기</button>
 </div>
 </div>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"solo":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const s = this.state || {};
@@ -113,7 +113,9 @@ class Component extends DCLogic {
       { id: 'partner', label: '상대', letter: '너' },
       { id: 'both', label: '함께', letter: '둘' }
     ];
-    const targets = T.map((t) => {
+    // 개인 공간: 사람 색은 나 하나 (PRD FR-CAL-04 AC5)
+    const solo = !!this.props.solo;
+    const targets = T.filter((t) => !solo || t.id === 'me').map((t) => {
       const on = t.id === target;
       return {
         label: t.label,
@@ -122,7 +124,7 @@ class Component extends DCLogic {
         colorName: nameOf(colors[t.id]),
         circleStyle: circle(colors[t.id], 36, 14),
         pick: () => this.setState({ target: t.id }),
-        boxStyle: 'height: 112px; border-radius: 16px; background: #FFFFFF; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ' + (on ? 'border: 2px solid #1C1A22' : 'border: 1px solid #E6E2EA')
+        boxStyle: (solo ? 'height: 64px; padding: 0 16px; flex-direction: row; justify-content: flex-start; gap: 12px; ' : 'height: 112px; flex-direction: column; justify-content: center; gap: 4px; ') + 'border-radius: 16px; background: #FFFFFF; font-family: inherit; display: flex; align-items: center; ' + (on ? 'border: 2px solid #1C1A22' : 'border: 1px solid #E6E2EA')
       };
     });
     const swatches = PALETTE.map((p) => {
@@ -136,7 +138,7 @@ class Component extends DCLogic {
       };
     });
     const WD = ['일', '월', '화', '수', '목', '금', '토'];
-    const WEEK = { 11: [], 12: ['partner', 'both', 'me'], 13: [], 14: ['partner'], 15: [], 16: ['me'], 17: ['both'] };
+    const WEEK = solo ? { 11: [], 12: ['me', 'me'], 13: [], 14: [], 15: ['me'], 16: ['me'], 17: [] } : { 11: [], 12: ['partner', 'both', 'me'], 13: [], 14: ['partner'], 15: [], 16: ['me'], 17: ['both'] };
     const week = [11, 12, 13, 14, 15, 16, 17].map((n, i) => ({
       wd: WD[i],
       n,
@@ -144,16 +146,22 @@ class Component extends DCLogic {
       dots: WEEK[n].map((w) => ({ style: dotS(colors[w], 5) }))
     }));
     const WHO = { me: '나', partner: '상대', both: '함께' };
-    const events = [
+    const events = (solo ? [
+      { who: 'me', time: '07:30', title: '필라테스' },
+      { who: 'me', time: '메모', title: '선물 리스트 정리' }
+    ] : [
       { who: 'partner', time: '14:00', title: '치과 예약' },
       { who: 'both', time: '19:30', title: '저녁 데이트' },
       { who: 'me', time: '메모', title: '선물 리스트 정리' }
-    ].map((e) => ({ time: e.time, title: e.title, who: WHO[e.who], dotStyle: dotS(colors[e.who], 8) }));
-    const hasDup = same(colors.me, colors.partner) || same(colors.me, colors.both) || same(colors.partner, colors.both);
+    ]).map((e) => ({ time: e.time, title: e.title, who: WHO[e.who], dotStyle: dotS(colors[e.who], 8) }));
+    const hasDup = !solo && (same(colors.me, colors.partner) || same(colors.me, colors.both) || same(colors.partner, colors.both));
     return {
       meAvatar: circle(colors.me, 28, 12) + '; box-shadow: 0 0 0 2px #F5F3F7',
       partnerAvatar: circle(colors.partner, 28, 12) + '; margin-left: -6px; box-shadow: 0 0 0 2px #F5F3F7',
       week,
+      couple: !solo,
+      targetGrid: solo ? 'display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px' : 'display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px',
+      applyNote: solo ? '연결하면 상대와 함께 색도 고를 수 있어요.' : '바꾼 색상은 두 사람 화면에 똑같이 적용돼요.',
       events,
       targets,
       targetLabel: WHO[target],
