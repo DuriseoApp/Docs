@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>연결 완료</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 56px 24px 0; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 20px">
+<svg width="96" height="62" viewBox="22 32 64 44" role="img" aria-label="두 원이 겹친 연결 표시">
+<circle cx="44" cy="54" r="20" fill="#E0612F"></circle>
+<circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle>
+<path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">[상대 이름]님과<br>연결됐어요</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5B5666">이제 캘린더와 메모를 함께 써요.<br>시작하기 전에 두 가지만 정해 주세요.</p>
+</div>
+</div>
+
+<section aria-labelledby="startTitle" style="display: flex; flex-direction: column; gap: 8px">
+<label id="startTitle" for="startDate" style="font-size: 13px; font-weight: 600; color: #5B5666">처음 만난 날</label>
+<button id="startDate" type="button" style="height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #D9D4DF; background: #FFFFFF; font-family: inherit; font-size: 16px; color: #77727F; display: flex; align-items: center; justify-content: space-between">
+<span>날짜를 골라 주세요</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B5666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>
+</button>
+<span style="font-size: 12px; line-height: 16px; color: #5B5666">D-day와 기념일이 이 날을 1일로 계산돼요. 둘 중 누구든 나중에 바꿀 수 있어요.</span>
+</section>
+
+<sc-if value="{{hasRecords}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="recTitle" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="recTitle" style="margin: 0; font-size: 13px; font-weight: 600; color: #5B5666">혼자 쓴 기록</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: #1C1A22">일정 [N]개, 기념일 [N]개, 메모 [N]개가 있어요.</p>
+</div>
+<div role="group" aria-label="혼자 쓴 기록 가져오기" style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" aria-pressed="{{isKeep}}" onClick="{{pickKeep}}" style="{{keepStyle}}">
+<span style="display: flex; flex-direction: column; gap: 2px; text-align: left">
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">가져오기</span>
+<span style="font-size: 13px; color: #5B5666">함께 쓰는 캘린더와 메모로 옮겨요</span>
+</span>
+<sc-if value="{{isKeep}}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1A22" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+</button>
+<button type="button" aria-pressed="{{isDrop}}" onClick="{{pickDrop}}" style="{{dropStyle}}">
+<span style="display: flex; flex-direction: column; gap: 2px; text-align: left">
+<span style="font-size: 15px; font-weight: 700; color: #1C1A22">가져오지 않기</span>
+<span style="font-size: 13px; color: #5B5666">혼자 쓴 기록은 삭제돼요</span>
+</span>
+<sc-if value="{{isDrop}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1A22" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+</button>
+</div>
+<span style="font-size: 12px; line-height: 16px; color: #5B5666">내 기록만 정해요. 상대의 기록은 상대가 정해요.</span>
+</section>
+</sc-if>
+</div>
+
+<div style="flex-shrink: 0; padding: 16px 24px 32px">
+<sc-if value="{{isKeep}}" hint-placeholder-val="{{ true }}">
+<a href="Calendar.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 16px; background: {{accent}}; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 700">둘이서 시작하기</a>
+</sc-if>
+<sc-if value="{{isDrop}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{openDialog}}" style="width: 100%; height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">둘이서 시작하기</button>
+</sc-if>
+</div>
+
+<sc-if value="{{dialogOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeDialog}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="dTitle" aria-describedby="dBody" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="dTitle" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">혼자 쓴 기록을 삭제할까요?</h2>
+<p id="dBody" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">가져오지 않으면 혼자 쓴 일정 [N]개, 기념일 [N]개, 메모 [N]개가 삭제되고 되돌릴 수 없어요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeDialog}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Calendar.dc.html" style="height: 48px; border-radius: 14px; background: #B42335; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">삭제하고 시작</a>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"choice":{"editor":"enum","options":["keep","drop"],"default":"keep","section":"상태"},"hasRecords":{"editor":"boolean","default":true,"section":"상태"},"dialogOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const accent = this.props.accent ?? '#6D4AE0';
+    const hasRecords = this.props.hasRecords !== false;
+    const choice = hasRecords ? (s.choice || this.props.choice || 'keep') : 'keep';
+    const dialogOpen = s.dialogOpen !== undefined ? !!s.dialogOpen : !!this.props.dialogOpen;
+    const box = 'box-sizing: border-box; min-height: 68px; padding: 12px 16px; border-radius: 16px; background: #FFFFFF; font-family: inherit; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; ';
+    const on = box + 'border: 2px solid #1C1A22';
+    const off = box + 'border: 1px solid #E6E2EA';
+    return {
+      accent,
+      hasRecords,
+      isKeep: choice === 'keep',
+      isDrop: choice === 'drop',
+      keepStyle: choice === 'keep' ? on : off,
+      dropStyle: choice === 'drop' ? on : off,
+      pickKeep: () => this.setState({ choice: 'keep' }),
+      pickDrop: () => this.setState({ choice: 'drop' }),
+      dialogOpen: choice === 'drop' && dialogOpen,
+      openDialog: () => this.setState({ dialogOpen: true }),
+      closeDialog: () => this.setState({ dialogOpen: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

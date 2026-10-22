@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>우리 색상 설정</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Menu.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">우리 색상</h1>
+<a href="Calendar.dc.html" style="height: 48px; padding: 0 14px; display: flex; align-items: center; text-decoration: none; color: #4A2FC0; font-size: 16px; font-weight: 700">완료</a>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 22px">
+<section aria-label="미리보기" style="padding: 16px; border-radius: 20px; background: #F5F3F7; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 12px; font-weight: 600; color: #5B5666">미리보기</span>
+<span style="display: flex" aria-hidden="true"><span style="{{meAvatar}}">나</span><span style="{{partnerAvatar}}">너</span></span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 8px 0; border-radius: 14px; background: #FFFFFF">
+<sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px">
+<span style="font-size: 11px; color: #77727F">{{d.wd}}</span>
+<span style="{{d.numStyle}}">{{d.n}}</span>
+<span style="display: flex; gap: 3px; height: 5px"><sc-for list="{{d.dots}}" as="dot" hint-placeholder-count="1"><span style="{{dot.style}}"></span></sc-for></span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="3">
+<div style="height: 40px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; gap: 10px; font-size: 14px">
+<span style="width: 38px; font-size: 12px; font-weight: 600; color: #5B5666">{{e.time}}</span>
+<span style="flex-grow: 1; font-weight: 600">{{e.title}}</span>
+<span style="display: flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; border-radius: 999px; border: 1px solid #E6E2EA; font-size: 12px; font-weight: 600"><span style="{{e.dotStyle}}"></span>{{e.who}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="targetTitle" style="display: flex; flex-direction: column; gap: 10px">
+<h2 id="targetTitle" style="margin: 0; font-size: 13px; font-weight: 600; color: #5B5666">바꿀 대상</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{targets}}" as="t" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.boxStyle}}">
+<span style="{{t.circleStyle}}">{{t.letter}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #1C1A22">{{t.label}}</span>
+<span style="font-size: 12px; color: #5B5666">{{t.colorName}}</span>
+</button>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="paletteTitle" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="paletteTitle" style="margin: 0; font-size: 13px; font-weight: 600; color: #5B5666">{{targetLabel}} 색상 고르기</h2>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 14px; justify-items: center">
+<sc-for list="{{swatches}}" as="sw" hint-placeholder-count="12">
+<button type="button" aria-label="{{sw.label}}" aria-pressed="{{sw.on}}" onClick="{{sw.pick}}" style="{{sw.style}}">
+<sc-if value="{{sw.on}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{sw.checkColor}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{hasDup}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; padding: 12px 14px; border-radius: 12px; background: #FDF1E8; font-size: 13px; line-height: 1.6; color: #8A3A12">같은 색을 쓰는 대상이 있어요. 캘린더에서 누구 일정인지 구분하기 어려울 수 있어요.</p>
+</sc-if>
+</section>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">바꾼 색상은 두 사람 화면에 똑같이 적용돼요.</p>
+<button type="button" onClick="{{reset}}" style="align-self: flex-start; height: 44px; padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: #5B5666; text-decoration: underline">기본 색으로 되돌리기</button>
+</div>
+</div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const DEF = {
+      me: this.props.meColor ?? '#E0612F',
+      partner: this.props.partnerColor ?? '#2F6FDB',
+      both: this.props.togetherColor ?? '#6D4AE0'
+    };
+    const colors = s.colors || DEF;
+    const target = s.target || 'me';
+    const PALETTE = [
+      { hex: '#E0612F', name: '주황' }, { hex: '#D6336C', name: '로즈' }, { hex: '#F59F00', name: '앰버' },
+      { hex: '#B8860B', name: '머스터드' }, { hex: '#2F9E44', name: '초록' }, { hex: '#0C8599', name: '청록' },
+      { hex: '#2F6FDB', name: '파랑' }, { hex: '#6D4AE0', name: '보라' }, { hex: '#AE3EC9', name: '자주' },
+      { hex: '#8D6E63', name: '브라운' }, { hex: '#868E96', name: '회색' }, { hex: '#1C1A22', name: '먹색' }
+    ];
+    const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+    const nameOf = (hex) => { const p = PALETTE.find((x) => same(x.hex, hex)); return p ? p.name : String(hex).toUpperCase(); };
+    const onColor = (hex) => {
+      const h = String(hex || '').replace('#', '');
+      if (h.length !== 6) return '#FFFFFF';
+      const lin = (v) => { const c = parseInt(v, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(h.slice(0, 2)) + 0.7152 * lin(h.slice(2, 4)) + 0.0722 * lin(h.slice(4, 6));
+      return L > 0.2 ? '#1C1A22' : '#FFFFFF';
+    };
+    const circle = (c, size, fs) => 'width: ' + size + 'px; height: ' + size + 'px; border-radius: ' + (size / 2) + 'px; background: ' + c + '; color: ' + onColor(c) + '; font-size: ' + fs + 'px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0';
+    const dotS = (c, n) => 'width: ' + n + 'px; height: ' + n + 'px; border-radius: ' + (n / 2) + 'px; flex-shrink: 0; background: ' + c;
+    const T = [
+      { id: 'me', label: '나', letter: '나' },
+      { id: 'partner', label: '상대', letter: '너' },
+      { id: 'both', label: '함께', letter: '둘' }
+    ];
+    const targets = T.map((t) => {
+      const on = t.id === target;
+      return {
+        label: t.label,
+        letter: t.letter,
+        on,
+        colorName: nameOf(colors[t.id]),
+        circleStyle: circle(colors[t.id], 36, 14),
+        pick: () => this.setState({ target: t.id }),
+        boxStyle: 'height: 112px; border-radius: 16px; background: #FFFFFF; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; ' + (on ? 'border: 2px solid #1C1A22' : 'border: 1px solid #E6E2EA')
+      };
+    });
+    const swatches = PALETTE.map((p) => {
+      const on = same(colors[target], p.hex);
+      return {
+        on,
+        label: p.name + (on ? ', 선택됨' : ''),
+        checkColor: onColor(p.hex),
+        pick: () => this.setState({ colors: { ...colors, [target]: p.hex } }),
+        style: 'width: 44px; height: 44px; border-radius: 22px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: ' + p.hex + '; box-shadow: ' + (on ? '0 0 0 3px #FFFFFF, 0 0 0 5px #1C1A22' : 'none')
+      };
+    });
+    const WD = ['일', '월', '화', '수', '목', '금', '토'];
+    const WEEK = { 11: [], 12: ['partner', 'both', 'me'], 13: [], 14: ['partner'], 15: [], 16: ['me'], 17: ['both'] };
+    const week = [11, 12, 13, 14, 15, 16, 17].map((n, i) => ({
+      wd: WD[i],
+      n,
+      numStyle: 'font-size: 14px; font-weight: ' + (n === 12 ? '700' : '500') + '; color: ' + (i === 0 ? '#C93545' : '#1C1A22'),
+      dots: WEEK[n].map((w) => ({ style: dotS(colors[w], 5) }))
+    }));
+    const WHO = { me: '나', partner: '상대', both: '함께' };
+    const events = [
+      { who: 'partner', time: '14:00', title: '치과 예약' },
+      { who: 'both', time: '19:30', title: '저녁 데이트' },
+      { who: 'me', time: '메모', title: '선물 리스트 정리' }
+    ].map((e) => ({ time: e.time, title: e.title, who: WHO[e.who], dotStyle: dotS(colors[e.who], 8) }));
+    const hasDup = same(colors.me, colors.partner) || same(colors.me, colors.both) || same(colors.partner, colors.both);
+    return {
+      meAvatar: circle(colors.me, 28, 12) + '; box-shadow: 0 0 0 2px #F5F3F7',
+      partnerAvatar: circle(colors.partner, 28, 12) + '; margin-left: -6px; box-shadow: 0 0 0 2px #F5F3F7',
+      week,
+      events,
+      targets,
+      targetLabel: WHO[target],
+      swatches,
+      hasDup,
+      reset: () => this.setState({ colors: { me: '#E0612F', partner: '#2F6FDB', both: '#6D4AE0' } })
+    };
+  }
+}
+</script>
+</body>
+</html>

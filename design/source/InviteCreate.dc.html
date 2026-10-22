@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>초대코드 만들기</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; padding: 0 8px">
+<a href="Connect.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+</header>
+<div style="flex-grow: 1; padding: 12px 24px 0; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">초대코드를<br>상대에게 보내주세요</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5B5666">상대가 이 코드를 입력하면 바로 연결돼요.</p>
+</div>
+<section aria-label="내 초대코드" style="padding: 24px 20px 20px; border-radius: 24px; background: #F5F3F7; display: flex; flex-direction: column; align-items: center; gap: 14px">
+<div style="display: flex; gap: 8px" aria-label="{{codeLabel}}">
+<sc-for list="{{chars}}" as="ch" hint-placeholder-count="6">
+<span style="width: 42px; height: 56px; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; color: #1C1A22">{{ch.c}}</span>
+</sc-for>
+</div>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5B5666">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+10분 동안 유효 · {{remainLabel}} 남음
+</span>
+<sc-if value="{{renewed}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 12px; background: #FFFFFF; font-size: 13px; line-height: 1.5; font-weight: 600; color: #4A4553; text-align: center">시간이 지나 새 코드를 만들었어요.<br>새 코드를 다시 보내 주세요.</p>
+</sc-if>
+<div style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 4px">
+<button type="button" onClick="{{copy}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"></rect><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"></path></svg>
+{{copyLabel}}
+</button>
+<button type="button" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5M5 13v6a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6"></path></svg>
+공유하기
+</button>
+</div>
+</section>
+<section aria-label="연결 상태" style="padding: 16px 18px; border-radius: 18px; border: 1px solid #EEEBF1; display: flex; align-items: center; gap: 14px">
+<span style="width: 20px; height: 20px; border-radius: 10px; background: #ECE6FC; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{accent}}"></span></span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 15px; font-weight: 600">상대방을 기다리는 중이에요</span>
+<span style="font-size: 13px; color: #5B5666">연결되면 자동으로 캘린더로 넘어가요</span>
+</span>
+</section>
+<div style="align-self: center; display: flex; flex-direction: column; align-items: center; gap: 2px">
+<sc-if value="{{canReissue}}" hint-placeholder-val="{{ true }}">
+<button type="button" style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #5B5666; text-decoration: underline; cursor: pointer">코드 새로 만들기</button>
+</sc-if>
+<sc-if value="{{cooldown}}" hint-placeholder-val="{{ false }}">
+<button type="button" disabled style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #B3AEBB">코드 새로 만들기</button>
+<span role="status" style="font-size: 12px; color: #5B5666">{{cooldownLabel}}</span>
+</sc-if>
+</div>
+</div>
+<div style="padding: 16px 24px 32px">
+<a href="Connected.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 16px; background: #1C1A22; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 700">연결 확인하기</a>
+</div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"cooldown":{"editor":"boolean","default":false,"section":"상태"},"renewed":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const copied = !!(this.state && this.state.copied);
+    // 코드는 10분 유효, 재요청은 마지막 발급 후 1분 뒤부터 (PRD D-05)
+    // 만료되면 새 코드를 자동으로 받아 보여준다 (PRD D-42). 막 받은 코드라 재요청은 1분 대기
+    const renewed = !!this.props.renewed;
+    const cooldown = !!this.props.cooldown || renewed;
+    const code = renewed ? 'P4WM7R' : 'K7Q29X';
+    return {
+      renewed,
+      cooldown,
+      canReissue: !cooldown,
+      codeLabel: '초대코드 ' + code,
+      remainLabel: renewed ? '9분 56초' : (cooldown ? '9분 18초' : '8분 12초'),
+      cooldownLabel: (renewed ? '56초' : '18초') + ' 뒤에 다시 만들 수 있어요',
+      accent: this.props.accent ?? '#6D4AE0',
+      chars: code.split('').map((c) => ({ c })),
+      copyLabel: copied ? '복사됨' : '코드 복사',
+      copy: () => this.setState({ copied: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

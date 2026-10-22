@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.4 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.5 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-10-18)
+> 작성일: 2026-10-17 (갱신: 2026-10-21)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -63,7 +63,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | account_type | varchar(10) | not null, CHECK in (`GUEST`, `MEMBER`) | 게스트 연동 시 `MEMBER`로 변경 (FR-AUTH-03) |
-| nickname | varchar(20) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름 (FR-AUTH-07) |
+| nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 소셜 이름이 10자가 넘으면 앞 10자만 쓴다 (FR-AUTH-07, PRD D-56, NFR-LIMIT-01) |
 | profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |
@@ -89,10 +89,22 @@
 | id | uuid | PK | |
 | user_id | uuid | not null, FK users ON DELETE CASCADE | |
 | refresh_token_hash | char(64) | not null, UNIQUE | 토큰 원문이 아닌 SHA-256 해시만 저장 |
-| expires_at | timestamptz | not null | 회원 30일, 게스트 365일. 사용할 때마다 새 토큰으로 교체하고 만료를 연장 (DB-02) |
+| expires_at | timestamptz | not null | 회원 30일, 게스트 365일. 토큰을 갱신할 때마다 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꿔 새 토큰으로 교체하고 만료를 연장 (DB-02). 게스트 연동 뒤 첫 갱신부터 회원 만료(30일)를 쓴다 |
 | last_used_at | timestamptz | not null | |
-| revoked_at | timestamptz | null | 로그아웃, 교체 시 기록 |
+| revoked_at | timestamptz | null | 로그아웃, 다른 기기 로그인으로 끊길 때 기록. `revoked_reason`과 함께 기록한다. 토큰 교체는 행을 무효화하지 않으므로 기록하지 않는다 |
+| revoked_reason | varchar(10) | null, CHECK in (`LOGOUT`, `REPLACED`, `WITHDRAWN`) | 무효가 된 이유. null이면 무효가 아님 (아래 표) |
 | created_at | timestamptz | not null | |
+
+| revoked_reason | 뜻 | 기록하는 시점 |
+| --- | --- | --- |
+| LOGOUT | 사용자가 로그아웃함 | 로그아웃 (FR-AUTH-05) |
+| REPLACED | 다른 기기 로그인으로 끊김 | 로그인 2종 (DB-09, FR-AUTH-02.AC3) |
+| WITHDRAWN | 탈퇴로 무효가 됨 | 탈퇴 (4.3) |
+
+- 서비스: `revoked_at`과 `revoked_reason`은 항상 같이 기록한다 (둘 다 null이거나 둘 다 값이 있다). 유효한 세션 = `revoked_at IS NULL AND expires_at > now`
+- 서비스: access 토큰의 `sid` 클레임이 이 테이블의 `id`다. 서버는 요청마다 그 세션이 무효인지 보고, `REPLACED`면 401 `SESSION_REPLACED`, 그 밖의 무효는 401 `SESSION_INVALID`로 나눠 답한다 (오류 코드와 검사 시점은 `API.md`). 그래서 `REPLACED` 행은 4.4 정리에서 `expires_at`까지 남겨 둔다 (DB-11)
+- 서비스: refresh 토큰을 교체할 때는 새 행을 만들지 않고 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다. 그래서 `sid`(= `id`)는 로그인부터 로그아웃까지 변하지 않는다. 이전 refresh 토큰을 다시 보내면 그 해시를 가진 행이 없어 무효(401 `SESSION_INVALID`)다 (DB-02)
+- 한 사용자가 동시에 가질 수 있는 유효한 세션은 하나다. 로그인 2종(게스트 시작, 소셜 로그인)을 하면 다른 유효 세션은 모두 `REPLACED`가 된다 (DB-09, PRD D-51)
 
 **devices** — FCM 푸시 토큰 (NFR-SYNC-01)
 
@@ -103,6 +115,11 @@
 | fcm_token | varchar(255) | not null, UNIQUE | 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다 |
 | platform | varchar(10) | not null, default `ANDROID` | iOS 대비 (PRD D-25) |
 | updated_at | timestamptz | not null | |
+
+- 서비스: 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다
+- 서비스: 로그인 2종(게스트 시작, 소셜 로그인)은 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다. 게스트 연동은 같은 기기라 지우지 않는다 (DB-09, PRD D-51)
+- 서비스: 로그아웃은 그 사용자의 `devices` 행을 모두 지운다. 한 기기 규칙이라 사용자 전체 = 그 기기다 (DB-09, PRD D-50). 그래서 로그아웃한 기기에는 푸시가 가지 않는다
+- 한 사용자의 유효한 세션이 하나이므로 `devices`도 사실상 한 행이다. 그래도 `user_id`에 UNIQUE를 걸지는 않는다 (등록과 삭제 사이에 잠깐 겹칠 수 있고, 위 서비스 규칙이 정리한다)
 
 **notification_settings** — 알림 종류별 켜고 끄기 (FR-NOTI-02, PRD 8장)
 
@@ -137,6 +154,7 @@
 - 서비스: 알림이 생기면 받는 사람마다 이 행을 먼저 만들고, 그 종류의 설정(`notification_settings`)이 켜져 있을 때만 푸시를 보낸다. 연결·해제 알림은 항상 푸시한다. 설정을 꺼도 행은 남는다 (DB-07)
 - 서비스: 조회·읽음 처리는 `user_id`가 요청자일 때만. 아니면 404 (DB-05)
 - `target_id`는 FK가 아니다. 대상 일정·메모가 삭제돼도 알림 기록은 30일까지 남는다
+- `COUPLE_UNLINKED`는 상대가 해제했을 때와 상대가 탈퇴해 해제됐을 때 모두 쓴다. 타입과 컬럼은 같고 제목·본문만 다르다. 탈퇴 해제는 복구 안내가 없는 전용 문구를 쓰고, 문구는 `API.md`가 정한다 (PRD D-53, 8장)
 
 ### 3.2 공간
 
@@ -299,7 +317,8 @@
 
 | 시점 | 만드는 행 |
 | --- | --- |
-| 게스트 시작, 신규 소셜 로그인 | users, notification_settings, spaces(PERSONAL), space_members(주황) |
+| 게스트 시작, 신규 소셜 로그인 | users, notification_settings, spaces(PERSONAL), space_members(주황), auth_sessions |
+| 로그인 2종 (게스트 시작, 소셜 로그인) | 새 auth_sessions. 같은 트랜잭션에서 다른 유효 세션과 devices를 정리한다 (4.6). 게스트 연동은 현재 세션을 그대로 쓰므로 새 행이 없다 |
 | 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라), space_members 2개(만든 사람 주황, 입력한 사람 파랑) |
 | 연결 해제 | 두 사람 각자 spaces(PERSONAL), space_members(주황) |
 | 알림이 생길 때 (PRD 8장) | 받는 사람마다 notifications. 푸시 설정을 꺼도 만든다 (DB-07) |
@@ -317,14 +336,19 @@
 2. 이 사용자가 속했던 UNLINKED 커플 공간의 `purge_at`을 탈퇴 시각 + 90일로 늦춘다. 이미 그보다 늦으면 그대로 둔다 (PRD D-36).
 3. 개인 공간과 가져오기 대기 중인 개인 공간을 지운다. 콘텐츠는 CASCADE로 함께 지워진다.
 4. 사용자를 익명화한다: `deleted_at` 기록, 닉네임 "탈퇴한 사용자", 프로필 사진 파일과 `profile_image_key` 삭제, `social_accounts`, `auth_sessions`, `devices`, `notification_settings`, `notifications`, `memo_favorites`, `event_reminders`, 유효한 `invite_codes` 삭제. `users` 행 자체는 남겨 보관 중인 커플 공간의 작성자 참조를 유지한다.
+   - `auth_sessions`는 먼저 `revoked_reason = WITHDRAWN`으로 무효화한 뒤 같은 트랜잭션에서 지운다. 그래서 탈퇴 뒤에 남는 세션 행은 없다.
+
+탈퇴로 해제될 때 상대에게는 탈퇴 전용 `COUPLE_UNLINKED` 알림이 간다 (PRD D-53). 이 알림은 `space_id`가 null이라 4.2의 알림 삭제에 지워지지 않는다. 문구는 `API.md`가 정한다.
 
 ### 4.4 매일 정리 작업 (03:00 KST)
 
+- **게스트 정리** (PRD Q-11): `account_type = GUEST`, `deleted_at IS NULL`이고 유효한(`revoked_at IS NULL AND expires_at > now`) `auth_sessions`가 하나도 없는 사용자를 4.3 탈퇴와 같이 처리한다. 게스트는 커플이 될 수 없으므로 개인 공간만 지우면 된다. 마지막 사용 뒤 365일(DB-02)이 지나면 대상이 되고, 아래 세션 정리보다 먼저 돈다 (DB-10)
 - `purge_at`이 지난 공간 삭제
 - `deleted_at`이 있고 더 이상 어떤 공간에서도 참조되지 않는 사용자 행 삭제
 - 7일 지난 `invite_code_attempts`, 30일 지난 사용·만료·무효 초대코드 삭제
-- 만료되거나 무효화된 `auth_sessions` 삭제
+- 만료된 `auth_sessions` 삭제. 무효화된 세션도 지우되 `REPLACED`는 `expires_at`이 지날 때까지 남긴다 (DB-11)
 - `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2)
+- 어떤 사용자도 참조하지 않는 프로필 사진 파일 삭제
 
 ### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
 
@@ -333,7 +357,20 @@
 - 커플 연결 뒤 개인 공간이 지워질 때(가져오지 않기를 고른 경우 포함): 그 개인 공간의 `space_id`를 가진 알림도 함께 지워진다.
 - 탈퇴로 개인 공간이 지워질 때(4.3의 3단계): 그 개인 공간의 알림도 함께 지워진다. 사용자 본인의 알림은 4.3의 4단계에서도 지운다.
 - `purge_at` 이후 정리 작업이 커플 공간을 지울 때도 같다 (4.4). 해제 시점에 이미 지웠으므로 남은 알림은 없다.
-- 어떤 사용자도 참조하지 않는 프로필 사진 파일 삭제
+### 4.6 로그인·로그아웃 시 세션과 기기 (한 기기 로그인)
+
+한 계정은 한 기기에서만 로그인한다 (PRD D-51). 요청 단위의 처리 순서와 오류 응답은 `API.md`를 본다.
+
+| 시점 | auth_sessions | devices |
+| --- | --- | --- |
+| 로그인 2종 (게스트 시작, 소셜 로그인) | 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고 새 세션을 만든다 | 그 사용자의 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다 |
+| 게스트 연동 (`/auth/link`) | 같은 기기라 현재 세션을 그대로 쓴다. 다른 세션을 끊지 않는다. 다음 토큰 갱신부터 회원 만료(30일) | 변화 없음 |
+| 로그아웃 | 현재 세션을 `revoked_reason = LOGOUT`으로 바꾼다 | 그 사용자의 행을 모두 지운다 (PRD D-50) |
+| refresh 토큰 갱신 | 새 행을 만들지 않고 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다. `sid`는 그대로다 (DB-02) | 변화 없음 |
+| 탈퇴 | `WITHDRAWN`으로 무효화한 뒤 삭제 (4.3) | 삭제 (4.3) |
+
+- 이전 기기는 `devices`가 지워져 푸시를 받지 않고, 다음 요청에서 세션이 `REPLACED`임을 알게 된다.
+- 위 동작은 모두 한 트랜잭션 안에서 처리한다. 새 세션이 생겼는데 이전 기기의 푸시가 계속 가는 순간이 없어야 한다.
 
 ---
 
@@ -342,13 +379,16 @@
 | ID | 결정 | 이유 |
 | --- | --- | --- |
 | DB-01 | 자동 기념일은 저장하지 않고 처음 만난 날로 계산 | 처음 만난 날이 바뀌면 다시 계산만 하면 되고, 저장된 값과 어긋날 일이 없음 |
-| DB-02 | refresh 토큰은 사용할 때마다 교체. 회원 30일, 게스트 365일 만료 | 게스트는 토큰을 잃으면 계정을 영영 잃으므로 길게 둠 (PRD D-02) |
+| DB-02 | refresh 토큰은 사용할 때마다 교체하되, 새 행을 만들지 않고 같은 `auth_sessions` 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다 (v0.5 보완). 회원 30일, 게스트 365일 만료 | 게스트는 토큰을 잃으면 계정을 영영 잃으므로 길게 둠 (PRD D-02). 행이 같으면 `sid`가 변하지 않아 갱신과 겹친 요청이 끊기지 않고, 이전 토큰은 해시가 없어 무효가 됨 |
 | DB-03 | MVP는 서버 인스턴스 1대를 가정 (스케줄러, 오입력 횟수 제한이 DB 기반) | 운영 단순화. 확장 시 분산 잠금 필요 |
 | DB-04 | 탈퇴한 사용자는 익명화(soft delete)하고, 속했던 커플 공간은 90일 보관 후 삭제 | 버그로 인한 손실이 생겨도 운영자가 복구할 수 있도록 (PRD D-36). 익명화로 작성자 참조도 유지됨 |
 | DB-05 | 다른 공간의 리소스 요청은 403이 아니라 404 | 리소스 존재 여부를 노출하지 않음 |
 | DB-06 | 일정 대상은 `is_together` 불리언 하나로 저장 | 상대를 대상으로 지정할 수 없어(PRD D-34) 대상은 '작성자 본인' 또는 '함께' 둘뿐 |
 | DB-07 | 알림 목록은 푸시와 별개로 저장하고 30일 뒤 삭제 | 푸시를 끈 종류도 목록에는 남기고(PRD D-39), 개인정보(일정·메모 제목) 보관을 30일로 제한 (NFR-PRIV-02, Q-03) |
 | DB-08 | 초대코드는 31자 집합 6자리(약 8.9억 조합) + 10분 만료 + 1시간 10회 오입력 제한으로 무차별 대입을 막음 | 코드가 짧아진 만큼 유효 시간과 시도 횟수로 보완 (PRD D-05, NFR-SEC-03) |
+| DB-09 | 한 기기 로그인: 로그인 2종(게스트 시작, 소셜 로그인)은 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 `REPLACED`로 무효화하고 `devices`를 모두 지운다. 로그아웃은 현재 세션을 `LOGOUT`으로 바꾸고 `devices`를 모두 지운다. 무효가 된 이유는 `auth_sessions.revoked_reason`에 둔다 | 이전 기기와 로그아웃한 기기에 푸시가 가지 않게 하고(PRD D-50, D-51), 이전 기기가 "다른 기기에서 로그인해서 로그아웃됐어요"(`REPLACED`)와 그냥 무효를 구분하게 하려고 |
+| DB-10 | 게스트 정리: 유효한 세션이 없는 게스트(`deleted_at IS NULL`)를 매일 정리 작업이 탈퇴와 같이 처리하고, 세션 정리보다 먼저 돈다 | 앱을 지운 게스트는 계정을 되찾을 수 없어 서버에 데이터만 남는다. 기본값은 마지막 사용 후 365일(PRD Q-11, DB-02). 같은 실행 안에서 세션 정리보다 먼저 돌도록 순서를 고정 |
+| DB-11 | `REPLACED` 세션 행은 `expires_at`까지 남기고, 그 밖의 무효·만료 세션은 정리 작업이 지운다 | 이전 기기가 며칠 뒤에 접속해도 `SESSION_REPLACED` 안내를 받게 하려고. 지우면 일반 무효(`SESSION_INVALID`)로 보인다 |
 
 ---
 
@@ -356,9 +396,12 @@
 
 | FR 영역 | 테이블 |
 | --- | --- |
-| FR-AUTH-01~05 | users, social_accounts, auth_sessions, notification_settings |
+| FR-AUTH-01~05 | users, social_accounts, auth_sessions (revoked_reason), devices, notification_settings |
 | FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3) |
-| FR-AUTH-07 프로필 | users.nickname, users.profile_image_key |
+| FR-AUTH-07 프로필 | users.nickname (최대 10자), users.profile_image_key |
+| FR-AUTH-08 이용 동의 | 테이블 없음 (앱) |
+| FR-AUTH-09 앱 밖 계정 삭제 요청 | 테이블 없음 (웹 페이지와 메일 요청, 처리는 FR-AUTH-06과 같음) |
+| FR-SET-02 정보 | 테이블 없음 (앱·웹) |
 | FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at), invite_code_attempts, spaces, space_members |
 | FR-COUPLE-03 | events, anniversaries, memos (space_id 이동) |
 | FR-COUPLE-04 | spaces.start_date |

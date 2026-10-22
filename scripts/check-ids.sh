@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.." || exit 2
 
 PRD="docs/PRD.md"
 DERIVED="docs/ERD.md docs/API.md docs/SCREENS.md"
-ID_RE='(NFR-[A-Z]+-[0-9]{2}|SCR-[A-Z]+-[0-9]{2}|FR-[A-Z]+-[0-9]{2}|D-[0-9]{2}|Q-[0-9]{2})'
+ID_RE='(NFR-[A-Z]+-[0-9]{2}|SCR-[A-Z]+-[0-9]{2}|FR-[A-Z]+-[0-9]{2}|D-[0-9]{2,3}|Q-[0-9]{2})'
 
 errors=0
 warnings=0

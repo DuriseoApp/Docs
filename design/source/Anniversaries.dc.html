@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>기념일</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="{{backHref}}" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">기념일</h1>
+<a href="AnniversaryEdit.dc.html" aria-label="기념일 추가" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</a>
+</header>
+
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 24px">
+<sc-if value="{{isCouple}}" hint-placeholder-val="{{ true }}">
+<section aria-label="함께한 날" style="padding: 22px 20px; border-radius: 24px; background: #F5F3F7; display: flex; align-items: center; gap: 16px">
+<svg width="56" height="38" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="{{meColor}}"></circle><circle cx="64" cy="54" r="20" fill="{{partnerColor}}"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="{{togetherColor}}"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600; color: #5B5666">함께한 지</span>
+<span style="font-size: 26px; line-height: 32px; font-weight: 700; color: #4A2FC0">D+189</span>
+<span style="font-size: 13px; color: #5B5666">처음 만난 날 2026년 4월 7일 (화)</span>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="upTitle" style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="upTitle" style="margin: 0; font-size: 15px; font-weight: 700">다가오는 기념일</h2>
+<span style="font-size: 13px; color: #77727F">가까운 순</span>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #EEEBF1">
+<span style="width: 48px; height: 52px; flex-shrink: 0; border-radius: 14px; background: #F7F6F9; display: flex; flex-direction: column; align-items: center; justify-content: center">
+<span style="font-size: 11px; font-weight: 600; color: #5B5666">{{it.month}}</span>
+<span style="font-size: 18px; line-height: 22px; font-weight: 700">{{it.day}}</span>
+</span>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{it.name}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #77727F">
+<sc-if value="{{it.isCustom}}" hint-placeholder-val="{{ false }}"><span style="{{it.dotStyle}}"></span></sc-if>
+{{it.meta}}
+</span>
+</span>
+<span style="{{it.badgeStyle}}">{{it.dday}}</span>
+</li>
+</sc-for>
+</ul>
+</section>
+</sc-if>
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 72px 0 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 36px; background: #F5F3F7; color: #8E8996; display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>
+<p style="margin: 0; font-size: 15px; color: #5B5666">아직 기념일이 없어요</p>
+<a href="AnniversaryEdit.dc.html" style="height: 44px; padding: 0 18px; border-radius: 12px; background: #6D4AE0; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center">기념일 추가</a>
+</div>
+</sc-if>
+
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 12px; line-height: 1.6; color: #5B5666">{{footNote}}</p></sc-if>
+</div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"solo":{"editor":"boolean","default":false,"section":"상태"},"empty":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const me = this.props.meColor ?? '#E0612F';
+    const partner = this.props.partnerColor ?? '#2F6FDB';
+    const together = this.props.togetherColor ?? '#6D4AE0';
+    const WHO = { me: { by: '내가', color: me }, partner: { by: '상대가', color: partner } };
+    // 오늘 2026년 10월 12일, 처음 만난 날 2026년 4월 7일 기준 예시
+    // 개인 공간: 함께한 날 카드 없이 직접 기념일만 (PRD D-54)
+    const solo = !!this.props.solo;
+    const SOLO = [
+      { m: '11월', d: 12, wd: '목', name: '엄마 생신', dday: 31, by: 'me', yearly: true },
+      { m: '3월', d: 2, wd: '화', name: '첫 출근한 날', dday: 141, by: 'me', yearly: true }
+    ];
+    const COUPLE = [
+      { m: '10월', d: 23, wd: '금', name: '200일', dday: 11 },
+      { m: '11월', d: 20, wd: '금', name: '[상대 이름] 생일', dday: 39, by: 'me', yearly: true },
+      { m: '12월', d: 5, wd: '토', name: '처음 여행 간 날', dday: 54, by: 'partner', yearly: true },
+      { m: '1월', d: 31, wd: '일', name: '300일', dday: 111 },
+      { m: '4월', d: 7, wd: '수', name: '1주년', dday: 177 }
+    ];
+    const badge = (near) => 'flex-shrink: 0; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; ' + (near ? 'background: #ECE6FC; color: #4A2FC0' : 'background: #F5F3F7; color: #5B5666');
+    const empty = solo && !!this.props.empty;
+    const LIST = empty ? [] : (solo ? SOLO : COUPLE);
+    const items = LIST.map((x) => ({
+      month: x.m,
+      day: x.d,
+      name: x.name,
+      isCustom: !!x.by,
+      dotStyle: x.by ? 'width: 7px; height: 7px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[x.by].color : '',
+      meta: solo ? ('내가 만든 기념일' + (x.yearly ? ' · 매년' : '')) : (x.by ? (WHO[x.by].by + ' 만든 기념일' + (x.yearly ? ' · 매년' : '')) : '자동 기념일'),
+      dday: 'D-' + x.dday,
+      badgeStyle: badge(x.dday <= 30)
+    }));
+    return {
+      meColor: me, partnerColor: partner, togetherColor: together, items,
+      isCouple: !solo,
+      isEmpty: empty,
+      hasItems: !empty,
+      backHref: solo ? 'CalendarSolo.dc.html' : 'Calendar.dc.html',
+      footNote: solo ? '직접 만든 기념일은 캘린더에도 보이고, 당일 오전 9시에 알려 드려요.' : '100일 단위와 매년 돌아오는 날은 처음 만난 날로 자동 계산돼요. 직접 만든 기념일은 만든 사람만 고칠 수 있어요.'
+    };
+  }
+}
+</script>
+</body>
+</html>

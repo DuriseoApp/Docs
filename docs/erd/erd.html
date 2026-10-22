@@ -73,7 +73,7 @@
 <div id="root">
   <h1>둘이서 ERD (MVP v0.1)</h1>
   <div class="sub">모든 콘텐츠는 공간에 속하고, 사용자는 활성 공간 하나에 속한다</div>
-  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.4 · 2026-10-18</div>
+  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.5 · 2026-10-21</div>
 
   <div class="zones">
     <!-- 계정 -->
@@ -86,7 +86,7 @@
             <div class="rows">
               <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">uuid</span></div>
               <div class="row"><span></span><span class="n">account_type</span><span class="t">GUEST · MEMBER</span></div>
-              <div class="row"><span></span><span class="n">nickname</span><span class="t">varchar(20)</span></div>
+              <div class="row"><span></span><span class="n">nickname</span><span class="t">varchar(10)</span></div>
               <div class="row"><span></span><span class="n">profile_image_key</span><span class="t">varchar · null</span></div>
               <div class="row"><span></span><span class="n">time_zone</span><span class="t">Asia/Seoul</span></div>
               <div class="row"><span></span><span class="n">deleted_at</span><span class="t">탈퇴 시 익명화</span></div>
@@ -110,6 +110,7 @@
               <div class="row"><span></span><span class="n">refresh_token_hash</span><span class="t">SHA-256 · UQ</span></div>
               <div class="row"><span></span><span class="n">expires_at</span><span class="t">timestamptz</span></div>
               <div class="row"><span></span><span class="n">revoked_at</span><span class="t">timestamptz · null</span></div>
+              <div class="row"><span></span><span class="n">revoked_reason</span><span class="t">LOGOUT 등 3종 · null</span></div>
             </div>
           </div>
           <div class="card" id="devices">

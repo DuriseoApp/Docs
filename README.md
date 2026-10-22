@@ -18,6 +18,7 @@ Docs/
 │   ├── design-system.md       디자인 원칙·말투·컴포넌트
 │   ├── tokens.json            색·글꼴·간격 값 (Android·iOS 테마의 원본)
 │   ├── screens/               화면 이미지 SCR-*.png (/design-sync가 채움)
+│   ├── source/                디자인 캔버스 보드 원본 (*.dc.html, canvas.json). 정확한 크기·간격·색은 여기서 읽음
 │   ├── canvas-map.md          디자인 캔버스 보드 ↔ 화면 ID 대응표
 │   └── change-requests/       디자인 변경 요청서 (/prd-sync가 만들고 /design-sync가 반영)
 ├── sync/                      PRD 버전별 영향 분석 기록
@@ -25,7 +26,7 @@ Docs/
 └── .claude/
     ├── settings.json          에이전트 팀 켜기, 권한
     ├── agents/                팀원 4명 정의
-    └── skills/                /prd-sync (맥), /design-sync (claude.ai 프로젝트 채팅)
+    └── skills/                /prd-sync (맥·프로젝트 채팅), /design-sync (claude.ai 프로젝트 채팅)
 ```
 
 ## 기획팀 (에이전트 팀)
@@ -93,6 +94,6 @@ Server·Android·iOS 레포의 `CLAUDE.md`에 아래를 넣고, 세션은 `claud
 기획 문서는 ../Docs 레포에 있다. 이 문서와 코드가 다르면 문서가 맞다.
 - 요구사항: ../Docs/docs/PRD.md (커밋·PR·테스트 이름에 FR ID를 쓴다)
 - 데이터: ../Docs/docs/ERD.md / API: ../Docs/docs/API.md
-- 화면: ../Docs/docs/SCREENS.md, 이미지 ../Docs/design/screens/, 토큰 ../Docs/design/tokens.json
+- 화면: ../Docs/docs/SCREENS.md, 이미지 ../Docs/design/screens/, 보드 원본 ../Docs/design/source/, 토큰 ../Docs/design/tokens.json
 문서에 없는 기능은 만들지 않는다. 문서가 틀려 보이면 작업을 멈추고 보고한다.
 ```

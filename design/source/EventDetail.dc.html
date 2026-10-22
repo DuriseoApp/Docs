@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>일정 상세</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
+<a href="Calendar.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 700">일정</h1>
+<sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}"><a href="AddEvent.dc.html" style="height: 48px; padding: 0 14px; display: flex; align-items: center; text-decoration: none; color: #4A2FC0; font-size: 16px; font-weight: 700">수정</a></sc-if>
+<sc-if value="{{readOnly}}" hint-placeholder-val="{{ false }}"><span style="width: 48px" aria-hidden="true"></span></sc-if>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+<span style="display: flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px; border: 1px solid #E6E2EA; font-size: 12px; font-weight: 600"><span style="{{whoDot}}"></span>{{whoLabel}}</span>
+<h2 style="margin: 0; font-size: 24px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">{{title}}</h2>
+</div>
+<section aria-label="일정 정보" style="border-radius: 16px; border: 1px solid #EEEBF1; display: flex; flex-direction: column">
+<div style="min-height: 52px; box-sizing: border-box; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px">
+<span style="width: 20px; color: #5B5666; padding-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>
+<span style="width: 52px; flex-shrink: 0; font-size: 14px; color: #5B5666; line-height: 22px">시작</span>
+<span style="flex-grow: 1; min-width: 0; font-size: 15px; font-weight: 600; line-height: 22px">{{startLine}}</span>
+</div>
+<div style="min-height: 52px; box-sizing: border-box; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid #EEEBF1">
+<span style="width: 20px; color: #5B5666; padding-top: 1px"></span>
+<span style="width: 52px; flex-shrink: 0; font-size: 14px; color: #5B5666; line-height: 22px">종료</span>
+<span style="flex-grow: 1; min-width: 0; font-size: 15px; font-weight: 600; line-height: 22px">{{endLine}}</span>
+</div>
+<div style="min-height: 56px; box-sizing: border-box; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid #EEEBF1">
+<span style="color: #5B5666; padding-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg></span>
+<span style="width: 52px; flex-shrink: 0; font-size: 14px; color: #5B5666; line-height: 22px">작성</span>
+<span style="flex-grow: 1; min-width: 0; font-size: 15px; font-weight: 600; line-height: 22px">{{author}}</span>
+</div>
+</section>
+<sc-if value="{{hasMemo}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="memoT" style="display: flex; flex-direction: column; gap: 8px">
+<h3 id="memoT" style="margin: 0; font-size: 13px; font-weight: 600; color: #5B5666">메모</h3>
+<p style="margin: 0; padding: 14px 16px; border-radius: 14px; background: #F7F6F9; font-size: 15px; line-height: 1.6">{{memo}}</p>
+</section>
+</sc-if>
+<section aria-labelledby="remT" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h3 id="remT" style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #5B5666"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg>내 알림</h3>
+<span style="font-size: 12px; color: #77727F">나에게만 와요</span>
+</div>
+<div role="radiogroup" aria-label="내 알림" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{opts}}" as="o" hint-placeholder-count="5">
+<button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+</section>
+<sc-if value="{{readOnly}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">상대가 만든 일정은 상대만 고치거나 지울 수 있어요.</p>
+</sc-if>
+</div>
+<sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}">
+<div style="flex-shrink: 0; padding: 12px 20px 32px; border-top: 1px solid #EEEBF1">
+<button type="button" onClick="{{openDialog}}" style="width: 100%; height: 52px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #B42335; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">일정 삭제</button>
+</div>
+</sc-if>
+<sc-if value="{{dialogOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px">
+<button type="button" onClick="{{closeDialog}}" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="dTitle" aria-describedby="dBody" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="dTitle" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">일정을 삭제할까요?</h2>
+<p id="dBody" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">삭제하면 상대 캘린더에서도 사라지고 되돌릴 수 없어요.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" onClick="{{closeDialog}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="{{afterDelete}}" style="height: 48px; border-radius: 14px; background: #B42335; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">삭제</a>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"partner":{"editor":"boolean","default":false,"section":"상태"},"allDay":{"editor":"boolean","default":false,"section":"상태"},"multiDay":{"editor":"boolean","default":false,"section":"상태"},"dialogOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const accent = this.props.accent ?? '#6D4AE0';
+    const colors = { me: this.props.meColor ?? '#E0612F', partner: this.props.partnerColor ?? '#2F6FDB', both: this.props.togetherColor ?? '#6D4AE0' };
+    const LABEL = { me: '나', partner: '상대', both: '함께' };
+    // 내 일정(함께, 내가 만듦)과 상대 일정(상대가 만듦, 대상 상대) 두 가지 예시
+    const multiDay = !!this.props.multiDay;
+    const ev = multiDay
+      ? { who: 'me', mine: true, title: '부산 출장', date: '', time: '', author: '[내 이름]', memo: '' }
+      : this.props.partner
+      ? { who: 'partner', mine: false, title: '치과 예약', date: '2026년 10월 12일 (월)', time: '오후 2:00 – 3:00', author: '[상대 이름]', memo: '' }
+      : { who: 'both', mine: true, title: '저녁 데이트', date: '2026년 10월 12일 (월)', time: '오후 7:30 – 9:30', author: '[내 이름]', memo: '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' };
+    const allDay = !!this.props.allDay;
+    // 수정·삭제는 작성자에게만, 대상이 함께면 두 사람 모두 (PRD FR-CAL-03)
+    const canEdit = ev.mine || ev.who === 'both';
+    // 알림 선택지: 시간 일정과 종일 일정이 다르다 (PRD FR-CAL-05)
+    const OPTS = allDay ? ['없음', '당일 오전 9시', '1일 전 오전 9시'] : ['없음', '정시', '10분 전', '1시간 전', '1일 전'];
+    const sel = s.rem || (multiDay ? '1일 전' : (allDay ? '당일 오전 9시' : (this.props.partner ? '없음' : '1시간 전')));
+    const chip = (on) => "height: 40px; padding: 0 14px; border-radius: 999px; font-family: 'IBM Plex Sans KR', sans-serif; font-size: 14px; cursor: pointer; " + (on ? 'border: 0; background: #1C1A22; color: #FFFFFF; font-weight: 600' : 'border: 1px solid #E6E2EA; background: #FFFFFF; color: #4A4553; font-weight: 500');
+    const dialogOpen = s.dialogOpen !== undefined ? !!s.dialogOpen : !!this.props.dialogOpen;
+    return {
+      accent,
+      title: ev.title,
+      whoLabel: LABEL[ev.who],
+      whoDot: 'width: 8px; height: 8px; border-radius: 4px; background: ' + colors[ev.who],
+      // 일시는 시작 줄과 종료 줄. 종일이면 날짜만 (PRD D-64)
+      startLine: multiDay ? (allDay ? '10월 17일 (토)' : '10월 17일 (토) 오전 10:00') : (allDay ? '10월 12일 (월)' : '10월 12일 (월) ' + ev.time.split(' – ')[0]),
+      endLine: multiDay ? (allDay ? '10월 18일 (일)' : '10월 18일 (일) 오후 6:00') : (allDay ? '10월 12일 (월)' : '10월 12일 (월) ' + (ev.time.split(' – ')[0].slice(0, 2)) + ' ' + ev.time.split(' – ')[1]),
+      author: ev.author,
+      memo: ev.memo,
+      hasMemo: !!ev.memo,
+      canEdit,
+      readOnly: !canEdit,
+      opts: OPTS.map((o) => ({ label: o, on: o === sel, style: chip(o === sel), pick: () => this.setState({ rem: o }) })),
+      dialogOpen: canEdit && dialogOpen,
+      openDialog: () => this.setState({ dialogOpen: true }),
+      closeDialog: () => this.setState({ dialogOpen: false }),
+      afterDelete: 'Calendar.dc.html'
+    };
+  }
+}
+</script>
+</body>
+</html>

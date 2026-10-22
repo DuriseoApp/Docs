@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쉐어 메모장</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">메모장</h1>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 120px; display: flex; flex-direction: column; gap: 24px">
+<section aria-labelledby="pinTitle" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="pinTitle" style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="#4A2FC0" stroke="#4A2FC0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1.5H7V13l3-3z"></path><path d="M12 14.5V20" fill="none"></path></svg>
+고정된 핀
+</h2>
+<span style="font-size: 13px; color: #77727F">{{pinCountLabel}}</span>
+</div>
+<sc-if value="{{noPins}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; padding: 16px; border-radius: 16px; border: 1px dashed #D9D4DF; font-size: 13px; line-height: 1.6; color: #5B5666">중요한 메모는 핀으로 고정하면 둘 다 맨 위에서 공지처럼 볼 수 있어요.</p>
+</sc-if>
+<sc-for list="{{visiblePins}}" as="p" hint-placeholder-count="3">
+<article style="padding: 14px 6px 16px 16px; border-radius: 20px; background: #F3F0FD; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5B5666">
+<span style="{{p.avatarStyle}}">{{p.avatar}}</span>{{p.whoText}} · {{p.date}}
+</span>
+<span style="display: flex">
+<button type="button" aria-label="{{p.pinLabel}}" aria-pressed="{{p.isPinned}}" onClick="{{p.togglePin}}" style="width: 44px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{p.pinStroke}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1.5H7V13l3-3z" fill="{{p.pinFill}}"></path><path d="M12 14.5V20"></path></svg>
+</button>
+<button type="button" aria-label="{{p.favLabel}}" aria-pressed="{{p.isFav}}" onClick="{{p.toggleFav}}" style="width: 44px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="{{p.starFill}}" stroke="{{p.starStroke}}" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-3.9 5.6-.8z"></path></svg>
+</button>
+</span>
+</div>
+<div style="padding-right: 10px; display: flex; flex-direction: column; gap: 4px">
+<a href="MemoDetail.dc.html" style="display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: #1C1A22">
+<h3 style="margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700">{{p.title}}</h3>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4A4553; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{p.preview}}</p>
+</a>
+<sc-if value="{{p.hasDate}}" hint-placeholder-val="{{ false }}">
+<span aria-label="{{p.dateAria}}" style="align-self: flex-start; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #4A4553; background: #FFFFFF"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>{{p.memoDate}}</span>
+</sc-if>
+</div>
+</article>
+</sc-for>
+<sc-if value="{{hasMorePins}}" hint-placeholder-val="{{ true }}">
+<a href="PinnedAll.dc.html" style="height: 44px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px">{{moreLabel}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></a>
+</sc-if>
+</section>
+<section aria-labelledby="listTitle" style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="listTitle" style="margin: 0; font-size: 15px; font-weight: 700">전체 메모</h2>
+<span style="font-size: 13px; color: #77727F">{{listCountLabel}}</span>
+</div>
+<div role="group" aria-label="정렬과 필터" style="display: flex; gap: 8px; padding: 6px 0 4px">
+<sc-for list="{{sorts}}" as="s" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="{{s.style}}">
+<sc-if value="{{s.isFav}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-3.9 5.6-.8z"></path></svg></sc-if>
+{{s.label}}
+</button>
+</sc-for>
+</div>
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; padding: 32px 0; text-align: center; font-size: 14px; line-height: 1.6; color: #5B5666">즐겨찾기한 메모가 없어요.<br>메모 옆 별을 눌러 추가해 보세요.</p>
+</sc-if>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{memos}}" as="m" hint-placeholder-count="6">
+<li style="display: flex; align-items: center; gap: 2px; padding: 12px 0; border-bottom: 1px solid #EEEBF1">
+<a href="MemoDetail.dc.html" style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-decoration: none; color: #1C1A22">
+<span style="font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{m.title}}</span>
+<span style="font-size: 14px; color: #5B5666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{m.preview}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #77727F"><span style="{{m.dotStyle}}"></span>{{m.whoLabel}} · {{m.date}}
+<sc-if value="{{m.hasDate}}" hint-placeholder-val="{{ false }}"><span aria-label="{{m.dateAria}}" style="margin-left: 2px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #4A4553; background: #F5F3F7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>{{m.memoDate}}</span></sc-if>
+</span>
+</a>
+<button type="button" aria-label="{{m.pinLabel}}" aria-pressed="{{m.isPinned}}" onClick="{{m.togglePin}}" style="width: 44px; height: 44px; flex-shrink: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{m.pinStroke}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1.5H7V13l3-3z" fill="{{m.pinFill}}"></path><path d="M12 14.5V20"></path></svg>
+</button>
+<button type="button" aria-label="{{m.favLabel}}" aria-pressed="{{m.isFav}}" onClick="{{m.toggleFav}}" style="width: 44px; height: 44px; flex-shrink: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="{{m.starFill}}" stroke="{{m.starStroke}}" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-3.9 5.6-.8z"></path></svg>
+</button>
+</li>
+</sc-for>
+</ul>
+</section>
+</div>
+<button type="button" aria-label="새 메모" style="position: absolute; right: 20px; bottom: 100px; width: 56px; height: 56px; border: 0; border-radius: 18px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+<nav aria-label="주요 메뉴" style="height: 80px; flex-shrink: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #EEEBF1; background: #FFFFFF">
+<a href="Calendar.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #77727F; font-size: 12px; font-weight: 500">
+<span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>
+캘린더
+</a>
+<a href="Memo.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #1C1A22; font-size: 12px; font-weight: 700">
+<span style="width: 56px; height: 30px; border-radius: 15px; background: #ECE6FC; color: #4A2FC0; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12.5A.5.5 0 0 1 5.5 20V4a.5.5 0 0 1 .5-.5z"></path><path d="M15 3.5V8h4M9 12h6M9 16h4"></path></svg></span>
+메모
+</a>
+</nav>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6D4AE0';
+    const s = this.state || {};
+    const sort = s.sort || 'new';
+    const SHOW_PINS = 3;
+    const BASE = [
+      { id: 1, t: 202610120912, who: 'partner', title: '여행 숙소 후보 정리했어', body: '세 곳 골라놨는데 주말 전까지 하나 골라줘!', date: '오늘 오전 9:12', pin: true, fav: false, memoDate: '10월 16일 (금)' },
+      { id: 2, t: 202610120840, who: 'partner', title: '장보기', body: '우유, 계란, 두부, 대파, 사과', date: '오늘 오전 8:40' },
+      { id: 3, t: 202610111930, who: 'me', title: '선물 아이디어', body: '향수 같이 시향해보기, 지난번에 본 머플러', date: '어제', fav: true, memoDate: '11월 20일 (금)' },
+      { id: 4, t: 202610091200, who: 'partner', title: '여행 준비물', body: '충전기, 여권 사본, 접이식 우산', date: '10월 9일', memoDate: '10월 17일 (토)' },
+      { id: 5, t: 202610081000, who: 'me', title: '주말 집안일 분담', body: '토요일 장보기는 내가, 일요일 청소는 같이 하기', date: '10월 8일' },
+      { id: 6, t: 202610051000, who: 'partner', title: '부모님 생신 선물 같이 고르기', body: '생신 전 주말에 같이 보러 가자', date: '10월 5일', fav: true, memoDate: '11월 14일 (토)' },
+      { id: 7, t: 202610021000, who: 'me', title: '보고 싶은 영화', body: '[영화 제목] 외 2편', date: '10월 2일' },
+      { id: 8, t: 202610011000, who: 'me', title: '이번 달 데이트 통장 정리', body: '이번 달은 여행 때문에 조금 더 넣기로 했어요. 금액은 [금액]으로 맞춰요.', date: '10월 1일', pin: true, fav: true },
+      { id: 9, t: 202609281000, who: 'me', title: '와이파이 비밀번호 바뀜', body: '공유기 뒷면 스티커에 새로 적어뒀어요', date: '9월 28일' }
+    ];
+    const fav = s.fav || BASE.reduce((acc, x) => { acc[x.id] = !!x.fav; return acc; }, {});
+    // 최근에 고정한 순서 (앞이 가장 최근)
+    const pinOrder = s.pinOrder || [2, 1, 5, 8];
+    const pin = pinOrder.reduce((acc, id) => { acc[id] = true; return acc; }, {});
+    // 작성자는 닉네임으로 보인다 (PRD D-57)
+    const WHO = { me: { label: '[내 이름]', color: '#E0612F' }, partner: { label: '[상대 이름]', color: '#2F6FDB' } };
+    const toggleFav = (id) => this.setState({ fav: { ...fav, [id]: !fav[id] } });
+    const togglePin = (id) => {
+      this.setState({ pinOrder: pin[id] ? pinOrder.filter((x) => x !== id) : [id, ...pinOrder] });
+    };
+    const decorate = (x) => ({
+      title: x.title,
+      date: x.date,
+      preview: x.body,
+      // 메모 날짜는 선택 (PRD FR-MEMO-01). 작성일과 구분해 달력 아이콘과 함께 보여준다
+      hasDate: !!x.memoDate,
+      memoDate: x.memoDate || '',
+      dateAria: x.memoDate ? '메모 날짜 ' + x.memoDate : '',
+      whoLabel: WHO[x.who].label,
+      whoText: WHO[x.who].label,
+      avatar: x.who === 'me' ? '나' : '너',
+      avatarStyle: 'width: 24px; height: 24px; border-radius: 12px; background: ' + WHO[x.who].color + '; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center',
+      dotStyle: 'width: 7px; height: 7px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[x.who].color,
+      isFav: !!fav[x.id],
+      isPinned: !!pin[x.id],
+      favLabel: fav[x.id] ? '즐겨찾기 해제' : '즐겨찾기',
+      pinLabel: pin[x.id] ? '고정 해제' : '상단에 고정',
+      starFill: fav[x.id] ? '#C27803' : 'none',
+      starStroke: fav[x.id] ? '#C27803' : '#8E8996',
+      pinFill: pin[x.id] ? accent : 'none',
+      pinStroke: pin[x.id] ? accent : '#8E8996',
+      toggleFav: () => toggleFav(x.id),
+      togglePin: () => togglePin(x.id)
+    });
+    const pins = pinOrder.map((id) => BASE.find((x) => x.id === id)).filter(Boolean).map(decorate);
+    const rest = BASE.filter((x) => !pin[x.id]);
+    const favCount = rest.filter((x) => fav[x.id]).length;
+    let list = sort === 'fav' ? rest.filter((x) => fav[x.id]) : rest.slice();
+    list.sort((a, b) => (sort === 'old' ? a.t - b.t : b.t - a.t));
+    const chipOn = "height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: #1C1A22; color: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px";
+    const chipOff = "height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #5B5666; font-family: 'IBM Plex Sans KR', sans-serif; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px";
+    const sorts = [
+      { id: 'new', label: '최신순' },
+      { id: 'old', label: '오래된순' },
+      { id: 'fav', label: '즐겨찾기 ' + favCount }
+    ].map((o) => ({
+      label: o.label,
+      isFav: o.id === 'fav',
+      on: sort === o.id,
+      style: sort === o.id ? chipOn : chipOff,
+      pick: () => this.setState({ sort: o.id })
+    }));
+    return {
+      accent,
+      visiblePins: pins.slice(0, SHOW_PINS),
+      noPins: pins.length === 0,
+      pinCountLabel: pins.length + '개',
+      hasMorePins: pins.length > SHOW_PINS,
+      moreLabel: '고정 메모 전체 보기 (' + pins.length + ')',
+      sorts,
+      memos: list.map(decorate),
+      isEmpty: list.length === 0,
+      listCountLabel: list.length + '개'
+    };
+  }
+}
+</script>
+</body>
+</html>
