@@ -13,6 +13,7 @@ Docs/
 │   ├── PRD.md                 단일 기준 (사람과 리드가 의논해서 고치는 유일한 문서)
 │   ├── ERD.md, ERD.png        데이터 모델 (이미지 원본: erd/erd.html)
 │   ├── API.md                 API 범위·권한·흐름
+│   ├── ENVIRONMENT.md         개발 환경 설정값 (공개값만, 비밀값은 보관 위치만)
 │   └── SCREENS.md             화면 명세 (앱 구현 기준)
 ├── design/
 │   ├── design-system.md       디자인 원칙·말투·컴포넌트
