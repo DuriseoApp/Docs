@@ -122,7 +122,7 @@
 | DELETE | /me/profile-image | (OpenAPI 기준) | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
 | GET | /users/{id}/profile-image | (OpenAPI 기준) | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
 | DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3) | 로그인 | FR-AUTH-06 |
-| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었거나 255자를 넘으면 400 `VALIDATION_FAILED`(`fcmToken`), `platform`이 두 값이 아니면 `INVALID`. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
+| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
 | GET, PATCH | /me/notification-settings | (OpenAPI 기준) | 알림 설정 조회·변경. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
 
 **공통 응답 모양** (JSON 필드는 camelCase, 일시는 ISO 8601 UTC. 값이 없는 필드는 빼지 않고 `null`로 보낸다, 1.1)
@@ -244,14 +244,14 @@
 2. 서버가 제공자에게 검증한다 (NFR-SEC-01). 토큰이 어긋나면 401 `SOCIAL_TOKEN_INVALID`로 거부하고 아무것도 바꾸지 않는다.
    - **Google**: ID 토큰의 서명(구글 공개키), `iss`, `aud`(둘이서 앱의 클라이언트 ID), `exp`를 확인한다. `iss`는 `accounts.google.com`과 `https://accounts.google.com` 두 값 모두 허용한다. 통과하면 토큰의 사용자 ID를 `provider_user_id`로 쓰고, 프로필 이름은 같은 ID 토큰의 `name` 클레임에서 읽는다.
    - **Kakao**: `GET https://kapi.kakao.com/v1/user/access_token_info`로 토큰을 확인하고, 응답의 `app_id`가 서버에 설정된 둘이서 앱 ID와 같은지 본다. 같을 때만 응답의 사용자 ID를 `provider_user_id`로 쓴다. 다른 앱에서 발급된 토큰은 여기서 걸러진다. 프로필 이름이 필요한 경우에만(아래 3단계의 신규 가입, 4.3의 "게스트" 닉네임 교체) 토큰 확인 다음에 `GET https://kapi.kakao.com/v2/user/me`를 호출해 `kakao_account.profile.nickname`**만** 받는다. 기존 회원의 로그인에서는 이 호출을 하지 않고 `access_token_info` 확인만 한다. 이메일 등 다른 값은 받거나 저장하지 않는다 (NFR-PRIV-01). Kakao Developers에서 동의항목 "닉네임"이 켜져 있어야 한다 (사람이 할 일).
-   - **제공자 장애**: Google 공개키를 받지 못함, Kakao가 5xx를 돌려주거나 시간이 초과됨은 사용자의 토큰이 틀린 것이 아니므로 500 `INTERNAL_ERROR`로 응답하고 아무것도 바꾸지 않는다. Kakao가 토큰을 거부(4xx)하면 401 `SOCIAL_TOKEN_INVALID`다.
+   - **제공자 장애와 거부**: Google 공개키를 받지 못함, Kakao가 5xx를 돌려주거나 시간이 초과됨(`access_token_info`와 `v2/user/me` 둘 다)은 사용자의 토큰이 틀린 것이 아니므로 500 `INTERNAL_ERROR`로 응답하고 아무것도 바꾸지 않는다. `access_token_info`가 토큰을 거부(4xx)하면 401 `SOCIAL_TOKEN_INVALID`다. `SOCIAL_TOKEN_INVALID`는 이 `access_token_info` 단계의 거부에만 쓴다. 토큰 확인을 이미 통과한 뒤 `v2/user/me`가 4xx를 돌려주면(동의항목 "닉네임"이 꺼진 경우 등) 로그인을 거부하지 않고 "이름을 받지 못함"으로 보아 "사용자"를 쓴다 (D-69).
 3. `social_accounts`에 있으면 그 사용자로 로그인한다. 없으면 MEMBER 사용자와 개인 공간을 만들고 `isNewUser: true`를 돌려준다. 닉네임 기본값은 소셜 프로필 이름(Google `name`, Kakao `kakao_account.profile.nickname`)에서 앞뒤 공백을 지운 값이고, 코드 포인트 10개를 넘으면 앞 10개만 쓴다 (FR-AUTH-07.AC1, D-56, D-82). 소셜 계정에서 이름을 받지 못했거나 공백뿐이면 "사용자"를 쓴다 (D-69). 앱은 이때 SCR-COUPLE-01을 띄운다 (PRD D-31).
 4. **이전 세션·기기 정리 (D-51)**: (`POST /auth/switch`도 4.7에서 같은 코드를 쓴다.) 3단계와 같은 트랜잭션에서 그 사용자의 다른 유효한 `auth_sessions`를 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고, 그 사용자의 `devices` 행을 모두 지운다. 새 세션의 `AuthTokens`(3.1)를 200으로 돌려준다.
 5. 앱은 로그인 직후 `PUT /me/devices`로 새 기기의 FCM 토큰을 다시 등록한다. 이전 기기는 푸시를 받지 못하고, 다음 요청에서 401 `SESSION_REPLACED`를 받아 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여준 뒤 SCR-START-01로 이동한다 (1장).
 
 ### 4.3 게스트 → 회원 연동 (FR-AUTH-03)
 
-1. 게스트가 `POST /auth/link`로 소셜 토큰을 보낸다. 4.2의 2단계처럼 검증한다. Kakao `GET /v2/user/me`는 4단계에서 닉네임이 정확히 "게스트"라 소셜 프로필 이름으로 바꿔야 할 때만 부른다. 토큰이 틀리면 401 `SOCIAL_TOKEN_INVALID`, 제공자 장애면 500 `INTERNAL_ERROR`이고 아무것도 바꾸지 않는다.
+1. 게스트가 `POST /auth/link`로 소셜 토큰을 보낸다. 4.2의 2단계처럼 검증한다. Kakao `GET /v2/user/me`는 4단계에서 닉네임이 정확히 "게스트"라 소셜 프로필 이름으로 바꿔야 할 때만 부른다. 이 호출이 4xx를 주면 연동을 거부하지 않고 이름을 받지 못한 것으로 보아 "사용자"를 쓰고(D-69), 5xx·시간 초과면 500 `INTERNAL_ERROR`로 거부하고 아무것도 바꾸지 않는다. 토큰이 틀리면 401 `SOCIAL_TOKEN_INVALID`, 제공자 장애면 500 `INTERNAL_ERROR`이고 아무것도 바꾸지 않는다.
 2. `social_accounts`에 행을 넣는다. UNIQUE 위반이면 409 `SOCIAL_ALREADY_USED`로 거부하고 아무것도 바꾸지 않는다 (PRD Q-01). 이때 앱은 "이미 가입된 계정이에요" 안내를 보여주고 4.7의 흐름으로 이어간다 (FR-AUTH-03.AC2).
 3. `users.account_type`을 MEMBER로 바꾼다. 사용자 ID와 모든 데이터는 그대로다. 계정 종류는 access 토큰에 들어 있지 않고 서버가 DB에서 읽으므로 같은 access 토큰으로 바로 회원으로 판단한다 (1장). 다음 토큰 갱신부터 회원 만료 정책(30일)을 쓴다.
 4. **닉네임 (D-68, D-69, D-82)**: 같은 트랜잭션에서 `users.nickname`이 정확히 "게스트"면 소셜 프로필 이름(앞뒤 공백을 지우고 코드 포인트 앞 10개)으로 바꾼다. 프로필 이름이 없거나 공백뿐이면 "사용자"로 바꾼다. "게스트"가 아닌 닉네임(사용자가 직접 바꾼 것)은 그대로 둔다. 응답은 204이고 새 토큰이 없으므로 앱은 연동 뒤 `GET /me`로 닉네임을 다시 읽는다.
@@ -313,13 +313,13 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었거나 255자 초과 (`PUT /me/devices`, `fcmToken`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름, 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`), 범위가 3개월 초과 (`GET /anniversaries`), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC3 |
+| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름, 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`), 범위가 3개월 초과 (`GET /anniversaries`), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC3 |
 | 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`, `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
 | 401 | SESSION_INVALID | `Authorization` 헤더가 없음, `Bearer` 형식이 아님, access 토큰의 서명이 틀림, 클레임이 없거나 틀림. 또는 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장, NFR-SEC-01 |
 | 401 | SESSION_REPLACED | 다른 기기 로그인으로 이 기기의 세션이 끊김. 앱은 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동 | D-51, FR-AUTH-02.AC3 |
-| 401 | SOCIAL_TOKEN_INVALID | 소셜 토큰 검증 실패: Google은 서명·`iss`(허용값 `accounts.google.com`, `https://accounts.google.com` 두 가지가 아님)·`aud`·`exp`, Kakao는 `app_id`가 맞지 않거나 Kakao가 토큰을 거부(4xx)함 (`/auth/social`, `/auth/link`, `/auth/switch`). 제공자 장애는 이 코드가 아니라 500 `INTERNAL_ERROR` | NFR-SEC-01 |
+| 401 | SOCIAL_TOKEN_INVALID | 소셜 토큰 검증 실패: Google은 서명·`iss`(허용값 `accounts.google.com`, `https://accounts.google.com` 두 가지가 아님)·`aud`·`exp`, Kakao는 `app_id`가 맞지 않거나 `access_token_info`가 토큰을 거부(4xx)함 (`/auth/social`, `/auth/link`, `/auth/switch`). 이 코드는 `access_token_info` 단계의 거부에만 쓴다: 확인 뒤 `v2/user/me`가 4xx를 주면 거부하지 않고 닉네임을 "사용자"로 쓴다 (D-69). 제공자 장애는 이 코드가 아니라 500 `INTERNAL_ERROR` | NFR-SEC-01 |
 | 403 | NOT_AUTHOR | 작성자가 아닌 수정·삭제, 작성자가 아닌 사용자의 일정 대상(`isTogether`) 변경 | R-02, R-03, R-05, R-13 |
 | 403 | GUEST_NOT_ALLOWED | 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름 | R-09, R-17, D-07, FR-AUTH-05 |
 | 403 | GUEST_ONLY | 게스트만 부를 수 있는 경로(`/auth/link`, `/auth/switch`)를 회원이 부름. `GUEST_NOT_ALLOWED`와 반대 경우다 | R-14, D-67, FR-AUTH-03 |
@@ -338,7 +338,7 @@
 | 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님 | NFR-FILE-01 |
 | 429 | INVITE_RATE_LIMITED | 1시간 내 초대코드 오입력 10회. `details.retryAfterSeconds`에 다시 입력할 수 있을 때까지 남은 초 | NFR-SEC-03 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청. `details.retryAfterSeconds` | FR-COUPLE-01.AC3 |
-| 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다 | 1.1, NFR-SEC-01 |
+| 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao(`access_token_info`, `v2/user/me`)가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다 | 1.1, NFR-SEC-01 |
 
 ---
 

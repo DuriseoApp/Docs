@@ -64,7 +64,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | account_type | varchar(10) | not null, CHECK in (`GUEST`, `MEMBER`) | 게스트 연동 시 `MEMBER`로 변경 (FR-AUTH-03) |
-| nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 소셜 이름이 10자가 넘으면 앞 10자만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, NFR-LIMIT-01). 앞뒤 공백을 지운 값을 저장하고, 글자 수는 유니코드 코드 포인트로 세어 1~10자다. 지운 뒤 빈 값이면 저장하지 않고 거부한다. 소셜 이름을 자를 때도 코드 포인트 10개까지 쓴다 (PRD D-82). 길이와 공백 검사는 서비스에서 하고, `varchar(10)`은 PostgreSQL이 문자 단위로 세므로 같은 기준이다. 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
+| nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 앞뒤 공백을 지운 값을 저장하고, 글자 수는 유니코드 코드 포인트로 세어 1~10자다. 지운 뒤 빈 값이면 저장하지 않고 거부한다. 소셜 이름이 코드 포인트 10개를 넘으면 앞 10개만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, D-82, NFR-LIMIT-01). 길이와 공백 검사는 서비스에서 하고, `varchar(10)`은 PostgreSQL이 문자 단위로 세므로 같은 기준이다. 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
 | profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |

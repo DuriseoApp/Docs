@@ -1,6 +1,6 @@
 # PRD v0.7 영향 분석
 
-> 상태: 진행 중
+> 상태: 검수 중
 > 이전 버전: v0.6 → 새 버전: v0.7
 > 브랜치: sync/prd-v0.7
 > PR: (PR 완료 후 링크)
@@ -103,7 +103,8 @@
 | Kakao 이름 조회 시점 (리드 결정) | `/v2/user/me`는 닉네임이 필요한 때만 부른다: `/auth/social` 신규 가입, `/auth/link`(닉네임이 정확히 "게스트"일 때, D-68). `/auth/switch`와 기존 회원의 `/auth/social` 로그인은 `access_token_info`만 | FR-AUTH-07.AC1 |
 | 닉네임 | 앞뒤 공백을 지운 값으로 저장하고 코드 포인트로 센다. 1~10자. 지운 뒤 빈 값이면 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10자 초과면 `TOO_LONG`. 소셜 이름을 자를 때도 코드 포인트 10개 | D-82, NFR-LIMIT-01 |
 | 시간대 | Java `ZoneId`로 해석되는 IANA 이름만. 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 `PATCH /me`로 갱신 | NFR-TIME-01 |
-| fcmToken | 비었거나 255자 초과면 `VALIDATION_FAILED`(`fcmToken`). `platform`이 두 값이 아니면 `INVALID` | NFR-SYNC-01 |
+| fcmToken | 비었으면 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자 초과면 `TOO_LONG` (리드 결정, 검수 1회차). `platform`이 두 값이 아니면 `INVALID` | NFR-SYNC-01 |
+| Kakao `/v2/user/me` 실패 (리드 결정, 검수 1회차) | 4xx(동의항목 꺼짐 등)는 거부하지 않고 이름 없음으로 보고 "사용자"(D-69). 5xx·시간 초과는 500 `INTERNAL_ERROR`. `SOCIAL_TOKEN_INVALID`는 `access_token_info` 단계의 거부에만 | FR-AUTH-07.AC1, D-69 |
 
 새 오류 코드는 없다. 기존 `TOKEN_EXPIRED`, `SESSION_INVALID`, `INTERNAL_ERROR`, `VALIDATION_FAILED`의 "언제" 열만 위 규칙에 맞게 넓힌다.
 
@@ -123,3 +124,4 @@
 
 | 회차 | 판정 | Critical | 비고 |
 | --- | --- | --- | --- |
+| 1 | 머지 가능 | 0 | Major 0, Minor 4: fcmToken reason·Kakao /v2/user/me 4xx는 리드 결정으로 api가 반영, ERD nickname 문장 정리는 data, SCREENS 이름 규칙은 그대로 둠(아래 줄이 기준을 설명) |
