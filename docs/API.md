@@ -1,10 +1,10 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.6 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.7 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-22, 응답 형식 1.1 추가)
+> 작성일: 2026-10-17 (갱신: 2026-10-26, 토큰 형식·인증 응답 모양 추가)
 
-이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 요청·응답의 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
+이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API의 요청·응답 모양은 3.1에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
 ---
 
@@ -17,9 +17,17 @@
 - JSON 필드는 camelCase, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 UTC (`2026-10-17T06:30:00Z`)
 - **날짜 범위는 1950-01-01 ~ 2050-12-31이다 (PRD D-74, R-15).** 일정, 메모 날짜, 직접 기념일을 만들거나 고칠 때(쓰기) 이 밖의 날짜가 있으면 400 `DATE_OUT_OF_RANGE`다. 날짜 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)는 다르다. 월 달력이 앞뒤 달 날짜도 그리므로 1950년 1월이나 2050년 12월에서는 `from`·`to`가 범위 밖으로 나간다. 이때 오류 없이 범위 안으로 잘라서 조회한다(R-15). 처음 만난 날은 1950-01-01보다 앞일 때만 이 코드이고, 오늘보다 뒤(2050년 이후 포함)면 `VALIDATION_FAILED`다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (ERD DB-13)
 - access 토큰 1시간, refresh 토큰은 회원 30일·게스트 365일, 사용할 때마다 교체 (PRD D-73, NFR-SEC-01, ERD DB-02). 로그인이 만료된 기기에는 푸시를 보내지 않는다 (R-16, 7장). 교체는 같은 세션 행의 토큰 해시와 만료를 갱신하는 것이라 `sid`는 로그인부터 로그아웃까지 바뀌지 않는다. 이전 refresh 토큰을 다시 보내면 401 `SESSION_INVALID`다
-- **한 계정은 한 기기에서만 로그인한다 (PRD D-51).** access 토큰에는 발급한 `auth_sessions.id`가 `sid` 클레임으로 들어 있다. 서버는 서명·만료 검사 뒤 요청마다 그 세션이 무효인지 본다. 무효인 이유가 `REPLACED`(다른 기기 로그인으로 끊김)면 401 `SESSION_REPLACED`, 그 밖의 무효(로그아웃, 탈퇴, 만료)면 401 `SESSION_INVALID`를 돌려준다
+- **토큰 형식 (PRD D-81, NFR-SEC-01).**
+  - **access 토큰**은 JWT다. HS256으로 서버 비밀 키로 서명하고, 클레임은 `sub`(사용자 ID, uuid 문자열), `sid`(세션 ID = `auth_sessions.id`), `iat`, `exp`(발급 + 1시간)다. **계정 종류(GUEST·MEMBER)는 토큰에 넣지 않는다.** 연동(`POST /auth/link`) 직후 같은 토큰으로 판단이 바뀌어야 하므로 서버가 요청마다 DB에서 읽는다 (R-14, R-17).
+  - **refresh 토큰**은 JWT가 아니라 보안 난수 32바이트를 base64url(패딩 없음)로 인코딩한 43자 무작위 문자열이다. 서버는 원문을 저장하지 않고 SHA-256 16진수 64자 해시만 `auth_sessions.refresh_token_hash`에 저장한다 (ERD DB-02). refresh 토큰은 세션 행으로 확인한다.
+  - 요청 헤더는 `Authorization: Bearer <access>`다. `POST /auth/refresh`는 access 토큰 없이 본문 `{refreshToken}`만 보낸다
+- **인증 실패 규칙과 검사 순서 (NFR-SEC-01).** access 토큰이 필요한 경로는 아래 순서로 검사하고 처음 걸린 것으로 응답한다.
+  1. **형식·서명**: `Authorization` 헤더가 없음, `Bearer <토큰>` 형식이 아님, JWT 형식이 아님, 서명이 틀림, 필요한 클레임(`sub`, `sid`, `iat`, `exp`)이 없거나 값이 틀림 → 401 `SESSION_INVALID`
+  2. **만료**: 서명은 맞고 `exp`가 지났음 → 401 `TOKEN_EXPIRED` (앱이 `POST /auth/refresh` 후 재시도)
+  3. **세션**: `sid`의 세션이 무효이면 `REPLACED`는 401 `SESSION_REPLACED`, 그 밖의 무효(로그아웃, 탈퇴, 만료)는 401 `SESSION_INVALID` (아래 "한 계정은 한 기기에서만" 항목)
+- **한 계정은 한 기기에서만 로그인한다 (PRD D-51).** access 토큰에는 발급한 `auth_sessions.id`가 `sid` 클레임으로 들어 있다. 서버는 서명·만료 검사 뒤(위 검사 순서) 요청마다 그 세션이 무효인지 본다. 무효인 이유가 `REPLACED`(다른 기기 로그인으로 끊김)면 401 `SESSION_REPLACED`, 그 밖의 무효(로그아웃, 탈퇴, 만료)면 401 `SESSION_INVALID`를 돌려준다
 - 앱은 401 `SESSION_REPLACED`를 받으면 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동한다 (FR-AUTH-02.AC3). `SESSION_INVALID`는 안내 없이 SCR-START-01로 보낸다. 이전 기기의 access 토큰이 이미 만료됐다면 `POST /auth/refresh`가 같은 기준으로 `SESSION_REPLACED`를 돌려주므로 안내는 그때 뜬다
-- 입력 길이 제한은 NFR-LIMIT-01을 따르고, 넘으면 400 `VALIDATION_FAILED`이며 필드 이름은 `details.fields`에 담는다 (1.1)
+- 입력 길이 제한은 NFR-LIMIT-01을 따르고 글자 수는 유니코드 코드 포인트로 센다 (PRD D-82). 넘으면 400 `VALIDATION_FAILED`이며 필드 이름은 `details.fields`에 담는다 (1.1)
 - 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 응답 모양은 1.1
 
 
@@ -98,22 +106,62 @@
 
 ### 3.1 인증·내 정보
 
-| 메서드 | 경로 | 설명 | 권한 | FR |
-| --- | --- | --- | --- | --- |
-| POST | /auth/guest | 게스트 시작. 새 사용자라 끊을 이전 세션·기기는 없다 (4.1) | 없음 | FR-AUTH-01 |
-| POST | /auth/social | 소셜 로그인 `{provider, token}`, 응답에 `isNewUser`. 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 `REPLACED`로 끊고 `devices`를 모두 지운다 (4.2). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID` | 없음 | FR-AUTH-02, NFR-SEC-01 |
-| POST | /auth/link | 게스트 → 회원 연동 `{provider, token}`. 같은 기기에서 하므로 현재 세션을 그대로 쓰고, 다른 세션을 끊거나 `devices`를 지우지 않으며 응답에 새 토큰도 담지 않는다 (4.3). 닉네임이 정확히 "게스트"면 소셜 프로필 이름으로 바꾼다 (D-68, D-69). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 그 소셜 계정이 이미 다른 회원이면 409 `SOCIAL_ALREADY_USED`(이때 앱은 4.7로 이어간다), 회원이 부르면 403 `GUEST_ONLY` | R-14 (GUEST만) | FR-AUTH-03, NFR-SEC-01 |
-| POST | /auth/switch | 게스트 → 기존 회원 계정 로그인 `{provider, token}`. 한 트랜잭션으로 게스트 계정·기록을 탈퇴와 같이 삭제하고 그 소셜 계정의 회원으로 로그인한다 (4.7, ERD DB-12). 응답은 `/auth/social`과 같다(`isNewUser: false`, 새 access·refresh 토큰). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 회원이 부르면 403 `GUEST_ONLY`, 그 소셜 계정으로 가입한 회원이 없으면 404 `SOCIAL_NOT_REGISTERED`(아무것도 바꾸지 않음) | R-14 (GUEST만) | FR-AUTH-03.AC3, D-67, NFR-SEC-01 |
-| POST | /auth/refresh | refresh 토큰 교체 발급 (같은 세션 행을 갱신하므로 `sid`는 그대로). 그 세션이 `REPLACED`로 끊겼으면 401 `SESSION_REPLACED`, 이전 refresh 토큰 재사용을 포함한 그 밖의 무효는 401 `SESSION_INVALID` | refresh 토큰 | NFR-SEC-01, FR-AUTH-02.AC3 |
-| POST | /auth/logout | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80) | R-17 (MEMBER만) | FR-AUTH-05 |
-| GET | /me | 내 정보 + 현재 공간 요약 (종류, 공간 ID, 상대, 사람 색, 처음 만난 날, `importPending`). SCR-COUPLE-02의 연결 확인 호출로도 쓴다 (4.4) | 로그인 | FR-SET-01, FR-COUPLE-02.AC5 |
-| PATCH | /me | 닉네임(최대 10자, 넘으면 400 `VALIDATION_FAILED`), 시간대 변경 | 로그인 | FR-AUTH-07, NFR-LIMIT-01 |
-| PUT | /me/profile-image | 프로필 사진 업로드 (multipart) | 로그인 | FR-AUTH-07.AC3 |
-| DELETE | /me/profile-image | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
-| GET | /users/{id}/profile-image | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
-| DELETE | /me | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3) | 로그인 | FR-AUTH-06 |
-| PUT | /me/devices | FCM 토큰 등록·갱신. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
-| GET, PATCH | /me/notification-settings | 알림 설정 조회·변경. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
+"요청 → 성공" 열은 요청 본문과 성공 상태·응답 본문이다. `AuthTokens`, `Me`는 표 아래에 한 번 정의한다. 오류 응답은 1.1과 5장을 따른다.
+
+| 메서드 | 경로 | 요청 → 성공 | 설명 | 권한 | FR |
+| --- | --- | --- | --- | --- | --- |
+| POST | /auth/guest | 본문 없음 → 201 `AuthTokens` (`isNewUser: true`) | 게스트 시작. 새 사용자라 끊을 이전 세션·기기는 없다 (4.1) | 없음 | FR-AUTH-01 |
+| POST | /auth/social | `{provider: "GOOGLE" \| "KAKAO", token: string}` → 200 `AuthTokens` (신규 가입이면 `isNewUser: true`) | 소셜 로그인. 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 `REPLACED`로 끊고 `devices`를 모두 지운다 (4.2). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID` | 없음 | FR-AUTH-02, NFR-SEC-01 |
+| POST | /auth/link | `{provider, token}` → 204 (새 토큰 없음, 앱은 `GET /me`로 다시 읽음) | 게스트 → 회원 연동. 같은 기기에서 하므로 현재 세션을 그대로 쓰고, 다른 세션을 끊거나 `devices`를 지우지 않으며 응답에 새 토큰도 담지 않는다 (4.3). 닉네임이 정확히 "게스트"면 소셜 프로필 이름으로 바꾼다 (D-68, D-69). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 그 소셜 계정이 이미 다른 회원이면 409 `SOCIAL_ALREADY_USED`(이때 앱은 4.7로 이어간다), 회원이 부르면 403 `GUEST_ONLY` | R-14 (GUEST만) | FR-AUTH-03, NFR-SEC-01 |
+| POST | /auth/switch | `{provider, token}` → 200 `AuthTokens` (`isNewUser: false`) | 게스트 → 기존 회원 계정 로그인. 한 트랜잭션으로 게스트 계정·기록을 탈퇴와 같이 삭제하고 그 소셜 계정의 회원으로 로그인한다 (4.7, ERD DB-12). 새 access·refresh 토큰을 돌려준다. 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 회원이 부르면 403 `GUEST_ONLY`, 그 소셜 계정으로 가입한 회원이 없으면 404 `SOCIAL_NOT_REGISTERED`(아무것도 바꾸지 않음) | R-14 (GUEST만) | FR-AUTH-03.AC3, D-67, NFR-SEC-01 |
+| POST | /auth/refresh | `{refreshToken: string}` (access 토큰 불필요) → 200 `AuthTokens` (`isNewUser: false`, 새 refresh 토큰) | refresh 토큰 교체 발급 (같은 세션 행을 갱신하므로 `sid`는 그대로). 그 세션이 `REPLACED`로 끊겼으면 401 `SESSION_REPLACED`, 이전 refresh 토큰 재사용을 포함한 그 밖의 무효는 401 `SESSION_INVALID` | refresh 토큰 | NFR-SEC-01, FR-AUTH-02.AC3 |
+| POST | /auth/logout | 본문 없음 → 204 | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80) | R-17 (MEMBER만) | FR-AUTH-05 |
+| GET | /me | → 200 `Me` | 내 정보 + 현재 공간 요약 (종류, 공간 ID, 상대, 사람 색, 처음 만난 날, `importPending`). SCR-COUPLE-02의 연결 확인 호출로도 쓴다 (4.4) | 로그인 | FR-SET-01, FR-COUPLE-02.AC5 |
+| PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다 | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
+| PUT | /me/profile-image | multipart (요청·응답 모양은 OpenAPI 기준) | 프로필 사진 업로드 | 로그인 | FR-AUTH-07.AC3 |
+| DELETE | /me/profile-image | (OpenAPI 기준) | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
+| GET | /users/{id}/profile-image | (OpenAPI 기준) | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
+| DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3) | 로그인 | FR-AUTH-06 |
+| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었거나 255자를 넘으면 400 `VALIDATION_FAILED`(`fcmToken`), `platform`이 두 값이 아니면 `INVALID`. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
+| GET, PATCH | /me/notification-settings | (OpenAPI 기준) | 알림 설정 조회·변경. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
+
+**공통 응답 모양** (JSON 필드는 camelCase, 일시는 ISO 8601 UTC. 값이 없는 필드는 빼지 않고 `null`로 보낸다, 1.1)
+
+`AuthTokens` (토큰을 주는 `/auth/guest`, `/auth/social`, `/auth/switch`, `/auth/refresh`의 응답 본문)
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `accessToken` | string | access JWT (1장) |
+| `accessTokenExpiresAt` | 일시 | access 만료 시각 (발급 + 1시간) |
+| `refreshToken` | string | refresh 토큰 원문 (43자). 앱은 암호화해 저장한다 |
+| `refreshTokenExpiresAt` | 일시 | refresh 만료 시각 (회원 30일, 게스트 365일) |
+| `isNewUser` | boolean | 이번 요청으로 사용자가 새로 만들어졌는지. `/auth/guest`는 `true`, `/auth/switch`·`/auth/refresh`는 `false`, `/auth/social`은 신규 가입이면 `true` |
+
+`Me` (`GET /me`, `PATCH /me`의 응답 본문)
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `id` | uuid | 사용자 ID |
+| `accountType` | `GUEST` \| `MEMBER` | `users.account_type` |
+| `nickname` | string | |
+| `timeZone` | string | IANA 시간대 (`users.time_zone`) |
+| `providers` | (`GOOGLE` \| `KAKAO`)[] | 연결된 로그인 수단. 게스트는 `[]` (FR-SET-01) |
+| `hasProfileImage` | boolean | 프로필 사진이 있는지. 이미지는 `GET /users/{id}/profile-image` |
+| `space` | `MeSpace` | 현재 활성 공간 요약 |
+
+`MeSpace`
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `id` | uuid | 활성 공간 ID |
+| `type` | `PERSONAL` \| `COUPLE` | |
+| `myColor` | string | 내 사람 색 팔레트 키 (`pick-*`) |
+| `partner` | `MePartner` \| null | 커플 공간의 상대. 개인 공간이면 `null` |
+| `togetherColor` | string \| null | '함께' 색. 개인 공간이면 `null` |
+| `startDate` | 날짜 \| null | 처음 만난 날. 개인 공간이거나 정하지 않았으면 `null` |
+| `importPending` | boolean | 가져오기 대기 중인 개인 공간이 있는지 (FR-COUPLE-03, 4.4의 10단계) |
+
+`MePartner`: `id`(uuid), `nickname`(string), `color`(팔레트 키), `hasProfileImage`(boolean)
 
 ### 3.2 공간·커플
 
@@ -186,26 +234,27 @@
 
 1. 앱이 `POST /auth/guest`를 호출한다.
 2. 서버가 `users`(GUEST, 닉네임 "게스트"), `notification_settings`, `spaces`(PERSONAL), `space_members`(색 주황)를 만든다.
-3. access 토큰(`sid` = 새 세션 ID)과 refresh 토큰(365일)을 돌려준다. 앱은 refresh 토큰을 암호화해 저장한다.
+3. 201과 `AuthTokens`(3.1)를 돌려준다. access 토큰(`sid` = 새 세션 ID)과 refresh 토큰(365일), `isNewUser: true`가 들어 있다. refresh 토큰은 무작위 문자열이고 서버는 해시만 저장한다 (1장, D-81). 앱은 refresh 토큰을 암호화해 저장한다.
 4. 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)은 모두 4.2의 "이전 세션·기기 정리"를 같은 코드로 처리한다 (ERD DB-12). 게스트 시작은 방금 만든 사용자라 끊을 세션과 지울 기기가 없을 뿐이다. 게스트 → 기존 계정 로그인은 4.7이다. 게스트 연동(4.3)은 이 정리를 하지 않는다.
 5. 앱을 지운 게스트의 서버 데이터는 API가 지우지 않는다. 유효한 세션이 없어진 게스트를 정리 작업이 탈퇴와 같이 삭제한다 (PRD Q-11, ERD 4.4 정리 작업).
 
 ### 4.2 소셜 로그인 (FR-AUTH-02)
 
 1. 앱이 Google SDK에서 ID 토큰, Kakao SDK에서 액세스 토큰을 받아 `POST /auth/social`로 보낸다.
-2. 서버가 제공자에게 검증한다 (NFR-SEC-01). 하나라도 어긋나면 401 `SOCIAL_TOKEN_INVALID`로 거부하고 아무것도 바꾸지 않는다.
-   - **Google**: ID 토큰의 서명(구글 공개키), `iss`(`accounts.google.com`), `aud`(둘이서 앱의 클라이언트 ID), `exp`를 확인한다. 통과하면 토큰의 사용자 ID를 `provider_user_id`로 쓴다.
-   - **Kakao**: `GET https://kapi.kakao.com/v1/user/access_token_info`로 토큰을 확인하고, 응답의 `app_id`가 서버에 설정된 둘이서 앱 ID와 같은지 본다. 같을 때만 응답의 사용자 ID를 `provider_user_id`로 쓴다. 다른 앱에서 발급된 토큰은 여기서 걸러진다.
-3. `social_accounts`에 있으면 그 사용자로 로그인한다. 없으면 MEMBER 사용자와 개인 공간을 만들고 `isNewUser: true`를 돌려준다. 닉네임 기본값은 소셜 프로필 이름이고 10자가 넘으면 앞 10자만 쓴다 (FR-AUTH-07.AC1, D-56). 소셜 계정에서 이름을 받지 못했거나 공백뿐이면 "사용자"를 쓴다 (D-69). 앱은 이때 SCR-COUPLE-01을 띄운다 (PRD D-31).
-4. **이전 세션·기기 정리 (D-51)**: (`POST /auth/switch`도 4.7에서 같은 코드를 쓴다.) 3단계와 같은 트랜잭션에서 그 사용자의 다른 유효한 `auth_sessions`를 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고, 그 사용자의 `devices` 행을 모두 지운다. 새 세션의 access·refresh 토큰을 돌려준다.
+2. 서버가 제공자에게 검증한다 (NFR-SEC-01). 토큰이 어긋나면 401 `SOCIAL_TOKEN_INVALID`로 거부하고 아무것도 바꾸지 않는다.
+   - **Google**: ID 토큰의 서명(구글 공개키), `iss`, `aud`(둘이서 앱의 클라이언트 ID), `exp`를 확인한다. `iss`는 `accounts.google.com`과 `https://accounts.google.com` 두 값 모두 허용한다. 통과하면 토큰의 사용자 ID를 `provider_user_id`로 쓰고, 프로필 이름은 같은 ID 토큰의 `name` 클레임에서 읽는다.
+   - **Kakao**: `GET https://kapi.kakao.com/v1/user/access_token_info`로 토큰을 확인하고, 응답의 `app_id`가 서버에 설정된 둘이서 앱 ID와 같은지 본다. 같을 때만 응답의 사용자 ID를 `provider_user_id`로 쓴다. 다른 앱에서 발급된 토큰은 여기서 걸러진다. 프로필 이름이 필요한 경우에만(아래 3단계의 신규 가입, 4.3의 "게스트" 닉네임 교체) 토큰 확인 다음에 `GET https://kapi.kakao.com/v2/user/me`를 호출해 `kakao_account.profile.nickname`**만** 받는다. 기존 회원의 로그인에서는 이 호출을 하지 않고 `access_token_info` 확인만 한다. 이메일 등 다른 값은 받거나 저장하지 않는다 (NFR-PRIV-01). Kakao Developers에서 동의항목 "닉네임"이 켜져 있어야 한다 (사람이 할 일).
+   - **제공자 장애**: Google 공개키를 받지 못함, Kakao가 5xx를 돌려주거나 시간이 초과됨은 사용자의 토큰이 틀린 것이 아니므로 500 `INTERNAL_ERROR`로 응답하고 아무것도 바꾸지 않는다. Kakao가 토큰을 거부(4xx)하면 401 `SOCIAL_TOKEN_INVALID`다.
+3. `social_accounts`에 있으면 그 사용자로 로그인한다. 없으면 MEMBER 사용자와 개인 공간을 만들고 `isNewUser: true`를 돌려준다. 닉네임 기본값은 소셜 프로필 이름(Google `name`, Kakao `kakao_account.profile.nickname`)에서 앞뒤 공백을 지운 값이고, 코드 포인트 10개를 넘으면 앞 10개만 쓴다 (FR-AUTH-07.AC1, D-56, D-82). 소셜 계정에서 이름을 받지 못했거나 공백뿐이면 "사용자"를 쓴다 (D-69). 앱은 이때 SCR-COUPLE-01을 띄운다 (PRD D-31).
+4. **이전 세션·기기 정리 (D-51)**: (`POST /auth/switch`도 4.7에서 같은 코드를 쓴다.) 3단계와 같은 트랜잭션에서 그 사용자의 다른 유효한 `auth_sessions`를 모두 `revoked_at` = 지금, `revoked_reason = REPLACED`로 바꾸고, 그 사용자의 `devices` 행을 모두 지운다. 새 세션의 `AuthTokens`(3.1)를 200으로 돌려준다.
 5. 앱은 로그인 직후 `PUT /me/devices`로 새 기기의 FCM 토큰을 다시 등록한다. 이전 기기는 푸시를 받지 못하고, 다음 요청에서 401 `SESSION_REPLACED`를 받아 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여준 뒤 SCR-START-01로 이동한다 (1장).
 
 ### 4.3 게스트 → 회원 연동 (FR-AUTH-03)
 
-1. 게스트가 `POST /auth/link`로 소셜 토큰을 보낸다. 4.2의 2단계처럼 검증한다. 실패하면 401 `SOCIAL_TOKEN_INVALID`.
+1. 게스트가 `POST /auth/link`로 소셜 토큰을 보낸다. 4.2의 2단계처럼 검증한다. Kakao `GET /v2/user/me`는 4단계에서 닉네임이 정확히 "게스트"라 소셜 프로필 이름으로 바꿔야 할 때만 부른다. 토큰이 틀리면 401 `SOCIAL_TOKEN_INVALID`, 제공자 장애면 500 `INTERNAL_ERROR`이고 아무것도 바꾸지 않는다.
 2. `social_accounts`에 행을 넣는다. UNIQUE 위반이면 409 `SOCIAL_ALREADY_USED`로 거부하고 아무것도 바꾸지 않는다 (PRD Q-01). 이때 앱은 "이미 가입된 계정이에요" 안내를 보여주고 4.7의 흐름으로 이어간다 (FR-AUTH-03.AC2).
-3. `users.account_type`을 MEMBER로 바꾼다. 사용자 ID와 모든 데이터는 그대로다. 다음 토큰 갱신부터 회원 만료 정책(30일)을 쓴다.
-4. **닉네임 (D-68, D-69)**: 같은 트랜잭션에서 `users.nickname`이 정확히 "게스트"면 소셜 프로필 이름(앞 10자)으로 바꾼다. 프로필 이름이 없거나 공백뿐이면 "사용자"로 바꾼다. "게스트"가 아닌 닉네임(사용자가 직접 바꾼 것)은 그대로 둔다. 응답에는 새 토큰이 없으므로 앱은 연동 뒤 `GET /me`로 닉네임을 다시 읽는다.
+3. `users.account_type`을 MEMBER로 바꾼다. 사용자 ID와 모든 데이터는 그대로다. 계정 종류는 access 토큰에 들어 있지 않고 서버가 DB에서 읽으므로 같은 access 토큰으로 바로 회원으로 판단한다 (1장). 다음 토큰 갱신부터 회원 만료 정책(30일)을 쓴다.
+4. **닉네임 (D-68, D-69, D-82)**: 같은 트랜잭션에서 `users.nickname`이 정확히 "게스트"면 소셜 프로필 이름(앞뒤 공백을 지우고 코드 포인트 앞 10개)으로 바꾼다. 프로필 이름이 없거나 공백뿐이면 "사용자"로 바꾼다. "게스트"가 아닌 닉네임(사용자가 직접 바꾼 것)은 그대로 둔다. 응답은 204이고 새 토큰이 없으므로 앱은 연동 뒤 `GET /me`로 닉네임을 다시 읽는다.
 5. 연동은 같은 기기에서 하므로 4.2의 4단계(이전 세션 `REPLACED`, `devices` 삭제)를 하지 않는다. 현재 세션과 `sid`, 등록된 FCM 토큰을 그대로 쓰고 응답에 새 토큰을 담지 않는다. 앱도 토큰을 바꾸거나 `PUT /me/devices`를 다시 부를 필요가 없다.
 6. **앱 동작 (D-79)**: 게스트가 커플 연결 메뉴의 [로그인하고 연결하기]로 연동을 시작했으면, 연동이 끝난 뒤 SCR-COUPLE-01(회원 화면)로 이동한다. API는 달라지지 않는다.
 
@@ -241,20 +290,20 @@
 
 ### 4.6 탈퇴 (FR-AUTH-06)
 
-`DELETE /me`는 한 트랜잭션에서 ERD 4.3의 순서로 처리한다: 연결 해제 → 속했던 커플 공간 `purge_at`을 +90일로 연장 → 개인 공간 삭제 → 사용자 익명화. **Kakao 연결 끊기 (FR-AUTH-06.AC3)**: 탈퇴 트랜잭션이 **커밋된 뒤에** 호출한다. `social_accounts.provider`가 `KAKAO`면 트랜잭션 안에서 행을 지우기 전에 `provider_user_id`를 읽어 두고, 커밋 뒤 Kakao 연결 끊기 API(`POST https://kapi.kakao.com/v1/user/unlink`, `target_id_type=user_id`, `target_id` = 읽어 둔 `provider_user_id`)를 서버의 Kakao 어드민 키로 호출한다. 어드민 키는 서버 설정값이며 문서와 로그에 쓰지 않는다. 호출이 실패하거나 시간이 초과돼도 이미 끝난 탈퇴를 되돌리지 않고 실패했다는 사실만 로그에 남긴다(키·토큰 제외). 외부 호출은 트랜잭션 밖이라 응답이 길어지지 않도록 짧은 제한 시간을 둔다. Google 회원과 게스트(4.7 포함)는 이 단계가 없다. 커플 공간에 있던 사용자가 탈퇴하면 연결 해제 단계에서 상대에게 4.5의 5단계처럼 `COUPLE_UNLINKED` 알림·푸시·동기화 신호(`SPACE`, `UNLINKED`)를 보내되 문구는 탈퇴 전용(탈퇴해 연결이 해제됐어요, 복구 안내 없음)을 쓴다 (D-53). 문구의 [상대 이름]은 받는 사람 기준의 상대, 곧 탈퇴하는 사용자의 익명화 전 닉네임이다. 응답 후 앱은 로컬 데이터를 모두 지우고 SCR-START-01로 이동한다.
+`DELETE /me`는 한 트랜잭션에서 ERD 4.3의 순서로 처리한다: 연결 해제 → 속했던 커플 공간 `purge_at`을 +90일로 연장 → 개인 공간 삭제 → 사용자 익명화. **Kakao 연결 끊기 (FR-AUTH-06.AC3)**: 탈퇴 트랜잭션이 **커밋된 뒤에** 호출한다. `social_accounts.provider`가 `KAKAO`면 트랜잭션 안에서 행을 지우기 전에 `provider_user_id`를 읽어 두고, 커밋 뒤 Kakao 연결 끊기 API(`POST https://kapi.kakao.com/v1/user/unlink`, `target_id_type=user_id`, `target_id` = 읽어 둔 `provider_user_id`)를 서버의 Kakao 어드민 키로 호출한다. 어드민 키는 서버 설정값이며 문서와 로그에 쓰지 않는다. 호출이 실패하거나 시간이 초과돼도 이미 끝난 탈퇴를 되돌리지 않고 실패했다는 사실만 로그에 남긴다(키·토큰 제외). 외부 호출은 트랜잭션 밖이라 응답이 길어지지 않도록 짧은 제한 시간을 둔다. Google 회원과 게스트(4.7 포함)는 이 단계가 없다. 커플 공간에 있던 사용자가 탈퇴하면 연결 해제 단계에서 상대에게 4.5의 5단계처럼 `COUPLE_UNLINKED` 알림·푸시·동기화 신호(`SPACE`, `UNLINKED`)를 보내되 문구는 탈퇴 전용(탈퇴해 연결이 해제됐어요, 복구 안내 없음)을 쓴다 (D-53). 문구의 [상대 이름]은 받는 사람 기준의 상대, 곧 탈퇴하는 사용자의 익명화 전 닉네임이다. 성공하면 204(본문 없음)를 돌려주고, 앱은 응답 후 로컬 데이터를 모두 지우고 SCR-START-01로 이동한다.
 
 ### 4.7 게스트 → 기존 계정 로그인 (FR-AUTH-03.AC2~AC3, D-67)
 
 게스트가 연동하려는 소셜 계정이 이미 회원이면, 게스트로 쓴 기록을 지우고 그 계정으로 로그인한다. 데이터는 합치지 않는다 (PRD Q-01). 게스트는 로그아웃이 없어 원래 계정으로 돌아갈 길이 이것뿐이다.
 
 1. **앱 흐름**: `POST /auth/link`가 409 `SOCIAL_ALREADY_USED`를 돌려주면 앱은 "이미 가입된 계정이에요" 다이얼로그와 [그 계정으로 로그인]을 보여준다. 누르면 "게스트로 쓴 기록은 모두 삭제돼요" 확인 다이얼로그를 한 번 더 보여주고, 확인하면 같은 소셜 토큰으로 `POST /auth/switch`를 호출한다(소셜 SDK 토큰을 다시 받아도 된다). 두 다이얼로그 어디서든 취소하면 아무것도 호출하지 않고 게스트로 계속 쓴다.
-2. 서버가 게스트의 access 토큰을 확인한다(R-14, 회원이면 403 `GUEST_ONLY`). 4.2의 2단계처럼 소셜 토큰을 검증한다. 실패하면 401 `SOCIAL_TOKEN_INVALID`로 거부하고 아무것도 바꾸지 않는다.
+2. 서버가 게스트의 access 토큰을 확인한다(R-14, 회원이면 403 `GUEST_ONLY`). 4.2의 2단계처럼 소셜 토큰을 검증한다. 토큰이 틀리면 401 `SOCIAL_TOKEN_INVALID`, 제공자 장애면 500 `INTERNAL_ERROR`로 거부하고 아무것도 바꾸지 않는다. 이 경로는 닉네임이 필요 없으므로 Kakao는 `access_token_info` 확인만 하고 `GET /v2/user/me`는 부르지 않는다.
 3. `social_accounts`에서 그 소셜 계정을 찾는다. 없으면 404 `SOCIAL_NOT_REGISTERED`로 거부하고 아무것도 바꾸지 않는다. 앱은 이때 `POST /auth/link`로 연동하면 된다.
 4. **한 트랜잭션으로 처리한다 (ERD DB-12)**. 트랜잭션 안에서 먼저 `social_accounts`를 다시 조회하고 대상 회원 행을 잠근다(`SELECT … FOR UPDATE`). 3단계 조회와 트랜잭션 사이에 그 회원이 탈퇴했을 수 있기 때문이다. 행이 없거나 탈퇴한 회원이면 롤백하고 404 `SOCIAL_NOT_REGISTERED`를 돌려준다. 이때 게스트 계정은 그대로 남는다. 확인이 끝나면 다음을 처리한다:
    1. 게스트 사용자를 4.6의 탈퇴와 같이 처리한다: 게스트의 세션을 `WITHDRAWN`으로 끊은 뒤 삭제하고, 개인 공간과 기록을 삭제하고, 사용자를 익명화한다. 게스트는 커플 공간에 들어갈 수 없으므로 연결 해제 단계와 Kakao 연결 끊기는 없다.
    2. 4.2의 "이전 세션·기기 정리"를 같은 코드로 처리한다: 그 회원의 다른 유효한 세션은 `REPLACED`, `devices`는 모두 삭제.
    3. 그 회원의 새 세션을 만든다.
-5. 응답은 `/auth/social`과 같다(`isNewUser: false`, 새 access·refresh 토큰). 트랜잭션이 실패하면 게스트 계정도 그대로 남는다.
+5. 200과 `AuthTokens`(3.1)를 돌려준다(`isNewUser: false`, 새 access·refresh 토큰). 트랜잭션이 실패하면 게스트 계정도 그대로 남는다.
 6. **앱 동작**: 앱은 게스트의 토큰과 로컬 데이터를 지우고 새 토큰을 저장한 뒤 `PUT /me/devices`로 FCM 토큰을 다시 등록하고, `GET /me`로 그 계정의 현재 상태(개인 공간·커플 공간, `importPending`)로 이동한다. 이전 게스트 access 토큰으로 다시 요청하면 401 `SESSION_INVALID`다 (1장).
 7. 다른 기기에서 그 회원 계정에 로그인해 있었다면 그 기기는 4단계의 2번(이전 세션 정리) 때문에 다음 요청에서 401 `SESSION_REPLACED`를 받는다 (1장).
 
@@ -264,13 +313,13 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 10자), 종료가 시작보다 이름, 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`), 범위가 3개월 초과 (`GET /anniversaries`), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드) | FR-CAL-02.AC3, NFR-LIMIT-01, FR-CAL-01.AC2, FR-COUPLE-04.AC3 |
+| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었거나 255자 초과 (`PUT /me/devices`, `fcmToken`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름, 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`), 범위가 3개월 초과 (`GET /anniversaries`), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC3 |
 | 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`, `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
-| 401 | TOKEN_EXPIRED | access 토큰 만료 (앱이 refresh 후 재시도) | |
-| 401 | SESSION_INVALID | 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장 |
+| 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
+| 401 | SESSION_INVALID | `Authorization` 헤더가 없음, `Bearer` 형식이 아님, access 토큰의 서명이 틀림, 클레임이 없거나 틀림. 또는 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장, NFR-SEC-01 |
 | 401 | SESSION_REPLACED | 다른 기기 로그인으로 이 기기의 세션이 끊김. 앱은 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동 | D-51, FR-AUTH-02.AC3 |
-| 401 | SOCIAL_TOKEN_INVALID | 소셜 토큰 검증 실패: Google은 서명·`iss`·`aud`·`exp`, Kakao는 `app_id`가 맞지 않음 (`/auth/social`, `/auth/link`, `/auth/switch`) | NFR-SEC-01 |
+| 401 | SOCIAL_TOKEN_INVALID | 소셜 토큰 검증 실패: Google은 서명·`iss`(허용값 `accounts.google.com`, `https://accounts.google.com` 두 가지가 아님)·`aud`·`exp`, Kakao는 `app_id`가 맞지 않거나 Kakao가 토큰을 거부(4xx)함 (`/auth/social`, `/auth/link`, `/auth/switch`). 제공자 장애는 이 코드가 아니라 500 `INTERNAL_ERROR` | NFR-SEC-01 |
 | 403 | NOT_AUTHOR | 작성자가 아닌 수정·삭제, 작성자가 아닌 사용자의 일정 대상(`isTogether`) 변경 | R-02, R-03, R-05, R-13 |
 | 403 | GUEST_NOT_ALLOWED | 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름 | R-09, R-17, D-07, FR-AUTH-05 |
 | 403 | GUEST_ONLY | 게스트만 부를 수 있는 경로(`/auth/link`, `/auth/switch`)를 회원이 부름. `GUEST_NOT_ALLOWED`와 반대 경우다 | R-14, D-67, FR-AUTH-03 |
@@ -289,7 +338,7 @@
 | 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님 | NFR-FILE-01 |
 | 429 | INVITE_RATE_LIMITED | 1시간 내 초대코드 오입력 10회. `details.retryAfterSeconds`에 다시 입력할 수 있을 때까지 남은 초 | NFR-SEC-03 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청. `details.retryAfterSeconds` | FR-COUPLE-01.AC3 |
-| 500 | INTERNAL_ERROR | 서버 내부 오류. `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다 | 1.1 |
+| 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다 | 1.1, NFR-SEC-01 |
 
 ---
 
@@ -345,7 +394,7 @@
 | FR-AUTH-03 게스트 → 회원 연동 (D-67, D-68, D-79) | POST /auth/link, POST /auth/switch | 4.3 (닉네임, 연동 뒤 SCR-COUPLE-01), 4.7, R-14 (403 `GUEST_ONLY`), 409 `SOCIAL_ALREADY_USED`, 404 `SOCIAL_NOT_REGISTERED`, ERD DB-12 |
 | FR-AUTH-05 로그아웃 (D-50, D-80) | POST /auth/logout | R-17 (게스트는 403 `GUEST_NOT_ALLOWED`), `devices` 삭제, "다른 계정으로 로그인"은 같은 호출 (앱 동작) |
 | FR-AUTH-06 탈퇴 | DELETE /me | 4.6 (AC3 Kakao 연결 끊기), 7장 (탈퇴 전용 해제 알림) |
-| FR-AUTH-07 프로필 | /me, /me/profile-image, /users/{id}/profile-image | R-11, 8장, 닉네임 10자, 이름 없으면 "사용자" (D-69, 4.2, 4.3) |
+| FR-AUTH-07 프로필 | /me, /me/profile-image, /users/{id}/profile-image | R-11, 8장, 닉네임 코드 포인트 10개·앞뒤 공백 제거 (D-82), 이름 없으면 "사용자" (D-69, 4.2, 4.3) |
 | FR-AUTH-08 이용 동의, FR-AUTH-09 앱 밖 계정 삭제 요청 | API 없음(앱·웹) | |
 | Q-11 게스트 정리 | API 없음 (정리 작업) | 4.1의 5단계, ERD 4.4 |
 | FR-COUPLE-01~02, 06 | /invite-codes, /invite-codes/current, /couple/join, GET /me | 4.4, 6장(`LINKED`), R-09 |
@@ -363,7 +412,9 @@
 | FR-MEMO-05 | /memos/pinned, /memos/{id}/pin | R-04 |
 | FR-MEMO-06 | /memos/{id}/favorite, ?view=favorites | R-06 |
 | FR-NOTI-01~04 | /me/devices, /me/notification-settings (게스트 포함, D-62), notifyPartner | 6장, 7장, R-16 (유효 세션이 있을 때만 푸시, D-73), 알림 권한은 앱 동작 (D-70) |
-| NFR-SEC-01 토큰·세션 (D-73) | /auth/*, 푸시 전송 | 1장 토큰 수명, R-16, 7장, ERD DB-14 |
+| NFR-SEC-01 토큰·세션 (D-73, D-81) | /auth/*, 푸시 전송 | 1장 토큰 수명·토큰 형식(access JWT, refresh 무작위 문자열)·인증 실패 규칙과 검사 순서, 3.1 `AuthTokens`·`Me`, 4.2 (Google `iss` 두 값, Kakao `v2/user/me`, 제공자 장애는 500 `INTERNAL_ERROR`), R-16, 7장, ERD DB-02, DB-14 |
+| NFR-LIMIT-01 글자 수 기준 (D-82) | PATCH /me, 소셜 프로필 이름 | 1장(코드 포인트로 센다), 3.1 `PATCH /me`(앞뒤 공백 제거, 빈 값은 `REQUIRED`, 초과는 `TOO_LONG`), 4.2의 3단계, 4.3의 4단계 |
+| NFR-PRIV-01 소셜 개인정보 최소 수집 | /auth/social, /auth/link | 4.2 (Kakao는 `kakao_account.profile.nickname`만 받음, 동의항목 "닉네임") |
 | FR-NOTI-05 알림 목록 | /notifications, /notifications/unread-count, /notifications/{id}/read | R-12, 3.5, 6장, 7장 |
 | FR-SET-01 | GET /me, GET /space | |
 | D-57 메모 작성자 닉네임 | API 변경 없음 | 앱이 `GET /space`의 구성원 닉네임을 메모의 `author_id`와 맞춰 채운다 |

@@ -1,6 +1,6 @@
 # PRD v0.7 영향 분석
 
-> 상태: 승인 대기
+> 상태: 진행 중
 > 이전 버전: v0.6 → 새 버전: v0.7
 > 브랜치: sync/prd-v0.7
 > PR: (PR 완료 후 링크)
@@ -100,6 +100,7 @@
 | Google `iss` | `accounts.google.com`과 `https://accounts.google.com` 둘 다 허용 | NFR-SEC-01 |
 | Google 이름 | ID 토큰의 `name` 클레임. 없거나 공백뿐이면 "사용자" (D-69) | FR-AUTH-07.AC1 |
 | Kakao 이름 | 토큰 확인(`access_token_info`) 뒤 `GET https://kapi.kakao.com/v2/user/me`로 `kakao_account.profile.nickname`만 받는다. 없거나 공백뿐이면 "사용자". 이메일 등 다른 값은 받거나 저장하지 않는다 (NFR-PRIV-01). Kakao Developers에서 "닉네임" 동의항목이 켜져 있어야 한다 | FR-AUTH-07.AC1, D-69 |
+| Kakao 이름 조회 시점 (리드 결정) | `/v2/user/me`는 닉네임이 필요한 때만 부른다: `/auth/social` 신규 가입, `/auth/link`(닉네임이 정확히 "게스트"일 때, D-68). `/auth/switch`와 기존 회원의 `/auth/social` 로그인은 `access_token_info`만 | FR-AUTH-07.AC1 |
 | 닉네임 | 앞뒤 공백을 지운 값으로 저장하고 코드 포인트로 센다. 1~10자. 지운 뒤 빈 값이면 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10자 초과면 `TOO_LONG`. 소셜 이름을 자를 때도 코드 포인트 10개 | D-82, NFR-LIMIT-01 |
 | 시간대 | Java `ZoneId`로 해석되는 IANA 이름만. 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 `PATCH /me`로 갱신 | NFR-TIME-01 |
 | fcmToken | 비었거나 255자 초과면 `VALIDATION_FAILED`(`fcmToken`). `platform`이 두 값이 아니면 `INVALID` | NFR-SYNC-01 |

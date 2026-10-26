@@ -1,6 +1,6 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.6 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.7 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
 > 작성일: 2026-10-17 (갱신: 2026-10-26)
 
@@ -64,7 +64,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | account_type | varchar(10) | not null, CHECK in (`GUEST`, `MEMBER`) | 게스트 연동 시 `MEMBER`로 변경 (FR-AUTH-03) |
-| nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 소셜 이름이 10자가 넘으면 앞 10자만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, NFR-LIMIT-01). 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
+| nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 소셜 이름이 10자가 넘으면 앞 10자만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, NFR-LIMIT-01). 앞뒤 공백을 지운 값을 저장하고, 글자 수는 유니코드 코드 포인트로 세어 1~10자다. 지운 뒤 빈 값이면 저장하지 않고 거부한다. 소셜 이름을 자를 때도 코드 포인트 10개까지 쓴다 (PRD D-82). 길이와 공백 검사는 서비스에서 하고, `varchar(10)`은 PostgreSQL이 문자 단위로 세므로 같은 기준이다. 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
 | profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |
@@ -90,7 +90,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | user_id | uuid | not null, FK users ON DELETE CASCADE | |
-| refresh_token_hash | char(64) | not null, UNIQUE | 토큰 원문이 아닌 SHA-256 해시만 저장 |
+| refresh_token_hash | char(64) | not null, UNIQUE | refresh 토큰은 보안 난수 32바이트를 base64url(패딩 없음)로 인코딩한 43자 무작위 문자열이다 (JWT 아님). DB에는 원문이 아닌 SHA-256 16진수 64자만 저장하고, 요청에서 받은 토큰을 해시해 이 컬럼으로 조회한다 (PRD D-81, NFR-SEC-01, DB-02) |
 | expires_at | timestamptz | not null | 회원 30일, 게스트 365일. 토큰을 갱신할 때마다 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꿔 새 토큰으로 교체하고 만료를 연장 (DB-02). 게스트 연동 뒤 첫 갱신부터 회원 만료(30일)를 쓴다 |
 | last_used_at | timestamptz | not null | |
 | revoked_at | timestamptz | null | 로그아웃, 다른 기기 로그인으로 끊길 때 기록. `revoked_reason`과 함께 기록한다. 토큰 교체는 행을 무효화하지 않으므로 기록하지 않는다 |
@@ -107,7 +107,7 @@
 - 서비스: access 토큰의 `sid` 클레임이 이 테이블의 `id`다. 서버는 요청마다 그 세션이 무효인지 보고, `REPLACED`면 401 `SESSION_REPLACED`, 그 밖의 무효는 401 `SESSION_INVALID`로 나눠 답한다 (오류 코드와 검사 시점은 `API.md`). 그래서 `REPLACED` 행은 4.4 정리에서 `expires_at`까지 남겨 둔다 (DB-11)
 - 서비스: refresh 토큰을 교체할 때는 새 행을 만들지 않고 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다. 그래서 `sid`(= `id`)는 로그인부터 로그아웃까지 변하지 않는다. 이전 refresh 토큰을 다시 보내면 그 해시를 가진 행이 없어 무효(401 `SESSION_INVALID`)다 (DB-02)
 - 한 사용자가 동시에 가질 수 있는 유효한 세션은 하나다. 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)을 하면 다른 유효 세션은 모두 `REPLACED`가 된다 (DB-09, DB-12, PRD D-51, D-67)
-- 서비스: 만료 시간은 access 1시간, refresh 회원 30일·게스트 365일이다 (PRD NFR-SEC-01, D-73). 푸시는 받는 사람에게 유효한 세션이 있을 때만 보낸다 (아래 `devices`, DB-14)
+- 서비스: 만료 시간은 access 1시간, refresh 회원 30일·게스트 365일이다 (PRD NFR-SEC-01, D-73). access는 JWT이고 DB에 저장하지 않으며, refresh는 무작위 토큰이다 (PRD D-81). 푸시는 받는 사람에게 유효한 세션이 있을 때만 보낸다 (아래 `devices`, DB-14)
 
 **devices** — FCM 푸시 토큰 (NFR-SYNC-01)
 
@@ -116,7 +116,7 @@
 | id | uuid | PK | |
 | user_id | uuid | not null, FK users ON DELETE CASCADE | |
 | fcm_token | varchar(255) | not null, UNIQUE | 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다 |
-| platform | varchar(10) | not null, default `ANDROID` | iOS 대비 (PRD D-25) |
+| platform | varchar(10) | not null, default `ANDROID` | 값은 `ANDROID`, `IOS`. iOS 대비 (PRD D-25). 요청의 값은 API에서 검사하고 DB CHECK는 두지 않는다 (1장 열거형 규칙의 예외) |
 | updated_at | timestamptz | not null | |
 
 - 서비스: 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다
@@ -427,11 +427,11 @@
 
 | FR 영역 | 테이블 |
 | --- | --- |
-| FR-AUTH-01~05 | users, social_accounts, auth_sessions (revoked_reason), devices, notification_settings |
+| FR-AUTH-01~05 | users, social_accounts, auth_sessions (revoked_reason, refresh_token_hash는 D-81), devices, notification_settings |
 | FR-AUTH-03 연동 (AC1 닉네임, AC3 기존 계정 로그인) | users.nickname, social_accounts, auth_sessions, devices (4.6, DB-12) |
 | FR-AUTH-05 로그아웃 (AC3 다른 계정으로 로그인) | auth_sessions (LOGOUT), devices (4.6) |
 | FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3). AC3 Kakao 연결 끊기는 social_accounts.provider (테이블 변화 없음) |
-| FR-AUTH-07 프로필 | users.nickname (최대 10자, 이름 없으면 "사용자"), users.profile_image_key |
+| FR-AUTH-07 프로필 | users.nickname (앞뒤 공백 제거, 코드 포인트 1~10자, 이름 없으면 "사용자", D-82), users.profile_image_key |
 | FR-AUTH-08 이용 동의 | 테이블 없음 (앱) |
 | FR-AUTH-09 앱 밖 계정 삭제 요청 | 테이블 없음 (웹 페이지와 메일 요청, 처리는 FR-AUTH-06과 같음) |
 | FR-SET-02 정보 | 테이블 없음 (앱·웹) |
