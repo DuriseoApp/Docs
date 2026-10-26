@@ -1,9 +1,10 @@
 # 둘이서
 
-둘이 함께 쓰는 캘린더와 메모. 커플 정보 공유 앱 **둘이서**(패키지 `com.juco.duriseo`)의 디자인 시스템이에요. 화면 데모(로그인 → 연결 → 캘린더 → 메모 → 색상 설정)에서 쓴 값을 그대로 토큰과 컴포넌트로 옮겼어요.
+둘이 함께 쓰는 캘린더와 메모. 커플 정보 공유 앱 **둘이서**(Android 패키지 `com.duriseo.android`)의 디자인 시스템이에요. 화면 데모(로그인 → 연결 → 캘린더 → 메모 → 색상 설정)에서 쓴 값을 그대로 토큰과 컴포넌트로 옮겼어요.
 
 > 이 파일은 claude.ai 디자인 캔버스의 디자인 시스템을 옮긴 것이에요. 실제 값(색 코드 등)은 `design/tokens.json`이 기준이고, `/design-sync`가 갱신해요.
 > PRD v0.3 반영: 말투 예시에서 "핀은 최대 3개까지 고정할 수 있어요."를 뺐어요. 고정 개수 제한은 없어요 (FR-MEMO-05).
+> 갱신: 2026-10-26 — Android 단위 1 준비에서 빈 곳을 캔버스 버전 38 보드 값으로 채웠어요: 하단 탭·스낵바 명세, 탭 아이콘 파일(`design/icons/`), Material 3 역할·Typography 매핑 추가, 패키지 이름 수정. 토큰 값은 바꾸지 않았어요. 토큰에 없는 수치는 컴포넌트 명세 숫자로 적고 보드 위치(`design/source/<보드>.dc.html` 행 번호)를 붙였어요.
 
 ## 원칙
 
@@ -72,7 +73,8 @@
 ## 아이콘
 
 - 24 그리드 선 아이콘이에요. 선 굵기 1.8, 둥근 끝(round cap·join)을 쓰고 색은 `currentColor`를 따라요.
-- 켜진 상태만 채워요. 핀은 `brand-500`, 별은 `favorite-600`으로 채우고, 꺼진 상태는 `ink-400` 선으로 그려요.
+- 켜진 상태만 채워요. 핀은 `brand-500`, 별은 `favorite-600`으로 채우고, 꺼진 상태는 `ink-400` 선으로 그려요. 이 규칙은 핀·별처럼 켜고 끄는 아이콘에 써요. 하단 탭 아이콘은 선택돼도 채우지 않아요 (아래 "하단 탭").
+- 아이콘 파일: 하단 탭의 달력·메모 아이콘은 `design/icons/tab-calendar.svg`, `design/icons/tab-memo.svg`예요 (보드 인라인 SVG를 그대로 옮김). 다른 아이콘 파일과 `components/bundle.css`·컴포넌트 README는 캔버스의 디자인 시스템에만 있고 Docs에는 아직 없어요. 그 전까지는 `design/source/` 보드의 인라인 SVG가 원본이에요.
 - 아이콘만 있는 버튼에는 반드시 접근성 라벨을 붙여요(`contentDescription`, `aria-label`). 예: "전체 메뉴", "고정 해제", "즐겨찾기".
 - 쓰는 아이콘: 햄버거(가로줄 3개), 알림 종, 뒤로·닫기, 더하기, 달력, 메모, 핀, 별, 팔레트, 복사, 공유, 시계, 링크, 사람이에요. 검색은 MVP에서 쓰지 않아요 (PRD v0.4 D-41).
 - 알림 종류 아이콘은 새로 만들지 않고 위 아이콘에서 골라요. 짝은 아래 NotificationItem에 있어요.
@@ -106,20 +108,80 @@
 
 알림 종류 아이콘: 일정 알림=알림 종, 상대 일정 추가=달력, 상대 메모 추가=메모, 메모 고정=핀, 기념일=달력, 연결=링크, 연결 해제=사람.
 
+### 하단 탭 (BottomNav) (2026-10-26)
+
+보드: `Memo.dc.html` 104~112행(메모 선택), 이전 보드 `Calendar_v1.dc.html` 98~107행(캘린더 선택). 두 보드의 값은 같아요. 지금 `Calendar.dc.html`(캔버스 버전 38)에는 탭 바가 없지만, 탭이 있는 모든 화면(SCR-CAL-01, SCR-MEMO-01)에 아래 탭을 그려요 (D-30, SCREENS 공통 "하단 탭").
+
+| 부분 | 값 | 토큰 / 보드 |
+|---|---|---|
+| 바 | 높이 80, 배경 흰색, 위 테두리 1 | `size-bottomnav`, `surface-0`, `line-100` (104행). 테두리 두께 1은 보드 값 |
+| 칸 | 두 칸을 같은 폭으로 나눔. 칸 안에서 알약과 라벨을 세로 가운데 정렬, 사이 간격 4 | `space-1` (105·109행) |
+| 알약 | 56×30, 모서리 15(높이의 절반이라 알약 모양). 선택 칸만 배경을 칠하고, 비선택 칸은 배경 없이 같은 56×30 자리만 둬요 | 선택 배경 `brand-100` (110행). 56·30·15는 보드 값 (106·110행) |
+| 아이콘 | 22×22로 그림(24 그리드 아이콘을 22로 줄인 것), 선 1.8, 채우지 않음 | 선택 `brand-700`, 비선택 `ink-500` (106·110행). 22는 보드 값이에요 (`size-icon` 24가 아님) |
+| 라벨 선택 | 12, 굵기 700, `ink-900` | 109행. 크기는 `caption`과 같고 굵기만 700 |
+| 라벨 비선택 | 12, 굵기 500, `ink-500` | 105행. `caption`(12/16, 500) 그대로 |
+| 라벨 행간 | 보드에 지정이 없어요 | `caption`의 16을 써요 |
+| 문구 | "캘린더", "메모" | 107·111행 |
+| 접근성 | 탭 묶음 라벨 "주요 메뉴", 선택 칸은 현재 화면으로 읽힘 | 104행 `aria-label`, 109행 `aria-current="page"` |
+
+- **선택 아이콘은 선 아이콘이에요.** 보드는 선택 칸의 아이콘도 `fill="none"` 선 아이콘이고(110행, `Calendar_v1.dc.html` 100행), 선택은 알약 면(`brand-100`)·아이콘 색(`brand-700`)·라벨 굵기(700)·라벨 색(`ink-900`)으로 보여요. "켜진 상태만 채워요"(아이콘)와 다르게 보일 수 있지만, 하단 탭은 보드를 따라요. 채운 탭 아이콘은 만들지 않아요.
+- **아이콘 파일**: 선택·비선택 모양이 같아서 탭마다 한 파일이에요. `design/icons/tab-calendar.svg`, `design/icons/tab-memo.svg` (선 색은 `currentColor`). Android는 VectorDrawable로 옮기고 색은 `Icon`의 `tint`로 줘요.
+- **FAB와의 관계**: 탭이 있는 화면의 FAB는 오른쪽 20, 바닥에서 100이에요 (`Memo.dc.html` 101행). 탭 바(80) 위로 20 떨어진 자리예요.
+- **Material 3와 다른 점**: M3 `NavigationBar`의 기본값은 배경 `surfaceContainer`(이 매핑에서는 `surface-100`), 지시자 64×32, 비선택 색 `onSurfaceVariant`(`ink-600`)라 보드와 달라요. 지시자 크기는 바꿀 수 없으니 보드 값(알약 56×30)을 맞추려면 `core:designsystem` 컴포넌트로 그려요.
+
+### 스낵바 (Snackbar) (2026-10-26)
+
+보드: `InviteCreate.dc.html` 74행("아직 연결되지 않았어요", SCR-COUPLE-02--not-yet), `Main.dc.html` 51행("다른 기기에서 로그인해서 로그아웃됐어요", SCR-START-01--session-replaced). 두 보드의 모양은 같아요.
+
+| 부분 | 값 | 토큰 / 보드 |
+|---|---|---|
+| 면 | 어두운 면 | `ink-900` |
+| 글자 | 흰색, 14, 굵기 400, 행간 1.5(21) | 색 `on-brand`(진한 채움 위 글자). 크기·굵기는 `body-sm`(14/22)과 같고, 행간은 보드 값 21이에요 |
+| 모서리 | 14 | `radius-md` |
+| 안쪽 여백 | 위아래 14, 좌우 16 | 좌우 `space-4`. 위아래 14는 보드 값 |
+| 폭 | 화면 좌우에서 16씩 띄운 전체 폭 | `space-4` |
+| 그림자 | `0 6px 16px rgba(28, 26, 34, 0.18)` | `shadow-fab`. 원칙 3의 "그림자는 FAB와 다이얼로그에만"과 달리 보드의 스낵바에도 있어서, 스낵바는 보드를 따라요 |
+| 내용 | 문구 한 줄만. 행동 버튼("다시 시도" 등)은 없어요 | 두 보드 모두 |
+| 접근성 | 나타나면 스크린리더가 읽어요 | `role="status"` (Compose: `liveRegion = Polite`) |
+
+- **위치**: 보드마다 달라요. `InviteCreate.dc.html`은 아래 고정 버튼 위(바닥에서 112, [연결 확인하기] 버튼 위로 24), `Main.dc.html`은 위에서 40이에요. **탭이 있는 화면(FAB가 있는 화면)에서의 위치를 그린 보드는 없어요.** 정해질 때까지 정하지 않은 값이에요.
+- **보이는 시간**: 보드에 없어요.
+- 쓰는 곳: 오프라인 안내, 공통 오류, 다른 기기 로그인, 아직 연결되지 않음 (SCREENS 공통 표, SCR-COUPLE-02).
+
 ## Android (Jetpack Compose) 매핑
 
-| Material 3 역할 | 토큰 |
-|---|---|
-| `primary` / `onPrimary` | `brand-500` / `on-brand` |
-| `primaryContainer` / `onPrimaryContainer` | `brand-100` / `brand-700` |
-| `surface` / `onSurface` | `surface-0` / `ink-900` |
-| `onSurfaceVariant` | `ink-600` |
-| `surfaceContainerLow` / `surfaceContainer` | `surface-50` / `surface-100` |
-| `outline` / `outlineVariant` | `line-300` / `line-200` |
-| `error` / `onError` | `danger-600` / `on-brand` |
-| `scrim` | `scrim` |
+| Material 3 역할 | 토큰 | 근거 (보드에서 같은 컴포넌트가 쓰는 색) |
+|---|---|---|
+| `primary` / `onPrimary` | `brand-500` / `on-brand` | 주요 버튼, FAB |
+| `primaryContainer` / `onPrimaryContainer` | `brand-100` / `brand-700` | 토널 강조 |
+| `secondary` / `onSecondary` | `ink-900` / `on-brand` | 어두운 채움 버튼 (`InviteCreate.dc.html` 71행 [연결 확인하기]) |
+| `secondaryContainer` / `onSecondaryContainer` | `brand-100` / `brand-700` | 하단 탭 선택 알약·아이콘 (`Memo.dc.html` 110행). M3 `NavigationBar` 지시자 색 |
+| `tertiary` / `onTertiary` / `tertiaryContainer` / `onTertiaryContainer` | 쓰지 않음 (core:designsystem 컴포넌트로 그림) | 보드에 3차 강조색이 없어요 |
+| `background` / `onBackground` | `surface-0` / `ink-900` | 화면 배경 (`Memo.dc.html` 18행) |
+| `surface` / `onSurface` | `surface-0` / `ink-900` | 화면·다이얼로그 면, 기본 글자 |
+| `surfaceVariant` | `surface-100` | 세그먼트 탭 트랙 (`AddEvent.dc.html` 28행) |
+| `onSurfaceVariant` | `ink-600` | 보조 글자 |
+| `surfaceContainerLowest` | `surface-0` | 입력창 면 (`AddEvent.dc.html` 35행) |
+| `surfaceContainerLow` / `surfaceContainer` | `surface-50` / `surface-100` | 카드 / 트랙·패널 |
+| `surfaceContainerHigh` | `surface-0` | 다이얼로그 면 (`Account.dc.html` 78행, `Calendar.dc.html` 174행). M3 `AlertDialog` 기본 면 |
+| `surfaceContainerHighest` | `line-300` | 꺼진 스위치 트랙 (`NotificationSettings.dc.html` 65행). M3 `Switch` 꺼짐 트랙 |
+| `inverseSurface` / `inverseOnSurface` | `ink-900` / `on-brand` | 스낵바 (`InviteCreate.dc.html` 74행, `Main.dc.html` 51행). M3 `Snackbar` 기본 색 |
+| `inversePrimary` | 쓰지 않음 (core:designsystem 컴포넌트로 그림) | 스낵바에 행동 버튼이 없어요 |
+| `outline` / `outlineVariant` | `line-300` / `line-200` | 입력 테두리 (`AddEvent.dc.html` 35행) / 아웃라인 버튼·칩·카드 |
+| `error` / `onError` | `danger-600` / `on-brand` | 입력 오류 테두리·문구 |
+| `errorContainer` / `onErrorContainer` | 쓰지 않음 (core:designsystem 컴포넌트로 그림) | 보드의 오류는 `danger-600` 테두리·글자만 쓰고 오류 면이 없어요 (`AddEvent.dc.html` 115·213행, `AddEventError` 상태) |
+| `scrim` | `scrim` | 다이얼로그·시트 뒤 막 |
 
+- "쓰지 않음"인 역할을 쓰는 M3 컴포넌트는 화면에 두지 않아요. 비워 두면 M3 기본색(보라 계열)이 남으니, 그 색이 화면에 보이면 매핑이 빠졌거나 M3 컴포넌트를 잘못 쓴 거예요.
+- M3 기본값이 보드와 다른 컴포넌트는 `core:designsystem`에서 색을 직접 줘요.
+  - 하단 탭: 위 "하단 탭" (배경 `surface-0`, 비선택 `ink-500`, 알약 56×30).
+  - 바텀시트: M3 `ModalBottomSheet`의 기본 면은 `surfaceContainerLow`(`surface-50`)지만 보드는 흰색이에요 (`Calendar.dc.html` 137행, `StartDateSheet.dc.html` 20행, 위 모서리 24). 면을 `surface-0`으로 줘요.
+  - 입력: 보드의 입력창은 아웃라인형이에요 (`surface-0` 면 + `line-300` 1px, 모서리 14, 높이 52 — `AddEvent.dc.html` 35행). 채움형 `TextField`(면 `surfaceContainerHighest`)는 쓰지 않아요.
+  - 선택된 필터 칩: 토큰 설명대로 `ink-900` 채움이에요 (M3 `FilterChip` 기본 `secondaryContainer`와 달라요).
 - 사람 색은 `ColorScheme`에 넣지 않고 `PersonColors(me, partner, together)`를 `CompositionLocal`로 제공해요. 값은 서버나 DataStore의 커플 설정에서 읽어요.
-- 타이포는 `Typography`에 이렇게 대응해요. `headlineMedium`=`headline`, `titleLarge`=`title-lg`, `titleMedium`=`title-md`, `bodyLarge`=`body-lg`, `bodyMedium`=`body-md`, `bodySmall`=`body-sm`, `labelLarge`=`label`, `labelMedium`=`caption`, `labelSmall`=`micro`.
+- 타이포는 `Typography`에 이렇게 대응해요. `displayLarge`=`display`, `headlineMedium`=`headline`, `titleLarge`=`title-lg`, `titleMedium`=`title-md`, `titleSmall`=`title-sm`, `bodyLarge`=`body-lg`, `bodyMedium`=`body-md`, `bodySmall`=`body-sm`, `labelLarge`=`label`, `labelMedium`=`caption`, `labelSmall`=`micro`. 남는 자리(`displayMedium`·`displaySmall`·`headlineLarge`·`headlineSmall`)는 쓰지 않아요.
+  - `display`는 로그인 앱 이름 "둘이서"에 써요 (`Main.dc.html` 27행, 40 · 행간 1.15 = 46 · 700 · -0.02em). `title-sm`은 목록 항목·섹션 제목 15/700이에요 (`Memo.dc.html` 25행).
+  - `code-lg`·`code-md`는 M3에 고정폭 자리가 없어서 `Typography`에 넣지 않고 `core:designsystem`에 따로 둬요 (`font.mono`). 초대코드 칸에 써요: `code-lg` 26/500 (`InviteCreate.dc.html` 32행), `code-md` 24/500 (`InviteEnter.dc.html` 65행).
+  - `letterSpacing`: 토큰에 있는 값은 em 그대로 써요 (Compose `TextUnit` `em`). `display` -0.02em, `headline`·`title-lg` -0.01em, `code-lg` 0.04em. 토큰에 없는 스타일(`title-md`·`title-sm`·`body-*`·`label`·`caption`·`micro`·`code-md`)은 **0**이에요 (보드도 지정하지 않음 = CSS 기본값).
 - 모서리는 `Shapes`에 이렇게 대응해요. `small`=`radius-sm`, `medium`=`radius-md`, `large`=`radius-lg`, `extraLarge`=`radius-2xl`.
 - 다크 모드는 아직 정의하지 않았어요(라이트 테마만 있어요).
