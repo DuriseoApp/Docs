@@ -1,6 +1,6 @@
 # 둘이서 화면 명세 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.7 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.8 (`docs/PRD.md`)
 > 디자인 기준: **반영됨 (2026-10-22, 캔버스 버전 38, PRD v0.6)**. 19개 화면과 v0.6 상태 화면 모두 이미지가 있어요 (SCR-COUPLE-03 오류 문구, 재연결 복구 시트는 디자인 없음).
 > 디자인 원본: claude.ai 디자인 캔버스 "커플 공유 앱 데모" (보드 대응표: `design/canvas-map.md`)
 > 디자인 변경 요청서: `design/change-requests/prd-v0.6.md` (반영 완료, 캔버스 버전 38). 이전: `design/change-requests/prd-v0.5.md` (반영 완료, 캔버스 버전 35), `design/change-requests/prd-v0.4.md`

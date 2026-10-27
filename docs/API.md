@@ -118,13 +118,13 @@
 | POST | /auth/link | `{provider, token}` → 204 (새 토큰 없음, 앱은 `GET /me`로 다시 읽음) | 게스트 → 회원 연동. 같은 기기에서 하므로 현재 세션을 그대로 쓰고, 다른 세션을 끊거나 `devices`를 지우지 않으며 응답에 새 토큰도 담지 않는다 (4.3). 닉네임이 정확히 "게스트"면 소셜 프로필 이름으로 바꾼다 (D-68, D-69). 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 그 소셜 계정이 이미 다른 회원이면 409 `SOCIAL_ALREADY_USED`(이때 앱은 4.7로 이어간다), 회원이 부르면 403 `GUEST_ONLY` | R-14 (GUEST만) | FR-AUTH-03, NFR-SEC-01 |
 | POST | /auth/switch | `{provider, token}` → 200 `AuthTokens` (`isNewUser: false`) | 게스트 → 기존 회원 계정 로그인. 한 트랜잭션으로 게스트 계정·기록을 탈퇴와 같이 삭제하고 그 소셜 계정의 회원으로 로그인한다 (4.7, ERD DB-12). 새 access·refresh 토큰을 돌려준다. 토큰 검증 실패는 401 `SOCIAL_TOKEN_INVALID`, 회원이 부르면 403 `GUEST_ONLY`, 그 소셜 계정으로 가입한 회원이 없으면 404 `SOCIAL_NOT_REGISTERED`(아무것도 바꾸지 않음) | R-14 (GUEST만) | FR-AUTH-03.AC3, D-67, NFR-SEC-01 |
 | POST | /auth/refresh | `{refreshToken: string}` (access 토큰 불필요) → 200 `AuthTokens` (`isNewUser: false`, 새 refresh 토큰) | refresh 토큰 교체 발급 (같은 세션 행을 갱신하므로 `sid`는 그대로). 그 세션이 `REPLACED`로 끊겼으면 401 `SESSION_REPLACED`, 이전 refresh 토큰 재사용을 포함한 그 밖의 무효는 401 `SESSION_INVALID` | refresh 토큰 | NFR-SEC-01, FR-AUTH-02.AC3 |
-| POST | /auth/logout | 본문 없음 → 204 | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80) | R-17 (MEMBER만) | FR-AUTH-05 |
+| POST | /auth/logout | 본문 없음 → 204 | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80). **앱 동작 (D-86)**: 쓰기와 같이 온라인에서만 부른다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요"를 보여준다. 응답이 401 `SESSION_REPLACED`·`SESSION_INVALID`면 이미 끊긴 세션이므로 1장 규칙대로 로컬을 지우고 SCR-START-01로 간다. 그 밖의 오류(5xx 포함)는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다(기기 데이터와 토큰을 지우지 않는다). 204를 받으면 소셜 SDK 상태도 지운다 (1장) | R-17 (MEMBER만) | FR-AUTH-05.AC4, D-86, D-50 |
 | GET | /me | → 200 `Me` | 내 정보 + 현재 공간 요약 (종류, 공간 ID, 상대, 사람 색, 처음 만난 날, `importPending`). SCR-COUPLE-02의 연결 확인 호출로도 쓴다 (4.4) | 로그인 | FR-SET-01, FR-COUPLE-02.AC5 |
 | PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다 | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
 | PUT | /me/profile-image | multipart (요청·응답 모양은 OpenAPI 기준) | 프로필 사진 업로드 | 로그인 | FR-AUTH-07.AC3 |
 | DELETE | /me/profile-image | (OpenAPI 기준) | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
 | GET | /users/{id}/profile-image | (OpenAPI 기준) | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
-| DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3) | 로그인 | FR-AUTH-06 |
+| DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3). **앱 동작 (D-86)**: `POST /auth/logout`과 같다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요", `SESSION_REPLACED`·`SESSION_INVALID`면 로컬을 지우고 SCR-START-01, 그 밖의 오류는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다. 204를 받으면 로컬 데이터와 소셜 SDK 상태를 지우고 SCR-START-01로 이동한다 | 로그인 | FR-AUTH-06, FR-AUTH-06.AC5, D-86 |
 | PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
 | GET, PATCH | /me/notification-settings | (OpenAPI 기준) | 알림 설정 조회·변경. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
 
@@ -150,6 +150,7 @@
 | `timeZone` | string | IANA 시간대 (`users.time_zone`) |
 | `providers` | (`GOOGLE` \| `KAKAO`)[] | 연결된 로그인 수단. 게스트는 `[]` (FR-SET-01) |
 | `hasProfileImage` | boolean | 프로필 사진이 있는지. 이미지는 `GET /users/{id}/profile-image` |
+| `createdAt` | 일시 | 가입일 (`users.created_at` 그대로, not null). 게스트가 연동한 회원은 게스트로 시작한 시각이다(계정이 그대로이므로). 앱은 기기 시간대 날짜로 바꿔 SCR-SET-01 회원 화면에 보여준다 (FR-SET-01) |
 | `space` | `MeSpace` | 현재 활성 공간 요약 |
 
 `MeSpace`

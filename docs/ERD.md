@@ -465,6 +465,7 @@
 | FR-MEMO-05 | memos.pinned_at, pinned_by |
 | FR-MEMO-06 | memo_favorites |
 | FR-NOTI-01~03 | devices, notification_settings. 로그인 만료 기기 푸시 금지는 auth_sessions 확인 + 정리 작업 (NFR-SEC-01, DB-14) |
+| FR-NOTI-03 알림 이동 | notifications.target_type (연결·해제 알림은 `SETTINGS`, D-85) |
 | FR-NOTI-05 알림 목록 | notifications |
 
 ---
