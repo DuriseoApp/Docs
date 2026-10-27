@@ -430,6 +430,8 @@
 | DB-12 | 게스트 → 기존 계정 로그인(`POST /auth/switch`)은 게스트 탈퇴(4.3)와 소셜 로그인을 한 트랜잭션으로 처리한다 (v0.6) | 게스트는 로그아웃이 없어 원래 계정으로 돌아갈 길이 없었다(PRD D-67). 데이터는 합치지 않고 게스트를 지운다. 한 트랜잭션이라 게스트만 지워지고 로그인이 실패하는 중간 상태가 없다. 트랜잭션 안에서 `social_accounts`를 다시 조회하고 대상 회원 행을 잠가, 그 사이에 회원이 탈퇴해도 안전하다. 없거나 탈퇴한 회원이면 롤백하고 게스트는 그대로 남는다. 이전 세션·기기 정리는 다른 로그인과 같은 코드를 쓴다 |
 | DB-13 | 날짜 범위(1950-01-01 ~ 2050-12-31)는 서비스에서 검사하고 DB CHECK는 두지 않는다 (v0.6) | 범위가 PRD D-74로 바뀔 수 있고, 바뀔 때마다 마이그레이션을 하지 않게 하려고. 서비스가 모든 입력 경로에서 막는다 (리드 결정) |
 | DB-14 | 사용자에게 보이는 푸시는 받는 사람에게 유효한 세션이 있을 때만 보내고(동기화 신호 SYNC는 그대로 보낸다), 매일 정리 작업이 유효 세션 없는 사용자의 `devices`를 지운다 (v0.6) | 로그인이 만료된 기기에 푸시가 가지 않게(PRD D-73, D-50과 같은 이유). 동기화 신호는 사용자에게 보이지 않으므로 막지 않고, 기기 정리로 자연히 멈춘다. 알림 목록 행은 그대로 만들어 다시 로그인하면 볼 수 있다. 푸시 전 확인과 정리 작업 두 겹으로 막는다 |
+| DB-15 | Kakao 연결 해제 알림은 `social_accounts`의 (`KAKAO`, `provider_user_id`)로 사용자를 찾아, Kakao가 유일한 로그인 수단이면 4.3 탈퇴로, 다른 수단이 있으면 `KAKAO` 행 삭제로 처리한다. 못 찾으면 아무것도 하지 않는다 (v0.8) | Kakao로만 들어오던 회원은 다시 들어올 방법이 없어 데이터를 남기지 않음 (PRD D-87). 같은 알림이 여러 번 와도 결과가 같다(멱등). 지금은 회원이 로그인 수단을 둘 가질 API가 없지만 UNIQUE (user_id, provider)가 허용하므로 정의해 둔다 |
+| DB-16 | 커플 연결 트랜잭션에서 두 사람의 다른 유효한 초대코드에 `revoked_at`을 기록한다 (v0.8) | 연결 뒤 남은 코드가 해제 직후 다시 쓸 수 있는 코드가 되지 않게. 연결 중인 사람의 코드를 넣으면 `INVITE_UNAVAILABLE`(`API.md` 오류 우선순위) (FR-COUPLE-02.AC3) |
 
 ---
 
@@ -440,14 +442,15 @@
 | FR-AUTH-01~05 | users, social_accounts, auth_sessions (revoked_reason, refresh_token_hash는 D-81), devices, notification_settings |
 | FR-AUTH-03 연동 (AC1 닉네임, AC3 기존 계정 로그인) | users.nickname, social_accounts, auth_sessions, devices (4.6, DB-12) |
 | FR-AUTH-05 로그아웃 (AC3 다른 계정으로 로그인) | auth_sessions (LOGOUT), devices (4.6) |
-| FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3). AC3 Kakao 연결 끊기는 social_accounts.provider (테이블 변화 없음) |
+| FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3). AC3 Kakao 연결 끊기는 social_accounts.provider (테이블 변화 없음). AC4 Kakao 연결 해제 알림은 social_accounts (KAKAO 행만 삭제 또는 탈퇴, 연결 끊기 호출 없음, D-87, DB-15, 테이블 변화 없음) |
+| FR-SET-01 계정 | users.created_at (가입일, API `Me.createdAt`), users.account_type (테이블 변화 없음) |
 | FR-AUTH-07 프로필 | users.nickname (앞뒤 공백 제거, 코드 포인트 1~10자, 이름 없으면 "사용자", D-82), users.profile_image_key |
 | FR-AUTH-08 이용 동의 | 테이블 없음 (앱) |
 | FR-AUTH-09 앱 밖 계정 삭제 요청 | 테이블 없음 (웹 페이지와 메일 요청, 처리는 FR-AUTH-06과 같음) |
 | FR-SET-02 정보 | 테이블 없음 (앱·웹) |
-| FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at), invite_code_attempts, spaces, space_members |
+| FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at; 연결 때 다른 유효 코드 무효화 DB-16), invite_code_attempts (AC4 최근 1시간 실패 10번, 미끄러지는 창, D-83), spaces, space_members |
 | FR-COUPLE-03 | events, anniversaries, memos (space_id 이동) |
-| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13) |
+| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13. 바꿀 수만 있고 null로 되돌리지 않음, D-84) |
 | FR-COUPLE-05 | spaces.status, unlinked_at, purge_at, space_members.left_at. AC4 가져오기 전 해제는 space_members.left_at을 비워 개인 공간을 되살림 (4.2) |
 | FR-CAL-01~03 | events |
 | FR-CAL-01.AC6 날짜 범위 | events, memos.memo_date, anniversaries.date, spaces.start_date (서비스 검사, DB-13) |

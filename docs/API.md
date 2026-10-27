@@ -87,7 +87,7 @@
 | R-05 | 직접 기념일 수정·삭제: 요청자 = `author_id` | 403 `NOT_AUTHOR` | FR-ANNIV-03 |
 | R-06 | 즐겨찾기: 요청자 본인의 행만 만들고 지운다. 목록 조회 시 다른 사용자의 즐겨찾기는 응답에 넣지 않는다 | — | D-24 |
 | R-07 | 일정 알림: 요청자 본인의 행만 만들고 바꾼다. 일정 응답에는 요청자의 알림만 넣는다 | — | D-16 |
-| R-08 | 처음 만난 날, 사람 색 변경: 커플 공간의 구성원이면 허용. 개인 공간에서는 자기 색만 | 409 `NOT_COUPLE` | FR-COUPLE-04, FR-CAL-04 |
+| R-08 | 처음 만난 날(`PATCH /space`)은 커플 공간의 구성원일 때만 허용한다. 사람 색(`PATCH /space/colors`)은 커플 공간의 구성원이면 허용하고, 개인 공간에서는 자기 색만 바꿀 수 있다 (`together`나 자기 밖 `userId`가 있으면 거부) | 409 `NOT_COUPLE` | FR-COUPLE-04, FR-CAL-04 |
 | R-09 | 초대코드 생성·입력: `account_type = MEMBER`이고 개인 공간에 있을 것 | 403 `GUEST_NOT_ALLOWED` / 409 `ALREADY_COUPLED` | D-07 |
 | R-10 | 일정 대상: 요청 본문은 `isTogether`만 받고 대상 사용자는 받지 않는다. 개인 공간에서 `isTogether = true`면 거부 | 400 `INVALID_TARGET` | D-34 |
 | R-11 | 프로필 사진 조회: 본인 또는 같은 활성 공간의 구성원만 | 404 `NOT_FOUND` | NFR-FILE-01 |
@@ -97,6 +97,7 @@
 | R-15 | 날짜 범위: `events`의 시작·종료 날짜(일시는 요청자 `users.time_zone` 기준 날짜), `memos.memoDate`(null이 아닐 때), `anniversaries.date`, `spaces.start_date`는 1950-01-01 ~ 2050-12-31 안이어야 한다. 이 검사와 `DATE_OUT_OF_RANGE`는 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `GET /anniversaries`, `GET /memos/dated`)의 `from`·`to`가 이 범위 밖이면 오류 없이 범위 안으로 잘라서 조회한다(`from`은 1950-01-01 이상, `to`는 2050-12-31 이하로). `from` > `to`와 3개월 초과 검사는 요청받은 값 그대로 먼저 하고, 잘라낸 뒤 조회 구간이 비면 빈 목록을 돌려준다. 처음 만난 날(`PATCH /space`)이 오늘보다 뒤면 범위와 관계없이 기존대로 `VALIDATION_FAILED`이고(2050년 이후 포함), `DATE_OUT_OF_RANGE`는 1950-01-01보다 앞일 때 나온다 | 400 `DATE_OUT_OF_RANGE` | D-74, FR-CAL-01.AC6, FR-COUPLE-04.AC3 |
 | R-16 | 푸시 전송: 받는 사람에게 유효한 세션(`auth_sessions.revoked_at IS NULL AND expires_at > now`)이 있을 때만 보낸다. 알림 목록 행(`notifications`)은 세션과 관계없이 그대로 만든다. 동기화 신호(6장)는 그대로 보낸다 | (푸시 안 보냄, 오류 아님) | D-73, ERD DB-14, NFR-SEC-01 |
 | R-17 | 회원 전용 `POST /auth/logout`: 요청자 = `account_type = MEMBER`. 게스트가 부르면 거부하고 아무것도 바꾸지 않는다. (커플 연결의 회원 전용 검사는 R-09) | 403 `GUEST_NOT_ALLOWED` | FR-AUTH-05, D-07 |
+| R-18 | 커플 연결 해제(`DELETE /couple`): 요청자의 활성 공간이 `COUPLE`일 것. 기록 가져오기(`POST /couple/import`): 요청자에게 가져오기 대기 중인 개인 공간이 있을 것(그런 공간은 커플 공간에 있는 동안만 있다, D-78). 게스트·회원 구분 없이 이 조건만 본다. 둘이 동시에 해제하면 두 번째 요청은 잠금 뒤 개인 공간을 보고 `NOT_COUPLE`이다 | 409 `NOT_COUPLE` (`DELETE /couple`) / 409 `NO_IMPORT_PENDING` (`POST /couple/import`) | FR-COUPLE-05, FR-COUPLE-03, D-78 |
 
 앱 화면에서 버튼을 숨기는 것은 사용성을 위한 것이고, 보안은 위 규칙으로만 보장한다.
 
