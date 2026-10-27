@@ -336,7 +336,7 @@
    | 6 | 그 코드가 없음 | 404 `INVITE_NOT_FOUND` | 예 |
    | 7 | 만든 사람 = 요청자 (만료·사용 여부와 관계없이) | 409 `INVITE_SELF` | 예 |
    | 8 | 사용된 코드 | 409 `INVITE_USED` | 예 |
-   | 9 | 만든 사람이 지금 커플 공간에 있거나 탈퇴함 (`deleted_at` 있음) | 409 `INVITE_UNAVAILABLE` | 예 |
+   | 9 | 만든 사람이 지금 커플 공간에 있음 (탈퇴한 사람의 코드는 탈퇴 때 지워져 6번의 404 `INVITE_NOT_FOUND`, ERD 4.3) | 409 `INVITE_UNAVAILABLE` | 예 |
    | 10 | 만료됨 또는 무효 (`revoked_at` 있음) | 409 `INVITE_EXPIRED` | 예 |
 
    - **오입력 제한 (NFR-SEC-03, D-83)**: 최근 1시간을 지금부터 거꾸로 센다(미끄러지는 창). 요청자의 `invite_code_attempts` 중 `succeeded = false`이고 `attempted_at > now − 1시간`인 행이 10개 이상이면 429 `INVITE_RATE_LIMITED`다. `details.retryAfterSeconds` = (그 실패 중 **10번째로 최근** 실패의 `attempted_at` + 1시간 − 지금)을 초 단위로 올림한 값이고 최소 1이다.
@@ -423,11 +423,11 @@
 | 404 | INVITE_NOT_FOUND | 존재하지 않는 초대코드. 공백 제거·대문자 변환 뒤 6자리가 아니거나 코드에 쓰는 31자 집합 밖의 글자가 있는 입력도 이 코드이고 오입력으로 센다 (`POST /couple/join`) | FR-COUPLE-02.AC2, D-83 |
 | 404 | SOCIAL_NOT_REGISTERED | `/auth/switch`에서 그 소셜 계정으로 가입한 회원이 없음. 아무것도 바꾸지 않으며 앱은 `/auth/link`로 연동하면 된다 | D-67, FR-AUTH-03.AC3 |
 | 409 | NO_IMPORT_PENDING | `POST /couple/import`를 불렀는데 가져오기 대기 중인 개인 공간이 없음(이미 정했거나, 연결 해제와 겹침). 아무것도 바꾸지 않는다 | R-18, FR-COUPLE-03, D-78 |
-| 409 | INVITE_EXPIRED | 만료된 코드(`expires_at <= now`), 또는 재요청으로 바뀐 이전 코드·연결로 무효가 된 코드(`revoked_at` 있음). 만든 사람이 연결 중이거나 탈퇴했으면 이 코드가 아니라 `INVITE_UNAVAILABLE`이 먼저다 (4.4의 2단계 순서) | FR-COUPLE-01.AC2, FR-COUPLE-02.AC2 (D-47) |
+| 409 | INVITE_EXPIRED | 만료된 코드(`expires_at <= now`), 또는 재요청으로 바뀐 이전 코드·연결로 무효가 된 코드(`revoked_at` 있음). 만든 사람이 연결 중이면 이 코드가 아니라 `INVITE_UNAVAILABLE`이 먼저다 (4.4의 2단계 순서) | FR-COUPLE-01.AC2, FR-COUPLE-02.AC2 (D-47) |
 | 409 | INVITE_USED | 이미 사용된 코드 | FR-COUPLE-02.AC2 |
 | 409 | INVITE_SELF | 자신이 만든 코드 (만료·사용 여부와 관계없이) | FR-COUPLE-02.AC2 |
-| 409 | INVITE_UNAVAILABLE | 코드를 만든 사람이 지금 커플 공간에 있거나 탈퇴함. 만든 사람이 연결을 해제해 다시 개인 공간이면 이 코드가 아니라 `INVITE_EXPIRED`다 | FR-COUPLE-02.AC3, DB-16 |
-| 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /couple/join`) | R-09 |
+| 409 | INVITE_UNAVAILABLE | 코드를 만든 사람이 지금 커플 공간에 있음 (탈퇴한 사람의 코드는 지워져 `INVITE_NOT_FOUND`). 만든 사람이 연결을 해제해 다시 개인 공간이면 이 코드가 아니라 `INVITE_EXPIRED`다 | FR-COUPLE-02.AC3, DB-16 |
+| 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`) | R-09 |
 | 409 | NOT_COUPLE | 커플 공간이 필요한 요청을 개인 공간에서 보냄: `PATCH /space`, 개인 공간에서 `together`나 자기 밖 `userId`가 있는 `PATCH /space/colors`, `DELETE /couple`. `DELETE /couple`이면 앱은 이미 해제된 것으로 보고 앱 초기화를 한다 (4.5) | R-08, R-18, FR-COUPLE-05.AC3 |
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
 | 413 | IMAGE_TOO_LARGE | 프로필 사진 10MB 초과 | NFR-FILE-01 |

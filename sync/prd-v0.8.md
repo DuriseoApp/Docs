@@ -110,7 +110,7 @@
 | 연결 때 다른 코드 무효화 (DB-16) | `/couple/join` 트랜잭션에서 A(만든 사람)와 B(입력한 사람)의 **다른** 유효한 코드(`used_at IS NULL AND revoked_at IS NULL`, 만료됐어도 포함)에 `revoked_at` = 지금을 기록한다. 입력한 코드는 기존대로 사용 처리(`used_at`, `used_by_user_id`) | FR-COUPLE-02.AC3 |
 | ERD `invite_codes.revoked_at` 설명 | "재요청으로 만료되거나(FR-COUPLE-01.AC3), 만든 사람이 커플로 연결돼 무효가 된 시각(DB-16)" | FR-COUPLE-01.AC3, FR-COUPLE-02.AC3 |
 | 오입력 제한 (D-83) | 미끄러지는 창: 요청자의 `invite_code_attempts` 중 `succeeded = false`이고 `attempted_at > now − 1시간`인 행이 10개 이상이면 429 `INVITE_RATE_LIMITED`. `retryAfterSeconds` = (그 실패 중 **10번째로 최근** 실패의 `attempted_at` + 1시간 − 지금)을 초 단위로 올림, 최소 1 | FR-COUPLE-02.AC4, NFR-SEC-03 |
-| 시도로 남기는 것 | 실패 = 아래 오류 순서의 5~9번(형식 오류 포함 `INVITE_NOT_FOUND`, `INVITE_SELF`, `INVITE_USED`, `INVITE_UNAVAILABLE`, `INVITE_EXPIRED`). 실패 기록은 연결 트랜잭션과 별도로 커밋된다(응답이 오류여도 남음). 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: R-09 거부, `VALIDATION_FAILED`, 429 `INVITE_RATE_LIMITED` 자체 | D-83, NFR-SEC-03 |
+| 시도로 남기는 것 | 실패 = 아래 오류 순서의 5~10번(형식 오류 포함 `INVITE_NOT_FOUND`, `INVITE_SELF`, `INVITE_USED`, `INVITE_UNAVAILABLE`, `INVITE_EXPIRED`). 실패 기록은 연결 트랜잭션과 별도로 커밋된다(응답이 오류여도 남음). 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: R-09 거부, `VALIDATION_FAILED`, 429 `INVITE_RATE_LIMITED` 자체 | D-83, NFR-SEC-03 |
 
 **`POST /couple/join` 오류 우선순위** (위에서부터 검사하고 처음 걸린 것으로 응답)
 
@@ -279,3 +279,4 @@ API.md에 새 **3.6 웹훅** 절(경로 표)과 새 **4.8 Kakao 연결 해제 �
 
 | 회차 | 판정 | Critical | 비고 |
 | --- | --- | --- | --- |
+| 1 | 머지 가능 | 0 | Major 1(탈퇴한 사람의 코드: ERD 4.3 삭제 ↔ API 9번 `INVITE_UNAVAILABLE`) → API 9번·5장에서 "탈퇴함" 제거, 탈퇴한 사람의 코드는 404 `INVITE_NOT_FOUND`(리드 결정). Minor 5 반영(ALREADY_COUPLED 경로, SCREENS 표현, DB-08 문구, 계약 5~10번, 이 기록) |
