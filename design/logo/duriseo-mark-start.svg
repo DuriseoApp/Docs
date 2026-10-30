@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="72" viewBox="0 0 112 72" role="img" aria-label="두 원이 겹친 둘이서 로고">
+<defs><clipPath id="leftCircle"><circle cx="38" cy="36" r="34"/></clipPath></defs>
+<circle cx="38" cy="36" r="34" fill="#E0612F"/>
+<circle cx="74" cy="36" r="34" fill="#2F6FDB"/>
+<circle cx="74" cy="36" r="34" fill="#6D4AE0" clip-path="url(#leftCircle)"/>
+</svg>

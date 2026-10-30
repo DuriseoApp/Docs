@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.7 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.8 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-10-26)
+> 작성일: 2026-10-17 (갱신: 2026-10-27)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -68,7 +68,7 @@
 | profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |
-| created_at, updated_at | timestamptz | not null | |
+| created_at, updated_at | timestamptz | not null | `created_at`은 API `Me.createdAt`(가입일)로 내보낸다. 게스트가 연동한 회원은 계정이 그대로이므로 게스트로 시작한 시각이다 (FR-SET-01) |
 
 **social_accounts** — 회원의 소셜 로그인 수단 (FR-AUTH-02, 03)
 
@@ -83,6 +83,7 @@
 - UNIQUE (provider, provider_user_id): 한 소셜 계정은 한 사용자에게만 연결된다. 이미 쓰인 계정의 연동 거부(PRD Q-01)는 이 제약 위반으로 판정한다. 거부된 게스트는 확인을 거쳐 게스트를 삭제하고 그 계정으로 로그인할 수 있다 (게스트 → 기존 계정 로그인, DB-12, PRD D-67). 데이터는 합치지 않는다.
 - UNIQUE (user_id, provider): 제공자별 하나씩.
 - 서비스: `provider = KAKAO`인 행은 탈퇴 트랜잭션(4.3)이 커밋된 뒤 Kakao 앱 연결 끊기를 호출한다. 실패해도 되돌리지 않는다 (FR-AUTH-06.AC3). 테이블 변화는 없다.
+- 서비스: Kakao 연결 해제 알림(`POST /webhooks/kakao/unlink`)은 (`KAKAO`, `provider_user_id`)로 사용자를 찾아, `KAKAO` 밖의 행이 있으면 `KAKAO` 행만 지우고, 없으면 그 사용자를 4.3과 같이 탈퇴 처리한다. 이때 Kakao 연결 끊기 호출은 하지 않는다 (이미 끊겼다). 못 찾으면 아무것도 하지 않는다 (DB-15, FR-AUTH-06.AC4, PRD D-87).
 
 **auth_sessions** — 서버가 발급한 refresh 토큰 (NFR-SEC-01)
 
@@ -148,7 +149,7 @@
 | type | varchar(30) | not null, CHECK in (`EVENT_REMINDER`, `PARTNER_CREATED`, `MEMO_PINNED`, `ANNIVERSARY`, `COUPLE_LINKED`, `COUPLE_UNLINKED`) | PRD 8장 알림 종류 |
 | title | varchar(100) | not null | 푸시 제목과 같음 |
 | body | varchar(200) | null | 푸시 본문과 같음 |
-| target_type | varchar(20) | null, CHECK in (`EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS`) | 누르면 이동할 대상 (FR-NOTI-03) |
+| target_type | varchar(20) | null, CHECK in (`EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS`) | 누르면 이동할 대상 (FR-NOTI-03). `COUPLE_LINKED`, `COUPLE_UNLINKED`(해제·탈퇴 해제 모두)는 `SETTINGS`이고 `target_id`는 null이다 (PRD D-85). 그 밖에 이동 대상이 없으면 `target_type`, `target_id` 모두 null |
 | target_id | uuid | null | `target_type`이 가리키는 행의 ID |
 | read_at | timestamptz | null | 읽은 시각. null이면 안 읽음 (FR-NOTI-05.AC3) |
 | created_at | timestamptz | not null | |
@@ -169,7 +170,7 @@
 | id | uuid | PK | |
 | type | varchar(10) | not null, CHECK in (`PERSONAL`, `COUPLE`) | |
 | status | varchar(10) | not null, default `ACTIVE`, CHECK in (`ACTIVE`, `UNLINKED`) | 개인 공간은 항상 `ACTIVE` |
-| start_date | date | null | 처음 만난 날. 커플 공간만 (FR-COUPLE-04) |
+| start_date | date | null | 처음 만난 날. 커플 공간만 (FR-COUPLE-04). 커플 공간에서 한번 정하면 바꿀 수만 있고 null로 되돌리지 않는다 (PRD D-84). 연결 직후에는 null(건너뛰기) |
 | together_color | varchar(20) | null | '함께' 사람 색의 팔레트 키. 커플 공간만 (FR-CAL-04) |
 | unlinked_at | timestamptz | null | 연결 해제 시각 |
 | purge_at | timestamptz | null | 이 시각이 지나면 정리 작업이 공간을 삭제한다. 연결 해제 시 `unlinked_at` + 30일, 구성원이 탈퇴하면 탈퇴 시각 + 90일로 늦춘다 (PRD D-06, D-36) |
@@ -195,7 +196,8 @@
 - UNIQUE (space_id, user_id)
 - **부분 UNIQUE (user_id) WHERE left_at IS NULL**: 사용자는 동시에 활성 공간 하나에만 속한다. 이 제약이 "한 사람은 한 커플" 규칙을 DB에서 보장한다.
 - 서비스: 커플 공간의 구성원은 정확히 2명, 개인 공간은 1명.
-- 팔레트 키는 디자인 시스템의 `pick-*` 12색 토큰 이름을 그대로 쓴다. 기본값은 개인 공간·초대코드를 만든 사람 = 주황, 입력한 사람 = 파랑, 함께 = 보라 (FR-CAL-04.AC3, AC5).
+- 팔레트 키(`space_members.color`, `spaces.together_color`)는 `design/tokens.json`의 `color.pick` 이름 12개 중 하나다. 이 순서가 팔레트 순서다: `pick-orange`, `pick-rose`, `pick-amber`, `pick-mustard`, `pick-green`, `pick-teal`, `pick-blue`, `pick-purple`, `pick-magenta`, `pick-brown`, `pick-gray`, `pick-ink`. 12개 밖의 값은 서비스에서 거부한다 (DB CHECK 없음).
+- 기본값은 개인 공간의 나·초대코드를 만든 사람 `pick-orange`(주황), 입력한 사람 `pick-blue`(파랑), 함께 `pick-purple`(보라)이다 (FR-CAL-04.AC3, AC5).
 
 **invite_codes** — 커플 연결용 초대코드 (FR-COUPLE-01, 02)
 
@@ -207,13 +209,15 @@
 | expires_at | timestamptz | not null | 생성 + 10분 (PRD D-05) |
 | used_at | timestamptz | null | |
 | used_by_user_id | uuid | null, FK users ON DELETE SET NULL | |
-| revoked_at | timestamptz | null | 재요청으로 만료된 시각 (FR-COUPLE-01.AC3) |
+| revoked_at | timestamptz | null | 재요청으로 만료되거나(FR-COUPLE-01.AC3), 만든 사람이 커플로 연결돼 무효가 된 시각 (DB-16) |
 | created_at | timestamptz | not null | |
 
 - 부분 UNIQUE (creator_user_id) WHERE used_at IS NULL AND revoked_at IS NULL: 사용자당 유효한 코드는 하나
 - 서비스: 입력한 코드는 공백을 없애고 대문자로 바꾼 뒤 비교한다 (FR-COUPLE-01.AC4). 그래서 DB에는 대문자만 있다
 - 서비스(재요청 간격): 같은 `creator_user_id`의 가장 최근 `created_at` + 60초가 지나야 새 코드를 발급한다. 새 컬럼은 없다 (FR-COUPLE-01.AC3)
 - 서비스(재요청): 새 코드를 만드는 같은 트랜잭션에서, 그 사용자의 사용되지 않은(`used_at IS NULL`) 이전 코드 전부의 `revoked_at`을 기록한다. 시간이 지나 만료됐어도 `revoked_at`이 null이면 포함한다. 그래야 위 부분 UNIQUE와 충돌하지 않고, 이전 코드는 그 즉시 쓸 수 없다
+- 서비스(유효한 코드): `used_at IS NULL AND revoked_at IS NULL AND expires_at > now`. `expires_at <= now`면 만료다
+- 서비스(연결 때 무효화, DB-16): `/couple/join` 트랜잭션에서 만든 사람 A와 입력한 사람 B의 **다른** 유효한 코드(`used_at IS NULL AND revoked_at IS NULL`, 만료됐어도 포함)에 `revoked_at` = 지금을 기록한다. 입력한 코드는 기존대로 사용 처리(`used_at`, `used_by_user_id`)한다 (FR-COUPLE-02.AC3)
 - 무차별 대입 방어는 DB-08
 
 **invite_code_attempts** — 초대코드 입력 시도 기록 (NFR-SEC-03)
@@ -226,6 +230,8 @@
 | attempted_at | timestamptz | not null | |
 
 - INDEX (user_id, attempted_at): 최근 1시간 실패 횟수 조회. 7일 지난 기록은 정리 작업에서 삭제
+- 서비스(미끄러지는 창, D-83): 요청자의 `succeeded = false`이고 `attempted_at > now − 1시간`인 행이 10개 이상이면 입력을 막는다. 1시간은 지금부터 거꾸로 센다. 그중 가장 오래된 실패가 1시간을 지나면 풀린다 (풀리는 시각 계산은 `API.md` 4.4). 고정 시간 구간이나 별도 잠금 컬럼은 없다
+- 서비스(무엇을 남기나): 연결에 쓸 수 없는 코드는 형식이 틀린 코드를 포함해 모두 `succeeded = false` 한 행이다 (`INVITE_NOT_FOUND`, `INVITE_SELF`, `INVITE_USED`, `INVITE_UNAVAILABLE`, `INVITE_EXPIRED`). 실패 행은 연결 트랜잭션과 별도로 커밋해 응답이 오류여도 남긴다. 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 게스트·이미 커플 거부(R-09), 요청 형식 오류(`VALIDATION_FAILED`), 입력 제한(`INVITE_RATE_LIMITED`) 자체 (PRD D-83, NFR-SEC-03)
 
 ### 3.3 콘텐츠
 
@@ -329,7 +335,7 @@
 | 게스트 시작, 신규 소셜 로그인 | users, notification_settings, spaces(PERSONAL), space_members(주황), auth_sessions |
 | 로그인 3종 (게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인) | 새 auth_sessions. 같은 트랜잭션에서 다른 유효 세션과 devices를 정리한다 (4.6). 게스트 연동은 현재 세션을 그대로 쓰므로 새 행이 없다 |
 | 게스트 → 기존 계정 로그인 (D-67) | 새 auth_sessions 한 행(그 계정의 회원 세션). 같은 트랜잭션에서 게스트 사용자를 4.3 탈퇴와 같이 처리한다 (DB-12). 새 users, spaces는 만들지 않는다 |
-| 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라), space_members 2개(만든 사람 주황, 입력한 사람 파랑). 같은 트랜잭션에서 두 사람 각자의 개인 공간을 정한다: 혼자 쓴 기록이 없으면 그 개인 공간을 바로 지운다 (아래 "커플 연결 때 개인 공간 처리") |
+| 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라), space_members 2개(만든 사람 주황, 입력한 사람 파랑). 같은 트랜잭션에서 두 사람 각자의 개인 공간을 정한다: 혼자 쓴 기록이 없으면 그 개인 공간을 바로 지운다 (아래 "커플 연결 때 개인 공간 처리"). 또 두 사람의 다른 유효한 invite_codes에 `revoked_at`을 기록해 무효로 만든다 (DB-16) |
 | 연결 해제 | 두 사람 각자 spaces(PERSONAL), space_members(주황). 단, 가져오기 대기 중인 개인 공간(기록이 있어 남아 있는 공간)이 있는 사람은 새로 만들지 않고 그 공간을 되살린다 (4.2) |
 | 알림이 생길 때 (PRD 8장) | 받는 사람마다 notifications. 푸시 설정을 꺼도 만든다 (DB-07) |
 
@@ -360,6 +366,10 @@
    - `auth_sessions`는 먼저 `revoked_reason = WITHDRAWN`으로 무효화한 뒤 같은 트랜잭션에서 지운다. 그래서 탈퇴 뒤에 남는 세션 행은 없다.
 
 **Kakao 연결 끊기** (FR-AUTH-06.AC3, 회원 탈퇴만): `social_accounts.provider = KAKAO`인 회원이면 탈퇴 트랜잭션이 **커밋된 뒤에** Kakao 연결 끊기 API를 서버의 Kakao 어드민 키로 호출한다 (키는 서버 설정값이며 이 문서에 쓰지 않는다). 행은 트랜잭션 안에서 지워지므로 호출에 필요한 `provider_user_id`는 지우기 전에 읽어 둔다. 호출이 실패해도 탈퇴를 되돌리지 않고 로그만 남긴다. 게스트 삭제(게스트 → 기존 계정 로그인, 게스트 정리)에는 소셜 계정이 없어 해당 없다. 테이블 변화는 없다.
+
+**Kakao 연결 해제 알림으로 인한 탈퇴** (FR-AUTH-06.AC4, PRD D-87, DB-15): 사용자가 Kakao 계정 설정에서 둘이서 연결을 끊으면 Kakao가 `POST /webhooks/kakao/unlink`를 부른다. 서버는 (`KAKAO`, `provider_user_id`)로 `social_accounts`를 찾고, 그 사용자 행을 잠근 뒤(탈퇴와 같은 잠금) 다음처럼 처리한다. 못 찾거나 이미 `deleted_at`이 있으면 아무것도 하지 않는다(같은 알림이 두 번 와도 결과가 같다).
+- 그 사용자에게 `KAKAO` 밖의 `social_accounts`(곧 `GOOGLE`)가 있으면 `KAKAO` 행만 지운다. 세션, 기기, 데이터는 그대로다.
+- 없으면 위 1~4단계와 같이 탈퇴 처리한다. 커플이면 연결 해제와 상대에게 탈퇴 전용 `COUPLE_UNLINKED` 알림, 속했던 커플 공간 `purge_at` +90일, 개인 공간 삭제, 익명화, 세션 `WITHDRAWN` 무효화 뒤 삭제까지 같다. **커밋 뒤 Kakao 연결 끊기 호출은 하지 않는다** (Kakao 쪽이 이미 끊었다). 테이블 변화는 없다.
 
 탈퇴로 해제될 때 상대에게는 탈퇴 전용 `COUPLE_UNLINKED` 알림이 간다 (PRD D-53). 이 알림은 `space_id`가 null이라 4.2의 알림 삭제에 지워지지 않는다. 문구는 `API.md`가 정한다.
 
@@ -413,13 +423,15 @@
 | DB-05 | 다른 공간의 리소스 요청은 403이 아니라 404 | 리소스 존재 여부를 노출하지 않음 |
 | DB-06 | 일정 대상은 `is_together` 불리언 하나로 저장 | 상대를 대상으로 지정할 수 없어(PRD D-34) 대상은 '작성자 본인' 또는 '함께' 둘뿐 |
 | DB-07 | 알림 목록은 푸시와 별개로 저장하고 30일 뒤 삭제 | 푸시를 끈 종류도 목록에는 남기고(PRD D-39), 개인정보(일정·메모 제목) 보관을 30일로 제한 (NFR-PRIV-02, Q-03) |
-| DB-08 | 초대코드는 31자 집합 6자리(약 8.9억 조합) + 10분 만료 + 1시간 10회 오입력 제한으로 무차별 대입을 막음 | 코드가 짧아진 만큼 유효 시간과 시도 횟수로 보완 (PRD D-05, NFR-SEC-03) |
+| DB-08 | 초대코드는 31자 집합 6자리(약 8.9억 조합) + 10분 만료 + 최근 1시간 실패 10번 오입력 제한(PRD D-83)으로 무차별 대입을 막음 | 코드가 짧아진 만큼 유효 시간과 시도 횟수로 보완 (PRD D-05, NFR-SEC-03) |
 | DB-09 | 한 기기 로그인: 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)은 같은 트랜잭션에서 그 사용자의 다른 유효 세션을 `REPLACED`로 무효화하고 `devices`를 모두 지운다. 로그아웃은 현재 세션을 `LOGOUT`으로 바꾸고 `devices`를 모두 지운다. 무효가 된 이유는 `auth_sessions.revoked_reason`에 둔다 | 이전 기기와 로그아웃한 기기에 푸시가 가지 않게 하고(PRD D-50, D-51), 이전 기기가 "다른 기기에서 로그인해서 로그아웃됐어요"(`REPLACED`)와 그냥 무효를 구분하게 하려고 |
 | DB-10 | 게스트 정리: 유효한 세션이 없는 게스트(`deleted_at IS NULL`)를 매일 정리 작업이 탈퇴와 같이 처리하고, 세션 정리보다 먼저 돈다 | 앱을 지운 게스트는 계정을 되찾을 수 없어 서버에 데이터만 남는다. 기본값은 마지막 사용 후 365일(PRD Q-11, DB-02). 같은 실행 안에서 세션 정리보다 먼저 돌도록 순서를 고정 |
 | DB-11 | `REPLACED` 세션 행은 `expires_at`까지 남기고, 그 밖의 무효·만료 세션은 정리 작업이 지운다 | 이전 기기가 며칠 뒤에 접속해도 `SESSION_REPLACED` 안내를 받게 하려고. 지우면 일반 무효(`SESSION_INVALID`)로 보인다 |
 | DB-12 | 게스트 → 기존 계정 로그인(`POST /auth/switch`)은 게스트 탈퇴(4.3)와 소셜 로그인을 한 트랜잭션으로 처리한다 (v0.6) | 게스트는 로그아웃이 없어 원래 계정으로 돌아갈 길이 없었다(PRD D-67). 데이터는 합치지 않고 게스트를 지운다. 한 트랜잭션이라 게스트만 지워지고 로그인이 실패하는 중간 상태가 없다. 트랜잭션 안에서 `social_accounts`를 다시 조회하고 대상 회원 행을 잠가, 그 사이에 회원이 탈퇴해도 안전하다. 없거나 탈퇴한 회원이면 롤백하고 게스트는 그대로 남는다. 이전 세션·기기 정리는 다른 로그인과 같은 코드를 쓴다 |
 | DB-13 | 날짜 범위(1950-01-01 ~ 2050-12-31)는 서비스에서 검사하고 DB CHECK는 두지 않는다 (v0.6) | 범위가 PRD D-74로 바뀔 수 있고, 바뀔 때마다 마이그레이션을 하지 않게 하려고. 서비스가 모든 입력 경로에서 막는다 (리드 결정) |
 | DB-14 | 사용자에게 보이는 푸시는 받는 사람에게 유효한 세션이 있을 때만 보내고(동기화 신호 SYNC는 그대로 보낸다), 매일 정리 작업이 유효 세션 없는 사용자의 `devices`를 지운다 (v0.6) | 로그인이 만료된 기기에 푸시가 가지 않게(PRD D-73, D-50과 같은 이유). 동기화 신호는 사용자에게 보이지 않으므로 막지 않고, 기기 정리로 자연히 멈춘다. 알림 목록 행은 그대로 만들어 다시 로그인하면 볼 수 있다. 푸시 전 확인과 정리 작업 두 겹으로 막는다 |
+| DB-15 | Kakao 연결 해제 알림은 `social_accounts`의 (`KAKAO`, `provider_user_id`)로 사용자를 찾아, Kakao가 유일한 로그인 수단이면 4.3 탈퇴로, 다른 수단이 있으면 `KAKAO` 행 삭제로 처리한다. 못 찾으면 아무것도 하지 않는다 (v0.8) | Kakao로만 들어오던 회원은 다시 들어올 방법이 없어 데이터를 남기지 않음 (PRD D-87). 같은 알림이 여러 번 와도 결과가 같다(멱등). 지금은 회원이 로그인 수단을 둘 가질 API가 없지만 UNIQUE (user_id, provider)가 허용하므로 정의해 둔다 |
+| DB-16 | 커플 연결 트랜잭션에서 두 사람의 다른 유효한 초대코드에 `revoked_at`을 기록한다 (v0.8) | 연결 뒤 남은 코드가 해제 직후 다시 쓸 수 있는 코드가 되지 않게. 연결 중인 사람의 코드를 넣으면 `INVITE_UNAVAILABLE`(`API.md` 오류 우선순위) (FR-COUPLE-02.AC3) |
 
 ---
 
@@ -430,14 +442,15 @@
 | FR-AUTH-01~05 | users, social_accounts, auth_sessions (revoked_reason, refresh_token_hash는 D-81), devices, notification_settings |
 | FR-AUTH-03 연동 (AC1 닉네임, AC3 기존 계정 로그인) | users.nickname, social_accounts, auth_sessions, devices (4.6, DB-12) |
 | FR-AUTH-05 로그아웃 (AC3 다른 계정으로 로그인) | auth_sessions (LOGOUT), devices (4.6) |
-| FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3). AC3 Kakao 연결 끊기는 social_accounts.provider (테이블 변화 없음) |
+| FR-AUTH-06 탈퇴 | 모든 사용자 관련 테이블 (4.3). AC3 Kakao 연결 끊기는 social_accounts.provider (테이블 변화 없음). AC4 Kakao 연결 해제 알림은 social_accounts (KAKAO 행만 삭제 또는 탈퇴, 연결 끊기 호출 없음, D-87, DB-15, 테이블 변화 없음) |
+| FR-SET-01 계정 | users.created_at (가입일, API `Me.createdAt`), users.account_type (테이블 변화 없음) |
 | FR-AUTH-07 프로필 | users.nickname (앞뒤 공백 제거, 코드 포인트 1~10자, 이름 없으면 "사용자", D-82), users.profile_image_key |
 | FR-AUTH-08 이용 동의 | 테이블 없음 (앱) |
 | FR-AUTH-09 앱 밖 계정 삭제 요청 | 테이블 없음 (웹 페이지와 메일 요청, 처리는 FR-AUTH-06과 같음) |
 | FR-SET-02 정보 | 테이블 없음 (앱·웹) |
-| FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at), invite_code_attempts, spaces, space_members |
+| FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at; 연결 때 다른 유효 코드 무효화 DB-16), invite_code_attempts (AC4 최근 1시간 실패 10번, 미끄러지는 창, D-83), spaces, space_members |
 | FR-COUPLE-03 | events, anniversaries, memos (space_id 이동) |
-| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13) |
+| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13. 바꿀 수만 있고 null로 되돌리지 않음, D-84) |
 | FR-COUPLE-05 | spaces.status, unlinked_at, purge_at, space_members.left_at. AC4 가져오기 전 해제는 space_members.left_at을 비워 개인 공간을 되살림 (4.2) |
 | FR-CAL-01~03 | events |
 | FR-CAL-01.AC6 날짜 범위 | events, memos.memo_date, anniversaries.date, spaces.start_date (서비스 검사, DB-13) |
@@ -452,6 +465,7 @@
 | FR-MEMO-05 | memos.pinned_at, pinned_by |
 | FR-MEMO-06 | memo_favorites |
 | FR-NOTI-01~03 | devices, notification_settings. 로그인 만료 기기 푸시 금지는 auth_sessions 확인 + 정리 작업 (NFR-SEC-01, DB-14) |
+| FR-NOTI-03 알림 이동 | notifications.target_type (연결·해제 알림은 `SETTINGS`, D-85) |
 | FR-NOTI-05 알림 목록 | notifications |
 
 ---
