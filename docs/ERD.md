@@ -179,6 +179,7 @@
 
 - CHECK: `type = 'COUPLE'` 이거나 `start_date`, `together_color`, `linked_at`, `unlinked_at`, `purge_at`이 모두 null (v0.9에서 `linked_at` 추가)
 - CHECK: `type = 'PERSONAL' OR linked_at IS NOT NULL` — 커플 공간은 늘 연결 시각이 있다 (v0.9, DB-17)
+- 마이그레이션 순서 (v0.9, 새 Flyway 버전. 이미 머지된 V1·V2 파일은 고치지 않는다): ① `linked_at timestamptz null` 추가 → ② 기존 `COUPLE` 행을 `linked_at = created_at`으로 채우기 → ③ 기존 CHECK(`type = 'COUPLE'` 이거나 … 모두 null)를 지우고 `linked_at`을 넣어 다시 만들기 → ④ 새 CHECK `type = 'PERSONAL' OR linked_at IS NOT NULL` 추가. 채우기(②) 없이 CHECK(④)를 걸면 기존 COUPLE 행에서 실패하므로 순서를 바꾸지 않는다. 출시 전이라 개발 데이터만 있고, 복구된 개발 데이터는 처음 연결 시각이 된다
 - CHECK: `(status = 'UNLINKED') = (unlinked_at IS NOT NULL AND purge_at IS NOT NULL)`
 - 부분 INDEX (purge_at) WHERE purge_at IS NOT NULL: 정리 작업용
 - 탈퇴한 구성원이 있는 UNLINKED 공간은 재연결 복구 대상이 아니다. 운영자만 DB에서 복구할 수 있다 (PRD D-36)
