@@ -73,7 +73,7 @@
 <div id="root">
   <h1>둘이서 ERD (MVP v0.1)</h1>
   <div class="sub">모든 콘텐츠는 공간에 속하고, 사용자는 활성 공간 하나에 속한다</div>
-  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.8 · 2026-10-27</div>
+  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.9 · 2026-10-31</div>
 
   <div class="zones">
     <!-- 계정 -->
@@ -162,6 +162,7 @@
               <div class="row"><span></span><span class="n">status</span><span class="t">ACTIVE · UNLINKED</span></div>
               <div class="row"><span></span><span class="n">start_date</span><span class="t">처음 만난 날 · date</span></div>
               <div class="row"><span></span><span class="n">together_color</span><span class="t">'함께' 색</span></div>
+              <div class="row"><span></span><span class="n">linked_at</span><span class="t">연결한 시각 · null(개인)</span></div>
               <div class="row"><span></span><span class="n">unlinked_at</span><span class="t">timestamptz · null</span></div>
               <div class="row"><span></span><span class="n">purge_at</span><span class="t">삭제 예정 시각</span></div>
             </div>

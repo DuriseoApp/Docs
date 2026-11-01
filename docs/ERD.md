@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.8 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-10-27)
+> 작성일: 2026-10-17 (갱신: 2026-10-31)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -172,11 +172,14 @@
 | status | varchar(10) | not null, default `ACTIVE`, CHECK in (`ACTIVE`, `UNLINKED`) | 개인 공간은 항상 `ACTIVE` |
 | start_date | date | null | 처음 만난 날. 커플 공간만 (FR-COUPLE-04). 커플 공간에서 한번 정하면 바꿀 수만 있고 null로 되돌리지 않는다 (PRD D-84). 연결 직후에는 null(건너뛰기) |
 | together_color | varchar(20) | null | '함께' 사람 색의 팔레트 키. 커플 공간만 (FR-CAL-04) |
+| linked_at | timestamptz | null | 커플 공간이 연결된 시각. 복구(FR-COUPLE-06)하면 다시 연결한 시각으로 바꾼다. 개인 공간은 null. API `MeSpace.linkedAt`·`Space.linkedAt`(연결한 날, FR-SET-01.AC1, PRD D-94, DB-17) |
 | unlinked_at | timestamptz | null | 연결 해제 시각 |
 | purge_at | timestamptz | null | 이 시각이 지나면 정리 작업이 공간을 삭제한다. 연결 해제 시 `unlinked_at` + 30일, 구성원이 탈퇴하면 탈퇴 시각 + 90일로 늦춘다 (PRD D-06, D-36) |
 | created_at, updated_at | timestamptz | not null | |
 
-- CHECK: `type = 'COUPLE'` 이거나 `start_date`, `together_color`, `unlinked_at`, `purge_at`이 모두 null
+- CHECK: `type = 'COUPLE'` 이거나 `start_date`, `together_color`, `linked_at`, `unlinked_at`, `purge_at`이 모두 null (v0.9에서 `linked_at` 추가)
+- CHECK: `type = 'PERSONAL' OR linked_at IS NOT NULL` — 커플 공간은 늘 연결 시각이 있다 (v0.9, DB-17)
+- 마이그레이션 순서 (v0.9, 새 Flyway 버전. 이미 머지된 V1·V2 파일은 고치지 않는다): ① `linked_at timestamptz null` 추가 → ② 기존 `COUPLE` 행을 `linked_at = created_at`으로 채우기 → ③ 기존 CHECK(`type = 'COUPLE'` 이거나 … 모두 null)를 지우고 `linked_at`을 넣어 다시 만들기 → ④ 새 CHECK `type = 'PERSONAL' OR linked_at IS NOT NULL` 추가. 채우기(②) 없이 CHECK(④)를 걸면 기존 COUPLE 행에서 실패하므로 순서를 바꾸지 않는다. 출시 전이라 개발 데이터만 있고, 복구된 개발 데이터는 처음 연결 시각이 된다
 - CHECK: `(status = 'UNLINKED') = (unlinked_at IS NOT NULL AND purge_at IS NOT NULL)`
 - 부분 INDEX (purge_at) WHERE purge_at IS NOT NULL: 정리 작업용
 - 탈퇴한 구성원이 있는 UNLINKED 공간은 재연결 복구 대상이 아니다. 운영자만 DB에서 복구할 수 있다 (PRD D-36)
@@ -250,7 +253,7 @@
 | is_all_day | boolean | not null | |
 | start_at, end_at | timestamptz | null | 시간 일정만 |
 | start_date, end_date | date | null | 종일 일정만 |
-| updated_by | uuid | null, FK users RESTRICT | 마지막 수정자 ('함께' 일정은 상대도 수정 가능) |
+| updated_by | uuid | null, FK users RESTRICT | 마지막 수정자 ('함께' 일정은 상대도 수정 가능). 생성 때 null, 수정할 때 수정자로 기록 (API `Event.updatedBy`) |
 | created_at, updated_at | timestamptz | not null | |
 
 - CHECK: 종일이면 `start_date`, `end_date`만 있고 `end_date >= start_date`, 아니면 `start_at`, `end_at`만 있고 `end_at >= start_at`
@@ -267,12 +270,18 @@
 | event_id | uuid | not null, FK events ON DELETE CASCADE | |
 | user_id | uuid | not null, FK users ON DELETE CASCADE | 알림을 받을 사람 |
 | option | varchar(20) | not null, CHECK in (`AT_TIME`, `MIN_10`, `HOUR_1`, `DAY_1`, `ALLDAY_9AM`, `ALLDAY_PREV_9AM`) | "없음"은 행이 없는 것 |
-| fire_at | timestamptz | not null | 보낼 시각. 일정 일시나 사용자 시간대가 바뀌면 다시 계산 (FR-CAL-05.AC4) |
-| sent_at | timestamptz | null | |
+| fire_at | timestamptz | not null | 보낼 시각. `option`과 일정 시작으로 계산한다 (계산식은 `API.md` 3.3, 아래 "알림 시각 계산"). 일정 시작이나 사용자 시간대가 바뀌면 다시 계산 (FR-CAL-05.AC4~AC6, PRD D-90, D-91). 이미 지난 시각일 수 있다 |
+| sent_at | timestamptz | null | 보냈거나, 저장할 때 이미 지난 시각이라 보내지 않기로 한 시각 (PRD D-90). null이면 아직 안 보냄 |
 | created_at, updated_at | timestamptz | not null | |
 
 - UNIQUE (event_id, user_id): 일정당 사용자별 하나
 - 부분 INDEX (fire_at) WHERE sent_at IS NULL: 1분마다 도는 발송 작업용
+- 서비스(알림 시각 계산, PRD D-90): `AT_TIME` = `start_at`, `MIN_10` = `start_at` − 10분, `HOUR_1` = `start_at` − 1시간, `DAY_1` = `start_at` − 24시간(서머타임이 있는 날도 24시간). `ALLDAY_9AM` = `start_date` 09:00, `ALLDAY_PREV_9AM` = (`start_date` − 1일) 09:00이며 둘 다 **알림 주인**(`event_reminders.user_id`)의 `users.time_zone` 기준으로 UTC로 바꾼다. 저장할 때(설정, 아래 다시 계산 모두) 계산한 `fire_at` <= 지금이면 행은 저장하고 `sent_at` = 지금으로 기록해 보내지 않는다. 미래면 `sent_at` = null. 끝난 일정에도 설정할 수 있다
+- 서비스(다시 계산, PRD D-91. 모두 일정 수정과 같은 트랜잭션):
+  - `isAllDay`가 바뀌면 그 일정의 `event_reminders`를 모든 사용자 것 삭제한다("없음"으로 돌아감).
+  - 종류는 그대로 `start`가 바뀌면 그 일정의 모든 행의 `fire_at`을 다시 계산하고 `sent_at`을 위 규칙(지났으면 지금, 미래면 null)으로 다시 정한다. 이미 보낸 알림도 새 시각이 미래면 다시 보낸다.
+  - `end`·제목·메모·대상만 바뀌면 알림은 그대로다(`fire_at`은 시작 기준).
+  - 사용자의 `time_zone`이 바뀌면 그 사용자의 행 중 `option`이 `ALLDAY_9AM`·`ALLDAY_PREV_9AM`이고 `sent_at IS NULL`인 것만 새 시간대로 다시 계산한다(지났으면 `sent_at` = 지금). 시간 일정 알림은 그대로다.
 
 **anniversaries** — 직접 기념일 (FR-ANNIV-03). 자동 기념일은 저장하지 않는다 (DB-01)
 
@@ -335,7 +344,7 @@
 | 게스트 시작, 신규 소셜 로그인 | users, notification_settings, spaces(PERSONAL), space_members(주황), auth_sessions |
 | 로그인 3종 (게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인) | 새 auth_sessions. 같은 트랜잭션에서 다른 유효 세션과 devices를 정리한다 (4.6). 게스트 연동은 현재 세션을 그대로 쓰므로 새 행이 없다 |
 | 게스트 → 기존 계정 로그인 (D-67) | 새 auth_sessions 한 행(그 계정의 회원 세션). 같은 트랜잭션에서 게스트 사용자를 4.3 탈퇴와 같이 처리한다 (DB-12). 새 users, spaces는 만들지 않는다 |
-| 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라), space_members 2개(만든 사람 주황, 입력한 사람 파랑). 같은 트랜잭션에서 두 사람 각자의 개인 공간을 정한다: 혼자 쓴 기록이 없으면 그 개인 공간을 바로 지운다 (아래 "커플 연결 때 개인 공간 처리"). 또 두 사람의 다른 유효한 invite_codes에 `revoked_at`을 기록해 무효로 만든다 (DB-16) |
+| 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라, `linked_at` = 지금, DB-17), space_members 2개(만든 사람 주황, 입력한 사람 파랑). 같은 트랜잭션에서 두 사람 각자의 개인 공간을 정한다: 혼자 쓴 기록이 없으면 그 개인 공간을 바로 지운다 (아래 "커플 연결 때 개인 공간 처리"). 또 두 사람의 다른 유효한 invite_codes에 `revoked_at`을 기록해 무효로 만든다 (DB-16) |
 | 연결 해제 | 두 사람 각자 spaces(PERSONAL), space_members(주황). 단, 가져오기 대기 중인 개인 공간(기록이 있어 남아 있는 공간)이 있는 사람은 새로 만들지 않고 그 공간을 되살린다 (4.2) |
 | 알림이 생길 때 (PRD 8장) | 받는 사람마다 notifications. 푸시 설정을 꺼도 만든다 (DB-07) |
 
@@ -345,13 +354,14 @@
 - 혼자 쓴 기록이 없으면 그 개인 공간을 같은 트랜잭션에서 바로 지운다. 소속과 알림(`notifications.space_id` CASCADE, 4.5)도 함께 지워진다.
 - 그래서 가져오기 대기 중인 개인 공간은 기록이 있는 공간뿐이고, `importPending`은 요청자에게 그런 공간이 남아 있을 때만 true다.
 - 대기 공간은 `POST /couple/import`로 가져오거나 가져오지 않기를 고르면 지워진다. 고르기 전에 연결이 해제되면 4.2가 그 공간을 되살린다.
+- `MeSpace.importCounts`는 대기 공간의 `events`, `anniversaries`, `memos` 행 수를 요청 때 센다. 저장하지 않는다 (PRD D-93).
 
 ### 4.2 연결 해제와 보관
 
 - 커플 공간은 `status = UNLINKED`, `unlinked_at` = 해제 시각, `purge_at` = 해제 시각 + 30일 (PRD D-06)
 - 두 구성원의 `space_members.left_at`을 기록하고, 그 공간의 `event_reminders`를 삭제한다
 - 해제한 공간의 `space_id`를 가진 `notifications`를 두 사람 모두 삭제한다 (PRD D-45). 이 처리 뒤에 만드는 `COUPLE_UNLINKED` 알림은 `space_id`가 null이라 지워지지 않는다
-- `purge_at` 전에 같은 두 사람이 다시 연결하면 공간을 ACTIVE로 되돌리고 `left_at`, `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06)
+- `purge_at` 전에 같은 두 사람이 다시 연결하면 공간을 ACTIVE로 되돌리고 `left_at`, `unlinked_at`, `purge_at`을 비우며 `linked_at` = 지금(다시 연결한 시각)으로 바꾼다 (FR-COUPLE-06, PRD D-94, DB-17). 해제·탈퇴 때는 `linked_at`을 그대로 둔다
 - 커플 연결 때의 개인 공간 처리(빈 개인 공간 즉시 삭제, 가져오기 대기)는 4.1의 "커플 연결 때 개인 공간 처리"에 있다. 아래 되살리기는 그 결과로 남은 대기 공간을 대상으로 한다
 - **가져오기 전 해제** (D-78): 구성원에게 가져오기 대기 중인 개인 공간(기록이 있어 남아 있고 소속에 `left_at`이 있는 PERSONAL)이 있으면 그 사람에게는 새 개인 공간을 만들지 않는다. 대신 그 공간의 `space_members.left_at`을 비워 다시 활성 공간으로 쓴다. 혼자 쓴 기록이 원래 개인 공간에 그대로 돌아가고, 그 사람의 `importPending`은 false가 된다 (FR-COUPLE-05.AC4). 활성 소속이 하나뿐이라는 부분 UNIQUE는 해제 처리에서 커플 공간 소속의 `left_at`을 먼저 기록한 뒤 되살리므로 지켜진다. 남아 있는 대기 중인 개인 공간이 없는 구성원(기록이 없어 연결 때 지워졌거나, 이미 가져오기·가져오지 않기를 정한 사람)은 기존대로 새 빈 개인 공간을 만든다
 
@@ -432,6 +442,7 @@
 | DB-14 | 사용자에게 보이는 푸시는 받는 사람에게 유효한 세션이 있을 때만 보내고(동기화 신호 SYNC는 그대로 보낸다), 매일 정리 작업이 유효 세션 없는 사용자의 `devices`를 지운다 (v0.6) | 로그인이 만료된 기기에 푸시가 가지 않게(PRD D-73, D-50과 같은 이유). 동기화 신호는 사용자에게 보이지 않으므로 막지 않고, 기기 정리로 자연히 멈춘다. 알림 목록 행은 그대로 만들어 다시 로그인하면 볼 수 있다. 푸시 전 확인과 정리 작업 두 겹으로 막는다 |
 | DB-15 | Kakao 연결 해제 알림은 `social_accounts`의 (`KAKAO`, `provider_user_id`)로 사용자를 찾아, Kakao가 유일한 로그인 수단이면 4.3 탈퇴로, 다른 수단이 있으면 `KAKAO` 행 삭제로 처리한다. 못 찾으면 아무것도 하지 않는다 (v0.8) | Kakao로만 들어오던 회원은 다시 들어올 방법이 없어 데이터를 남기지 않음 (PRD D-87). 같은 알림이 여러 번 와도 결과가 같다(멱등). 지금은 회원이 로그인 수단을 둘 가질 API가 없지만 UNIQUE (user_id, provider)가 허용하므로 정의해 둔다 |
 | DB-16 | 커플 연결 트랜잭션에서 두 사람의 다른 유효한 초대코드에 `revoked_at`을 기록한다 (v0.8) | 연결 뒤 남은 코드가 해제 직후 다시 쓸 수 있는 코드가 되지 않게. 연결 중인 사람의 코드를 넣으면 `INVITE_UNAVAILABLE`(`API.md` 오류 우선순위) (FR-COUPLE-02.AC3) |
+| DB-17 | 연결한 날은 `spaces.linked_at`에 둔다. `space_members.joined_at`을 쓰지 않는다 (v0.9) | `joined_at`은 소속 행이 생긴 시각이라 복구 때 바뀌지 않고, 연결 시각은 공간 하나에 값 하나라 공간에 두는 것이 맞다 (PRD D-94). 복구하면 `linked_at`을 다시 연결한 시각으로 바꾼다. 개수(`importCounts`)는 저장하지 않고 요청 때 센다 (4.1, PRD D-93) |
 
 ---
 
@@ -449,15 +460,16 @@
 | FR-AUTH-09 앱 밖 계정 삭제 요청 | 테이블 없음 (웹 페이지와 메일 요청, 처리는 FR-AUTH-06과 같음) |
 | FR-SET-02 정보 | 테이블 없음 (앱·웹) |
 | FR-COUPLE-01~02, 06 | invite_codes (code, expires_at, revoked_at; 연결 때 다른 유효 코드 무효화 DB-16), invite_code_attempts (AC4 최근 1시간 실패 10번, 미끄러지는 창, D-83), spaces, space_members |
-| FR-COUPLE-03 | events, anniversaries, memos (space_id 이동) |
-| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13. 바꿀 수만 있고 null로 되돌리지 않음, D-84) |
+| FR-COUPLE-03 | events, anniversaries, memos (space_id 이동). AC1·AC2 종류별 개수(`importCounts`)는 대기 공간의 행 수를 요청 때 세며 저장하지 않음 (D-93, 테이블 변화 없음) |
+| FR-COUPLE-04 | spaces.start_date (1950-01-01 ~ 오늘, 서비스 검사, DB-13. 바꿀 수만 있고 null로 되돌리지 않음, D-84). AC4·AC5(시트 칸 동작, 처음 만난 날 없는 메뉴)는 앱 동작이라 테이블 변화 없음 (D-98, D-99) |
+| FR-SET-01 연결한 날 (AC1) | spaces.linked_at (D-94, DB-17). 복구하면 다시 연결한 시각 |
 | FR-COUPLE-05 | spaces.status, unlinked_at, purge_at, space_members.left_at. AC4 가져오기 전 해제는 space_members.left_at을 비워 개인 공간을 되살림 (4.2) |
-| FR-CAL-01~03 | events |
+| FR-CAL-01~03 | events (`updated_by`는 생성 때 null, 수정할 때 수정자). FR-CAL-02.AC1 제목 앞뒤 공백 제거는 서비스 검사 (D-89, 테이블 변화 없음) |
 | FR-CAL-01.AC6 날짜 범위 | events, memos.memo_date, anniversaries.date, spaces.start_date (서비스 검사, DB-13) |
 | FR-CAL-01 날짜 있는 메모 | memos.memo_date |
 | FR-CAL-01.AC4 안 읽음 점 | notifications.read_at |
 | FR-CAL-04 사람 색 | space_members.color, spaces.together_color |
-| FR-CAL-05 일정 알림 | event_reminders |
+| FR-CAL-05 일정 알림 | event_reminders. AC4 종일↔시간 전환 시 모든 사용자 행 삭제와 일시 변경 때 다시 계산 (D-91), AC5 `fire_at` 계산과 지난 시각이면 `sent_at` = 지금 (D-90), AC6 시간대 변경 때 보내지 않은 종일 알림만 다시 계산 (D-91). 테이블 변화 없음 |
 | FR-ANNIV-01~04 | spaces.start_date(자동), anniversaries(직접). AC3 지난 기념일은 `repeats_yearly = false`이고 `date` < 오늘인 조회, AC4 처음 만난 날이 없으면 자동 기념일 없음 (`start_date` null) |
 | FR-MEMO-01~03 | memos |
 | FR-MEMO-02 메모 날짜 | memos.memo_date |
