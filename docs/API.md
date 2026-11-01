@@ -2,7 +2,7 @@
 
 > 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-27, 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가) (갱신: 2026-10-31, PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt`)
+> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt`)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -120,7 +120,7 @@
 | POST | /auth/refresh | `{refreshToken: string}` (access 토큰 불필요) → 200 `AuthTokens` (`isNewUser: false`, 새 refresh 토큰) | refresh 토큰 교체 발급 (같은 세션 행을 갱신하므로 `sid`는 그대로). 그 세션이 `REPLACED`로 끊겼으면 401 `SESSION_REPLACED`, 이전 refresh 토큰 재사용을 포함한 그 밖의 무효는 401 `SESSION_INVALID` | refresh 토큰 | NFR-SEC-01, FR-AUTH-02.AC3 |
 | POST | /auth/logout | 본문 없음 → 204 | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80). **앱 동작 (D-86)**: 쓰기와 같이 온라인에서만 부른다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요"를 보여준다. 응답이 401 `SESSION_REPLACED`·`SESSION_INVALID`면 이미 끊긴 세션이므로 1장 규칙대로 로컬을 지우고 SCR-START-01로 간다. 그 밖의 오류(5xx 포함)는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다(기기 데이터와 토큰을 지우지 않는다). 204를 받으면 소셜 SDK 상태도 지운다 (1장) | R-17 (MEMBER만) | FR-AUTH-05.AC4, D-86, D-50 |
 | GET | /me | → 200 `Me` | 내 정보 + 현재 공간 요약 (종류, 공간 ID, 상대, 사람 색, 처음 만난 날, 연결한 날 `linkedAt`, `importPending`, 가져오기 대기 기록 개수 `importCounts`). SCR-COUPLE-02의 연결 확인 호출로도 쓴다 (4.4) | 로그인 | FR-SET-01, FR-COUPLE-02.AC5 |
-| PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다 | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
+| PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다. 시간대가 바뀌면 그 사용자의 종일 일정 알림 `fire_at`을 다시 계산한다 (3.3 "다시 계산", FR-CAL-05.AC6) | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
 | PUT | /me/profile-image | multipart (요청·응답 모양은 OpenAPI 기준) | 프로필 사진 업로드 | 로그인 | FR-AUTH-07.AC3 |
 | DELETE | /me/profile-image | (OpenAPI 기준) | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
 | GET | /users/{id}/profile-image | (OpenAPI 기준) | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
@@ -297,7 +297,7 @@
 - `DELETE /events/{id}`: R-01 → R-02
 - `POST /events`: R-10 → 값 검사 → 날짜 범위
 - `PUT`·`DELETE /events/{id}/reminder`: R-01 → 값 검사
-- 권한 없는 사용자에게 필드 오류를 보여주지 않는다. `isTogether`가 boolean이 아니면 R-13·R-10은 건너뛰고 값 검사에서 (`isTogether`, `INVALID`)로 응답한다.
+- 권한 없는 사용자에게 필드 오류를 보여주지 않는다. `isTogether`가 `null`이면 (`isTogether`, `REQUIRED`), boolean이 아닌 값(문자열 등)이면 (`isTogether`, `INVALID`)이고, 둘 다 R-13·R-10은 건너뛰고 값 검사에서 응답한다.
 
 **일정 알림 `option`**
 
@@ -330,7 +330,7 @@
 | `PATCH`로 `isAllDay`가 바뀜 | 그 일정의 `event_reminders`를 **모든 사용자 것** 삭제한다. 응답의 `reminder`는 `null` |
 | `PATCH`로 `start`가 바뀜 (종류는 그대로) | 그 일정의 모든 행의 `fire_at`을 새 `start`로 다시 계산하고, `sent_at`은 위 규칙(지났으면 지금, 미래면 null)으로 다시 정한다. 이미 보낸 알림도 새 시각이 미래면 다시 보낸다 |
 | `end`·제목·메모·대상만 바뀜 | 알림은 그대로 (`fire_at`은 시작 기준) |
-| 사용자의 `time_zone`이 바뀜 (`PATCH /me`, 단위 1의 `UserTimeZoneChanged`) | 그 사용자의 행 중 `option`이 `ALLDAY_9AM`·`ALLDAY_PREV_9AM`이고 `sent_at IS NULL`인 것만 새 시간대로 다시 계산한다(지났으면 `sent_at` = 지금). 시간 일정 알림은 그대로 |
+| 사용자의 `time_zone`이 바뀜 (`PATCH /me`, 단위 1의 `UserTimeZoneChanged`) | 그 사용자의 행 중 `option`이 `ALLDAY_9AM`·`ALLDAY_PREV_9AM`이고 `sent_at IS NULL`인 것만 새 시간대로 다시 계산한다(지났으면 `sent_at` = 지금). 시간 일정 알림은 그대로. 저장 때 이미 지나 `sent_at`이 찍힌 행은 다시 계산하지 않는다. D-91의 "아직 보내지 않은"은 `sent_at IS NULL`로 읽는다 (리드 보충) |
 
 **상대 일정 추가 알림** (7장 "상대 활동 알림" 줄, D-92)
 
@@ -448,7 +448,7 @@
    - **시도로 남기는 것**: 실패는 위 표의 5~10번(형식이 틀린 코드를 포함해 연결에 쓸 수 없는 모든 코드)이다. 실패 기록은 연결 트랜잭션과 별도로 커밋된다(응답이 오류여도 남는다). 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 1~3번(R-09 거부, `VALIDATION_FAILED`)과 4번(429 `INVITE_RATE_LIMITED` 자체).
    - 7~10번은 코드 행을 잠근 뒤(`SELECT … FOR UPDATE`) 검사한다. 9번을 10번보다 먼저 보는 이유: 4.4의 5단계 "다른 코드 무효화" 때문에 만든 사람이 다른 사람과 연결되면 그 코드에 `revoked_at`이 생겨 10번이 나오게 되는데, 그러면 FR-COUPLE-02.AC3의 "사용할 수 없는 코드"가 깨진다. 만든 사람이 연결을 해제해 다시 개인 공간이면 9번에 걸리지 않고 10번(만료된 코드)이 된다.
 3. 위 표를 통과하면 A와 B가 MEMBER이고 둘 다 개인 공간에 있는 것이다. 실패마다 다른 오류 코드를 돌려준다 (FR-COUPLE-02.AC2, 5장). 재요청이나 연결로 무효가 된 코드(`revoked_at` 있음)는 만료와 같은 `INVITE_EXPIRED`로 응답한다 (PRD D-47).
-4. **복구 확인**: `purge_at`이 지나지 않았고 이전 구성원이 정확히 A와 B인 UNLINKED 커플 공간이 있으면, 그 공간을 다시 ACTIVE로 바꾸고 두 사람의 `space_members.left_at`과 공간의 `unlinked_at`, `purge_at`을 비운다 (FR-COUPLE-06). 없으면 새 커플 공간과 구성원(A 주황, B 파랑, 함께 보라)을 만든다.
+4. **복구 확인**: `purge_at`이 지나지 않았고 이전 구성원이 정확히 A와 B인 UNLINKED 커플 공간이 있으면, 그 공간을 다시 ACTIVE로 바꾸고 두 사람의 `space_members.left_at`과 공간의 `unlinked_at`, `purge_at`을 비우고 `linked_at` = 지금(다시 연결한 시각)으로 바꾼다 (FR-COUPLE-06, D-94, ERD 4.2·DB-17). 새 커플 공간을 만들 때는 `linked_at` = 지금으로 넣는다. 없으면 새 커플 공간과 구성원(A 주황, B 파랑, 함께 보라)을 만든다.
 5. 입력한 코드를 사용 처리하고(`used_at`, `used_by_user_id`), **A와 B의 다른 유효한 코드(`used_at IS NULL AND revoked_at IS NULL`, 만료됐어도 포함)에 `revoked_at` = 지금을 기록한다** (ERD DB-16: 연결 뒤 남은 코드가 해제 직후 다시 쓸 수 있는 코드가 되지 않게. 연결 중인 사람의 코드를 넣으면 `INVITE_UNAVAILABLE`). A와 B 각자의 개인 공간을 정한다 (D-78).
    - 혼자 쓴 기록(`events`, `anniversaries`, `memos`)이 있으면 소속에 `left_at`을 기록하고 공간은 지우지 않는다 (가져오기 대기).
    - 혼자 쓴 기록이 없으면 그 개인 공간을 같은 트랜잭션에서 바로 지운다. 그래서 가져오기 대기 중인 개인 공간은 기록이 있는 공간뿐이다.
@@ -465,11 +465,22 @@
      
      처음 로그인한 기기에서 `GET /me`가 처음부터 커플 공간을 돌려주면(저장값 없음) 변화로 보지 않고 `importPending`만 본다. FR-COUPLE-03.AC6 확인: 처음 연결한 사용자는 연결 전에 개인 공간 ID가 1번으로 저장돼 있으므로, 연결 뒤 커플 공간 ID가 저장값과 달라 시트가 뜨고, 기록이 없어도 시트를 닫기 전에 앱을 끄면 저장값이 그대로라 다음 실행 때 시트가 다시 뜬다.
 9. 시트에서 두 사람은 각자 `POST /couple/import`로 고른다. 가져오기 대기 중인 개인 공간이 없으면(이미 정했거나 연결 해제와 겹친 경우 포함) 409 `NO_IMPORT_PENDING`이고 아무것도 바꾸지 않는다 (R-18). `import`가 없거나 `null`이면 400 `VALIDATION_FAILED`(`import`, `REQUIRED`)이고 R-18이 먼저다. 성공은 204다. `import: true`면 자기 개인 공간의 `events`, `anniversaries`, `memos`의 `space_id`를 커플 공간으로 바꾼 뒤 개인 공간을 지운다. `false`면 개인 공간을 지운다 (FR-COUPLE-03). 처음 만난 날은 같은 시트에서 정하며, 건너뛰어도 된다. 서버 저장은 `PATCH /space`이고, 칸을 채우는 시트의 [저장]은 서버를 부르지 않는다 (아래 [시작하기] 순서). 오늘보다 뒤의 날짜는 400 `VALIDATION_FAILED`, 1950-01-01보다 앞의 날짜는 400 `DATE_OUT_OF_RANGE`로 거부한다 (FR-COUPLE-04.AC3, D-74, R-15). 정한 뒤에는 다른 날로 바꿀 수만 있고 지울 수 없다(`null`은 400 `VALIDATION_FAILED`, D-84). 앱은 기록 선택을 [가져오기]로 미리 선택해 보여주고, [시작하기] 전에는 시트를 닫지 못하게 한다 (D-76, 앱 동작).
-   - **[시작하기] 순서 (앱 동작, D-98, FR-COUPLE-04.AC4)**: ① 처음 만난 날을 골랐으면 `PATCH /space` ② 기록 선택이 있으면 `POST /couple/import` ③ 시트를 닫고 확인한 공간 ID를 저장한다. 되돌릴 수 없는 삭제를 마지막에 하려는 순서다. 중간에 실패하면 거기서 멈추고 공통 오류(D-88)를 보여주며 시트는 그대로 둔다(다시 누르면 처음부터 하고, 같은 날짜의 `PATCH /space`는 무해하다).
-   - **`NO_IMPORT_PENDING` (앱 동작, D-103)**: ②에서 409 `NO_IMPORT_PENDING`을 받으면 이미 정한 것으로 보고 ③으로 간 뒤 `GET /me`를 다시 읽는다. 해제와 겹친 경우면 이 읽기에서 공간이 바뀐 것을 알고 4.5의 6단계 초기화로 이어진다.
+   - **[시작하기] 순서 (앱 동작, D-98, FR-COUPLE-04.AC4)**: ① 처음 만난 날을 골랐으면 `PATCH /space` ② 기록 선택이 있으면 `POST /couple/import` ③ 시트를 닫고 확인한 공간 ID를 커플 공간 ID로 바꿔 저장한다(8단계 저장 시점 2). 되돌릴 수 없는 삭제를 마지막에 하려는 순서다. 중간에 실패하면 거기서 멈추고 공통 오류(D-88)를 보여주며 시트는 그대로 둔다(다시 누르면 처음부터 하고, 같은 날짜의 `PATCH /space`는 무해하다).
+   - **`NO_IMPORT_PENDING` (앱 동작, D-103)**: ②에서 409 `NO_IMPORT_PENDING`을 받으면 이미 정한 것으로 보고 ③으로 간 뒤 `GET /me`를 다시 읽는다. 해제와 겹친 경우면 이 읽기에서 공간이 바뀐 것을 알고 4.5의 6단계 초기화로 이어진다. 이 `GET /me` 다시 읽기는 **리드 보충**이다(근거: FR-COUPLE-03, 해제와 겹친 `NO_IMPORT_PENDING`을 앱이 알아채야 함).
 10. `importPending`은 6단계와 같은 정의다: 가져오기 대기 중인 개인 공간(소속에 `left_at`이 있는 PERSONAL 공간, 곧 기록이 있는 공간)이 남아 있을 때만 true다. true인 사람은 고르기 전에는 시트를 닫을 수 없다(혼자 쓴 기록이 없는 사람은 대기 공간이 없어 false이고 바로 닫을 수 있다). `importPending`이 true인 동안 `GET /me`의 `importCounts`는 그 대기 공간의 개수를 계속 돌려주고(`false`면 `null`), 앱은 시트와 "혼자 쓴 기록을 삭제할까요?" 다이얼로그의 [N]에 쓴다 (D-93). 고르지 않고 앱을 껐다가 다시 열었을 때 대기 공간이 남아 있으면 `GET /me`의 `importPending`이 계속 true이므로 앱이 시트를 다시 띄워 묻는다 (FR-COUPLE-03.AC4). 고르기 전에 연결이 해제되면 4.5의 4단계가 이 공간을 되살린다 (D-78).
 11. 알림 권한: 커플 연결도 앱이 알림 권한을 처음 묻는 시점 중 하나다 (D-70, 앱 동작, API 없음).
-12. **낡은 로컬 상태 (앱 동작, D-95)**: `POST /invite-codes`·`GET /invite-codes/current`·`POST /couple/join`이 409 `ALREADY_COUPLED`나 403 `GUEST_NOT_ALLOWED`를 주면 앱은 공통 오류(D-88)를 보여준 뒤 `GET /me`를 다시 읽는다(로컬 정보가 낡은 경우. 공간이 바뀌었으면 시트나 4.5의 6단계 초기화로 이어진다). `POST /couple/join`의 `VALIDATION_FAILED`(`code`)는 공통 오류다. 그 밖의 초대코드 오류 코드의 문구는 PRD FR-COUPLE-02 "초대코드 오류 문구" 표를 따른다.
+12. **낡은 로컬 상태 (앱 동작, D-95)**: `POST /invite-codes`·`GET /invite-codes/current`·`POST /couple/join`이 409 `ALREADY_COUPLED`나 403 `GUEST_NOT_ALLOWED`를 주면 앱은 공통 오류(D-88)를 보여준 뒤 `GET /me`를 다시 읽는다(로컬 정보가 낡은 경우. 공간이 바뀌었으면 시트나 4.5의 6단계 초기화로 이어진다). `POST /couple/join`의 `VALIDATION_FAILED`(`code`, `code`가 아예 없거나 `null`·공백만 있을 때)는 공통 오류다. 앱은 오류의 `code`로 문구를 고른다. 초대코드 오류 코드와 PRD FR-COUPLE-02 "초대코드 오류 문구" 표 6줄의 대응은 다음과 같다(문구는 PRD가 기준이다).
+
+    | 오류 코드 | PRD 표의 경우 |
+    | --- | --- |
+    | `INVITE_NOT_FOUND` | 존재하지 않는 코드("없는 코드예요…"). 형식이 틀린 코드(6자리가 아님, 31자 집합 밖의 글자)도 서버가 이 코드로 주므로 같은 문구다 |
+    | `INVITE_EXPIRED` | 만료된 코드. 재요청·자동 재발급·연결로 바뀐 이전 코드(`revoked_at` 있음)도 포함 |
+    | `INVITE_USED` | 이미 사용된 코드 |
+    | `INVITE_SELF` | 자신이 만든 코드 |
+    | `INVITE_UNAVAILABLE` | 사용할 수 없는 코드 (만든 사람이 다른 사람과 연결 중) |
+    | `INVITE_RATE_LIMITED` | 입력 제한. 문구의 [N]분은 `details.retryAfterSeconds`를 분으로 올림(최소 1)한 값 |
+
+    위 6개 밖의 오류(`VALIDATION_FAILED`, 5xx 등)는 공통 오류(D-88), 오프라인은 "인터넷 연결이 필요해요"다.
 
 ### 4.5 연결 해제 (FR-COUPLE-05)
 
