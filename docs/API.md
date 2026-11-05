@@ -2,7 +2,7 @@
 
 > 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt` / 2026-11-04 PRD v0.10: 기념일 API 요청·응답(`Anniversary`, `AnniversaryOccurrence`)·조회·쓰기 규칙·검사 순서, 자동 기념일 계산과 같은 날 순서, 커서·`size` 공통 규칙, 일정 저장 순서, SYNC `ANNIVERSARY` 범위)
+> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt` / 2026-11-05 PRD v0.10: 기념일 API 요청·응답(`Anniversary`, `AnniversaryOccurrence`)·조회·쓰기 규칙·검사 순서, 자동 기념일 계산과 같은 날 순서, 커서·`size` 공통 규칙, 일정 저장 순서, SYNC `ANNIVERSARY` 범위)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -48,13 +48,13 @@
 - 최상위는 항상 객체다. 배열을 그대로 돌려주지 않는다 (나중에 필드를 더해도 앱이 깨지지 않게).
 - 값이 없는 필드는 빼지 않고 `null`로 보낸다.
 
-**커서·`size` 공통 규칙** (PRD 변경 없음, v0.10 영향 분석 3.2)
+**커서·`size` 공통 규칙**
 
 | 항목 | 규칙 |
 | --- | --- |
 | 적용 경로 | `cursor`, `size`를 받는 모든 경로: `GET /anniversaries/upcoming`, `GET /anniversaries/past`, `GET /memos`, `GET /notifications` |
 | `size` | 정수 1 ~ 100. 생략하면 20. 정수가 아니거나 범위 밖이면 400 `VALIDATION_FAILED`(`size`, `INVALID`) |
-| `cursor` | 서버가 만든 불투명 문자열. 서버는 경로 표의 "커서는 (…)"에 적힌 정렬 키를 담는다. 앱은 해석하지 않고 앞 응답의 `nextCursor`를 그대로 보낸다. 생략하면 첫 페이지. 서버가 읽지 못하면 400 `VALIDATION_FAILED`(`cursor`, `INVALID`) |
+| `cursor` | 서버가 만든 불투명 문자열. 서버는 3.3 "커서 정렬 키" 표에 적힌 정렬 키를 담는다. 앱은 해석하지 않고 앞 응답의 `nextCursor`를 그대로 보낸다. 생략하면 첫 페이지. 서버가 읽지 못하면 400 `VALIDATION_FAILED`(`cursor`, `INVALID`) |
 | 마지막 페이지 | `nextCursor`는 `null` |
 
 **오류 객체**
@@ -364,7 +364,7 @@
 
 - `GET /anniversaries?from=&to=`는 **캘린더용**이다. 날짜 범위의 자동 + 직접 기념일을 합쳐 날짜순으로 돌려주고(`kind: AUTO` 또는 `CUSTOM`), D-N 계산(`daysLeft`)을 포함한다. 범위는 최대 3개월이고 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다. 개인 공간과 처음 만난 날이 없는 커플 공간에는 `AUTO`가 없고 `CUSTOM`만 나온다 (FR-ANNIV-04.AC2, AC4). 쿼리와 오류는 아래 "조회 규칙".
 - `GET /anniversaries/upcoming?cursor=&size=`는 **기념일 목록(SCR-ANNIV-01)용**이다. 요청자 시간대 기준 오늘(포함)부터 2050-12-31까지의 자동·직접 기념일 발생일을 날짜순으로 돌려준다. 매년 반복하는 기념일은 해마다 한 항목이다. 항목은 `AnniversaryOccurrence`이고 `daysLeft`는 오늘이면 0이다(앱이 "D-day"로 표시). 정렬은 `date` 오름차순 → 3.3 "같은 날 순서". 커서는 이 정렬 키를 1.1 "커서·`size` 공통 규칙"대로 담는다. 처음 만난 날이 없는 커플과 개인 공간에는 `AUTO` 항목이 없다. 앱이 처음 만난 날 입력 안내를 보여주는 것은 커플이고 처음 만난 날이 없을 때만이고, 개인 공간은 `AUTO`만 없을 뿐 안내도 없다 (FR-ANNIV-04.AC2, AC4).
-- `GET /anniversaries/past?cursor=&size=`는 **"지난 기념일"용**이다. `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 앞인 직접 기념일만, 날짜 최근 순으로 돌려준다. 응답에 `totalCount`(조건에 맞는 지난 1회성 직접 기념일 전체 개수, 페이지와 관계없음)도 넣는다. 앱은 접힌 행 "지난 기념일 N개"에 쓰고 0이면 행을 숨긴다 (D-71). 커서는 (date, anniversaryId)이고 1.1 "커서·`size` 공통 규칙"대로 쓴다. 수정·삭제는 `PATCH`·`DELETE /anniversaries/{id}`(R-05)로 한다.
+- `GET /anniversaries/past?cursor=&size=`는 **"지난 기념일"용**이다. `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 앞인 직접 기념일만, 날짜 최근 순으로 돌려준다. 응답에 `totalCount`(조건에 맞는 지난 1회성 직접 기념일 전체 개수, 페이지와 관계없음)도 넣는다. 앱은 접힌 행 "지난 기념일 N개"에 쓰고 0이면 행을 숨긴다 (D-71). 정렬은 `date` 내림차순 → 같은 `date`면 `anniversaryId` 내림차순이다. 커서 (`date`, `anniversaryId`)는 같은 방향으로 "이 값보다 작은 것"을 비교한다 (3.3 "커서 정렬 키"). 1.1 "커서·`size` 공통 규칙"대로 쓴다. 수정·삭제는 `PATCH`·`DELETE /anniversaries/{id}`(R-05)로 한다.
 - 날짜가 1950-01-01 ~ 2050-12-31 밖인 쓰기는 400 `DATE_OUT_OF_RANGE`다 (R-15).
 
 `Anniversary` (직접 기념일. `POST`·`PATCH` 응답)
@@ -433,7 +433,19 @@
 | 직접, 1회 | `date` 하루 | |
 | 범위 | 1950-01-01 ~ 2050-12-31 안의 발생일만. 개인 공간과 처음 만난 날이 없는 커플 공간에는 자동이 없다 | D-74, FR-ANNIV-04.AC2·AC4 |
 | 같은 날 순서 | ① 자동 일수 ② 자동 주년 ③ 직접 기념일(`anniversaryId` 오름차순). ① → ②는 D-106, 자동 → 직접은 Q-15 기본값, 직접끼리는 "늘 같은 순서"(Q-15)를 `anniversaryId`로 맞춘다 | FR-ANNIV-04.AC5, D-106, Q-15 |
-| 커서 정렬 키 | (`date`, 같은 날 순번, `anniversaryId`). 순번은 ① = 0, ② = 1, ③ = 2. 자동은 `anniversaryId`가 `null`이어도 순번으로 갈린다 | |
+| 커서 정렬 키 | 아래 "커서 정렬 키" 표 | |
+
+**커서 정렬 키** (1.1 "커서·`size` 공통 규칙"이 가리키는 표. 커서는 불투명이고 앱은 해석하지 않는다)
+
+| 경로 | 정렬 | 커서 키 | 다음 페이지 |
+| --- | --- | --- | --- |
+| `GET /anniversaries/upcoming` | `date` 오름차순 → 순번 오름차순 → `anniversaryId` 오름차순 | (`date`, 같은 날 순번, `anniversaryId`). 순번은 ① = 0, ② = 1, ③ = 2. 자동은 `anniversaryId`가 `null`이어도 순번으로 갈린다 | 커서 키보다 큰 것 |
+| `GET /anniversaries/past` | `date` 내림차순 → `anniversaryId` 내림차순 (최신순을 끝까지 뒤집은 순서) | (`date`, `anniversaryId`) | 커서 키보다 **작은** 것 (`date`, `anniversaryId` 모두 내림차순 방향으로 비교) |
+| `GET /memos` | 3.4 | (`created_at`, `id`) | 3.4 |
+| `GET /notifications` | 3.5 | (`created_at`, `id`) | 3.5 |
+
+- **리드 보충 (순서 사용)**: 앱은 캘린더용 `GET /anniversaries`, `upcoming`, `past` 응답의 **순서를 그대로** 쓴다. Room에는 응답 안의 순번을 함께 저장하고, 앱이 이름 등으로 다시 정렬하지 않는다.
+- **리드 보충 (uuid 비교)**: 직접 기념일끼리 `anniversaryId`를 비교할 때는 PostgreSQL `uuid` 비교(부호 없는 바이트 순)를 쓴다. 정렬과 커서 비교 모두 같다.
 
 - 지금 규칙에서 ①과 ②가 같은 날이 되는 경우는 없다(일수는 +99 … +999일, 주년은 +365일 이상이라 겹치지 않는다). 이 순서는 규칙이 바뀔 때를 위한 안전장치다. 같은 날 여러 항목은 자동 + 직접, 직접 + 직접에서 실제로 생긴다.
 - 자동 → 직접 순서는 PRD Q-15 기본값이다. 사람이 다르게 정하면 이 표를 고친다.
