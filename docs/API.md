@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt`)
+> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt` / 2026-11-04 PRD v0.10: 기념일 API 요청·응답(`Anniversary`, `AnniversaryOccurrence`)·조회·쓰기 규칙·검사 순서, 자동 기념일 계산과 같은 날 순서, 커서·`size` 공통 규칙, 일정 저장 순서, SYNC `ANNIVERSARY` 범위)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -29,7 +29,7 @@
 - 앱은 401 `SESSION_REPLACED`를 받으면 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동한다 (FR-AUTH-02.AC3). `SESSION_INVALID`는 안내 없이 SCR-START-01로 보낸다. 이전 기기의 access 토큰이 이미 만료됐다면 `POST /auth/refresh`가 같은 기준으로 `SESSION_REPLACED`를 돌려주므로 안내는 그때 뜬다
 - **세션이 끝날 때 앱의 소셜 SDK 정리 (앱 동작, 서버 API 없음, FR-AUTH-05, FR-AUTH-06).** 로그아웃(204 뒤), 탈퇴(204 뒤), 세션 끊김(401 `SESSION_REPLACED`·`SESSION_INVALID`)이면 앱은 기기의 소셜 SDK 로그인 상태도 지운다: Kakao SDK 로그아웃(기기의 Kakao 토큰 삭제), Google Credential Manager 자격 증명 상태 지우기. 실패는 무시한다. Kakao 앱 연결 끊기는 서버가 한다 (4.6). 로그아웃·탈퇴 요청이 실패했을 때의 앱 동작은 3.1의 `POST /auth/logout`·`DELETE /me`
 - 입력 길이 제한은 NFR-LIMIT-01을 따르고 글자 수는 유니코드 코드 포인트로 센다 (PRD D-82). 넘으면 400 `VALIDATION_FAILED`이며 필드 이름은 `details.fields`에 담는다 (1.1)
-- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 응답 모양은 1.1
+- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 규칙은 1.1의 "커서·`size` 공통 규칙", 응답 모양은 1.1
 
 
 ### 1.1 응답 형식
@@ -39,7 +39,7 @@
 | 경우 | 상태 | 본문 |
 | --- | --- | --- |
 | 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
-| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
+| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
 | 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/dated`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
 | 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
 | Kakao 연결 해제 알림 웹훅 (`/webhooks/kakao/unlink`) | 200 | 없음. 위 "204" 규칙의 예외다. Kakao가 3초 안에 `200 OK`를 요구하고 처리 결과·서버 오류와 관계없이 200을 기대한다. 인증 실패만 401 (3.6) |
@@ -47,6 +47,15 @@
 
 - 최상위는 항상 객체다. 배열을 그대로 돌려주지 않는다 (나중에 필드를 더해도 앱이 깨지지 않게).
 - 값이 없는 필드는 빼지 않고 `null`로 보낸다.
+
+**커서·`size` 공통 규칙** (PRD 변경 없음, v0.10 영향 분석 3.2)
+
+| 항목 | 규칙 |
+| --- | --- |
+| 적용 경로 | `cursor`, `size`를 받는 모든 경로: `GET /anniversaries/upcoming`, `GET /anniversaries/past`, `GET /memos`, `GET /notifications` |
+| `size` | 정수 1 ~ 100. 생략하면 20. 정수가 아니거나 범위 밖이면 400 `VALIDATION_FAILED`(`size`, `INVALID`) |
+| `cursor` | 서버가 만든 불투명 문자열. 서버는 경로 표의 "커서는 (…)"에 적힌 정렬 키를 담는다. 앱은 해석하지 않고 앞 응답의 `nextCursor`를 그대로 보낸다. 생략하면 첫 페이지. 서버가 읽지 못하면 400 `VALIDATION_FAILED`(`cursor`, `INVALID`) |
+| 마지막 페이지 | `nextCursor`는 `null` |
 
 **오류 객체**
 

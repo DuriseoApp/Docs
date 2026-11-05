@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-10-31)
+> 작성일: 2026-10-17 (갱신: 2026-11-05)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -290,8 +290,8 @@
 | id | uuid | PK | |
 | space_id | uuid | not null, FK spaces ON DELETE CASCADE | |
 | author_id | uuid | not null, FK users RESTRICT | |
-| name | varchar(30) | not null | |
-| date | date | not null | |
+| name | varchar(30) | not null | 앞뒤 공백을 지운 값, 지운 뒤 코드 포인트 30개 이하 (PRD D-104, D-82) |
+| date | date | not null | 등록한 날짜. 매년 반복이면 이 날짜의 해부터 해마다 발생 (API.md 3.3) |
 | repeats_yearly | boolean | not null, default true | |
 | created_at, updated_at | timestamptz | not null | |
 
@@ -426,7 +426,7 @@
 
 | ID | 결정 | 이유 |
 | --- | --- | --- |
-| DB-01 | 자동 기념일은 저장하지 않고 처음 만난 날로 계산 | 처음 만난 날이 바뀌면 다시 계산만 하면 되고, 저장된 값과 어긋날 일이 없음 |
+| DB-01 | 자동 기념일은 저장하지 않고 처음 만난 날로 계산 | 처음 만난 날이 바뀌면 다시 계산만 하면 되고, 저장된 값과 어긋날 일이 없음. 자동 기념일 계산·이름·같은 날 순서는 API.md 3.3 (PRD D-105, D-106) |
 | DB-02 | refresh 토큰은 사용할 때마다 교체하되, 새 행을 만들지 않고 같은 `auth_sessions` 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다 (v0.5 보완). 회원 30일, 게스트 365일 만료 | 게스트는 토큰을 잃으면 계정을 영영 잃으므로 길게 둠 (PRD D-02). 행이 같으면 `sid`가 변하지 않아 갱신과 겹친 요청이 끊기지 않고, 이전 토큰은 해시가 없어 무효가 됨 |
 | DB-03 | MVP는 서버 인스턴스 1대를 가정 (스케줄러, 오입력 횟수 제한이 DB 기반) | 운영 단순화. 확장 시 분산 잠금 필요 |
 | DB-04 | 탈퇴한 사용자는 익명화(soft delete)하고, 속했던 커플 공간은 90일 보관 후 삭제 | 버그로 인한 손실이 생겨도 운영자가 복구할 수 있도록 (PRD D-36). 익명화로 작성자 참조도 유지됨 |
@@ -471,6 +471,9 @@
 | FR-CAL-04 사람 색 | space_members.color, spaces.together_color |
 | FR-CAL-05 일정 알림 | event_reminders. AC4 종일↔시간 전환 시 모든 사용자 행 삭제와 일시 변경 때 다시 계산 (D-91), AC5 `fire_at` 계산과 지난 시각이면 `sent_at` = 지금 (D-90), AC6 시간대 변경 때 보내지 않은 종일 알림만 다시 계산 (D-91). 테이블 변화 없음 |
 | FR-ANNIV-01~04 | spaces.start_date(자동), anniversaries(직접). AC3 지난 기념일은 `repeats_yearly = false`이고 `date` < 오늘인 조회, AC4 처음 만난 날이 없으면 자동 기념일 없음 (`start_date` null) |
+| FR-ANNIV-02 AC4·AC5, FR-ANNIV-04 AC5 | 테이블 변화 없음. 자동 기념일 이름(D-105)·2월 29일 주년(D-106)·같은 날 순서는 계산이라 저장하지 않음 (DB-01, API.md 3.3) |
+| FR-ANNIV-03 AC1 | anniversaries.name (앞뒤 공백 제거, 코드 포인트 30자 이하, D-104, D-82), anniversaries.date. 테이블 변화 없음 |
+| D-104 ~ D-106 | D-104 anniversaries.name, D-105·D-106 DB-01 (계산, 테이블 변화 없음) |
 | FR-MEMO-01~03 | memos |
 | FR-MEMO-02 메모 날짜 | memos.memo_date |
 | FR-MEMO-04 | 삭제됨 (PRD v0.4) |
