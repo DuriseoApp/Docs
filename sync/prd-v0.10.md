@@ -1,6 +1,6 @@
 # PRD v0.10 영향 분석
 
-> 상태: PR 완료
+> 상태: PR 완료 (https://github.com/DuriseoApp/Docs/pull/11)
 > 이전 버전: v0.9 → 새 버전: v0.10
 > 브랜치: sync/prd-v0.10
 > PR: (PR 완료 후 링크)
