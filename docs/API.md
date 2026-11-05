@@ -441,10 +441,10 @@
 | --- | --- | --- | --- |
 | `GET /anniversaries/upcoming` | `date` 오름차순 → 순번 오름차순 → `anniversaryId` 오름차순 | (`date`, 같은 날 순번, `anniversaryId`). 순번은 ① = 0, ② = 1, ③ = 2. 자동은 `anniversaryId`가 `null`이어도 순번으로 갈린다 | 커서 키보다 큰 것 |
 | `GET /anniversaries/past` | `date` 내림차순 → `anniversaryId` 내림차순 (최신순을 끝까지 뒤집은 순서) | (`date`, `anniversaryId`) | 커서 키보다 **작은** 것 (`date`, `anniversaryId` 모두 내림차순 방향으로 비교) |
-| `GET /memos` | 3.4 | (`created_at`, `id`) | 3.4 |
-| `GET /notifications` | 3.5 | (`created_at`, `id`) | 3.5 |
+| `GET /memos` | 3.4 | (`created_at`, `id`) | 미정 (서버 단위 5에서 정함) |
+| `GET /notifications` | 3.5 | (`created_at`, `id`) | 미정 (서버 단위 6에서 정함) |
 
-- **리드 보충 (순서 사용)**: 앱은 캘린더용 `GET /anniversaries`, `upcoming`, `past` 응답의 **순서를 그대로** 쓴다. Room에는 응답 안의 순번을 함께 저장하고, 앱이 이름 등으로 다시 정렬하지 않는다.
+- **리드 보충 (순서 사용)**: 앱은 캘린더용 `GET /anniversaries`, `upcoming`, `past` 응답의 **순서를 그대로** 쓴다. Room에는 응답 배열의 위치(여러 페이지면 페이지를 이어 붙인 순서)를 함께 저장하고, 앱이 이름 등으로 다시 정렬하지 않는다.
 - **리드 보충 (uuid 비교)**: 직접 기념일끼리 `anniversaryId`를 비교할 때는 PostgreSQL `uuid` 비교(부호 없는 바이트 순)를 쓴다. 정렬과 커서 비교 모두 같다.
 
 - 지금 규칙에서 ①과 ②가 같은 날이 되는 경우는 없다(일수는 +99 … +999일, 주년은 +365일 이상이라 겹치지 않는다). 이 순서는 규칙이 바뀔 때를 위한 안전장치다. 같은 날 여러 항목은 자동 + 직접, 직접 + 직접에서 실제로 생긴다.
