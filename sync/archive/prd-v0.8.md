@@ -40,7 +40,7 @@
 | docs/SCREENS.md | screen | 헤더 PRD v0.8 (갱신 줄). 3장 "이름 확정"의 SCREENS 열을 반영: 공통 표(공통 오류 D-88 근거, 요청 중 표시, 소셜 로그인 취소·실패), SCR-START-01(상태·오류, 스낵바 위치, 기능 칩 문구, 로고 접근성 문구), SCR-SET-01(보드 문구, 가입일 형식, 게스트 ID Q-12, 연동 성공 안내, 연동·switch 오류 처리, 로그아웃·탈퇴 실패 D-86, 탈퇴 다이얼로그 버튼 이미지 차이), SCR-NOTI-01 이동 표에 D-85, 처음 만난 날 선택 시트와 SCR-COUPLE-04에 "지우기 없음"(D-84), SCR-COUPLE-03 오류 줄에 D-83 |
 | design/design-system.md | screen | 갱신 줄 추가. 3.10의 컴포넌트 수치(버튼 54 등, 시작 화면, 게스트 배너, 메뉴 행, 섹션 제목, 로그인 카드, 정보 행, 다이얼로그)를 "하단 탭"·"스낵바"와 같은 표 형식으로 보드 행 번호를 붙여 적는다. **토큰 값은 바꾸지 않는다.** "로고" 절을 `design/logo/` 파일을 가리키게 고친다 (3.11) |
 | design/logo/ (새 폴더) | screen | 보드 인라인 SVG를 그대로 옮긴 파일 3개 (3.11) |
-| 디자인 변경 요청서 | screen | 있음: `design/change-requests/prd-v0.8.md` (3.12). 캔버스 수정은 게스트 ID 샘플 값 하나, 나머지는 PNG 다시 만들기 |
+| 디자인 변경 요청서 | screen | 있음: `design/change-requests/archive/prd-v0.8.md` (3.12). 캔버스 수정은 게스트 ID 샘플 값 하나, 나머지는 PNG 다시 만들기 |
 
 ## 3. 이름 확정
 
@@ -241,7 +241,7 @@ API.md에 새 **3.6 웹훅** 절(경로 표)과 새 **4.8 Kakao 연결 해제 �
 
 - design-system.md "로고" 절: "`Logos` 그룹에 두 파일" 문장을 "`design/logo/`에 세 파일(캔버스 `Logos` 그룹과 보드에서 옮김)"로 바꾸고 위 표를 넣는다. Android는 VectorDrawable로 옮겨 쓴다고 한 줄.
 
-### 3.12 디자인 변경 요청서 (`design/change-requests/prd-v0.8.md`)
+### 3.12 디자인 변경 요청서 (`design/change-requests/archive/prd-v0.8.md`)
 
 이전 요청서 형식을 따른다. 상태 "요청됨". 새 화면·새 토큰 없음.
 

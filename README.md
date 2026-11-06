@@ -13,20 +13,21 @@ Docs/
 │   ├── PRD.md                 단일 기준 (사람과 리드가 의논해서 고치는 유일한 문서)
 │   ├── ERD.md, ERD.png        데이터 모델 (이미지 원본: erd/erd.html)
 │   ├── API.md                 API 범위·권한·흐름
-│   └── SCREENS.md             화면 명세 (앱 구현 기준)
+│   ├── SCREENS.md             화면 명세 (앱 구현 기준)
+│   └── archive/               해결된 기록 (SCREENS의 해결된 "PRD와의 차이")
 ├── design/
 │   ├── design-system.md       디자인 원칙·말투·컴포넌트
 │   ├── tokens.json            색·글꼴·간격 값 (Android·iOS 테마의 원본)
 │   ├── screens/               화면 이미지 SCR-*.png (/design-sync가 채움)
 │   ├── source/                디자인 캔버스 보드 원본 (*.dc.html, canvas.json). 정확한 크기·간격·색은 여기서 읽음
 │   ├── canvas-map.md          디자인 캔버스 보드 ↔ 화면 ID 대응표
-│   └── change-requests/       디자인 변경 요청서 (/prd-sync가 만들고 /design-sync가 반영)
-├── sync/                      PRD 버전별 영향 분석 기록
+│   └── change-requests/       디자인 변경 요청서 (/prd-sync가 만들고 /design-sync가 반영). 반영 끝난 것은 archive/
+├── sync/                      PRD 버전별 영향 분석 기록 (끝난 것은 archive/)
 ├── scripts/                   check-ids.sh (정합성 검사), render.mjs (ERD → PNG), render-design.mjs (디자인 보드 → PNG)
 └── .claude/
     ├── settings.json          에이전트 팀 켜기, 권한
     ├── agents/                팀원 4명 정의
-    └── skills/                /prd-sync (맥·프로젝트 채팅), /design-sync (claude.ai 프로젝트 채팅)
+    └── skills/                /prd-sync (맥·프로젝트 채팅), /design-sync (프로젝트 채팅·Artifact 클라우드 세션)
 ```
 
 ## 기획팀 (에이전트 팀)
