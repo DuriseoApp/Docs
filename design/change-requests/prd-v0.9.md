@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.9
 
-> 상태: 요청됨
+> 상태: 반영 완료 (2026-11-06, 캔버스 버전 41)
 > 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.9.md`
 > 작성일: 2026-11-01
 
@@ -112,12 +112,12 @@ PRD가 v0.9로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지우�
 
 | # | 화면 | 반영 |
 | --- | --- | --- |
-| 1 | SCR-COUPLE-03: InviteEnterError, InviteEnterRateLimited 새 보드, 오류 줄 `danger-600`, 칸 테두리 결정 알림, 이미지 2개 | |
-| 2 | SCR-COUPLE-02: InviteCreateLoading 새 보드, 빈 칸 6개, 비활성 버튼 2개, 남은 시간 줄 결정 알림, 이미지 1개 | |
-| 3 | 처음 만난 날 선택 시트: StartDateSheetYearMonth 새 보드, 1950년~올해, 미래 월 비활성, 이미지 1개 | |
-| 4 | SCR-COUPLE-04: CalendarLinkedSheetDate 새 보드, 날짜 "2026년 3월 14일", [나중에 하기] 없음, 이미지 1개 | |
-| 5 | SCR-SET-01: MenuNoStartDate, ConnectionInfoNoStartDate 새 보드, 행 숨김/라벨 남김 결정 알림, 이미지 2개 | |
-| 6 | SCR-SET-01 연결 정보 · 혼자 사용 중: 코드 패널·해제 안내 빼기, 버튼 두 개 이동 연결, 수정 방식 알림, `SCR-SET-01--couple-solo.png` 다시 만들기 | |
-| 7 | 새 토큰·컴포넌트 필요 여부 | |
-| 8 | SCR-COUPLE-01 뒤로 링크는 고치지 않음 | |
-| 9 | 보드 샘플·문구 그대로 | |
+| 1 | SCR-COUPLE-03: InviteEnterError, InviteEnterRateLimited 새 보드, 오류 줄 `danger-600`, 칸 테두리 결정 알림, 이미지 2개 | 반영됨 — InviteEnterError, InviteEnterRateLimited 새 보드. 오류 줄은 칸 아래 4(gap 12에서 -4), 아이콘 16 + 13/18/600 `danger-600`. 칸 테두리: 없는 코드는 채운 칸 테두리 1 `danger-600`, 입력 제한은 테두리 그대로(버튼만 비활성). 이미지 `SCR-COUPLE-03--error.png`, `SCR-COUPLE-03--rate-limited.png` |
+| 2 | SCR-COUPLE-02: InviteCreateLoading 새 보드, 빈 칸 6개, 비활성 버튼 2개, 남은 시간 줄 결정 알림, 이미지 1개 | 반영됨 — InviteCreateLoading 새 보드. 빈 칸 6개, [코드 복사]·[공유하기] 비활성(`line-100` 면·테두리 + `ink-500` 글자). "N분 N초 남음" 줄은 뺌. 이미지 `SCR-COUPLE-02--loading.png` |
+| 3 | 처음 만난 날 선택 시트: StartDateSheetYearMonth 새 보드, 1950년~올해, 미래 월 비활성, 이미지 1개 | 반영됨 — StartDateSheetYearMonth 새 보드(StartDateSheet의 연도·월 선택). 1950년~올해, 미래 월 비활성, 2026년 4월 선택. 이미지 `SCR-SET-01--start-date-sheet-year-month.png` |
+| 4 | SCR-COUPLE-04: CalendarLinkedSheetDate 새 보드, 날짜 "2026년 3월 14일", [나중에 하기] 없음, 이미지 1개 | 반영됨 — CalendarLinkedSheetDate 새 보드. 칸에 "2026년 3월 14일", [나중에 하기] 없음. 이미지 `SCR-COUPLE-04--date-set.png` |
+| 5 | SCR-SET-01: MenuNoStartDate, ConnectionInfoNoStartDate 새 보드, 행 숨김/라벨 남김 결정 알림, 이미지 2개 | 반영됨 — MenuNoStartDate, ConnectionInfoNoStartDate 새 보드. 연결 정보는 "처음 만난 날"·"함께한 지" 행을 통째로 숨김. 전체 메뉴 카드는 가운데 로고를 아바타 높이(72) 가운데로 맞춤. 이미지 `SCR-SET-01--no-start-date.png`, `SCR-SET-01--couple-no-start-date.png` |
+| 6 | SCR-SET-01 연결 정보 · 혼자 사용 중: 코드 패널·해제 안내 빼기, 버튼 두 개 이동 연결, 수정 방식 알림, `SCR-SET-01--couple-solo.png` 다시 만들기 | 반영됨 — ConnectionInfo(혼자 사용 중)에서 코드 패널과 `justDisconnected` 안내를 뺌. [초대코드 만들기]→SCR-COUPLE-02, [받은 초대코드 입력하기]→SCR-COUPLE-03. 이미지 `SCR-SET-01--couple-solo.png` |
+| 7 | 새 토큰·컴포넌트 필요 여부 | 새 토큰 없음. 연도·월 선택은 새 컴포넌트로 design-system에 적음 (2026-11-06 절) |
+| 8 | SCR-COUPLE-01 뒤로 링크는 고치지 않음 | 반영됨 — `Connect.dc.html` 20행 뒤로 링크는 고치지 않음 |
+| 9 | 보드 샘플·문구 그대로 | 반영됨 — 보드 샘플·문구 그대로 (`ColorSettings.dc.html` 포함) |

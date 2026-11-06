@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.8
 
-> 상태: 요청됨
+> 상태: 반영 완료 (2026-11-06, 캔버스 버전 41)
 > 기준 문서: 둘이서 PRD v0.8 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.8.md`
 > 작성일: 2026-10-27
 
@@ -68,7 +68,7 @@ PRD가 v0.8로 바뀌어서 캔버스를 조금 수정해 줘. 기존 화면은 
 
 | # | 화면 | 반영 |
 | --- | --- | --- |
-| 1 | SCR-SET-01 계정 · 게스트: 게스트 ID 샘플 UUID 36자 (Account 수정), 줄바꿈 모양 확인, `SCR-SET-01--account-guest.png` 다시 만들기 | |
-| 1-1 | SCR-SET-01 이미 가입된 계정 ①·②: 뒤 화면의 게스트 ID가 바뀐 이미지 두 개 다시 만들기 | |
-| 2 | SCR-SET-01 탈퇴 확인: 캔버스 수정 없이 `SCR-SET-01--withdraw-dialog.png`만 다시 만들기, "탈퇴하기"로 나오는지 확인 | |
-| 3 | 새 토큰·컴포넌트 필요 여부 | |
+| 1 | SCR-SET-01 계정 · 게스트: 게스트 ID 샘플 UUID 36자 (Account 수정), 줄바꿈 모양 확인, `SCR-SET-01--account-guest.png` 다시 만들기 | 반영됨 — Account 보드의 게스트 ID를 샘플 UUID 36자로 교체(그 자리에서 수정). 36자가 한 줄에 들어가요(너비 약 259/350). `word-break: break-all`만 더함. 이미지 `SCR-SET-01--account-guest.png` |
+| 1-1 | SCR-SET-01 이미 가입된 계정 ①·②: 뒤 화면의 게스트 ID가 바뀐 이미지 두 개 다시 만들기 | 반영됨 — 보드 수정 없이 이미지 `SCR-SET-01--account-guest-existing.png`, `SCR-SET-01--account-guest-existing-confirm.png` 다시 만듦 |
+| 2 | SCR-SET-01 탈퇴 확인: 캔버스 수정 없이 `SCR-SET-01--withdraw-dialog.png`만 다시 만들기, "탈퇴하기"로 나오는지 확인 | 반영됨 — 캔버스 수정 없음. 보드와 다시 만든 `SCR-SET-01--withdraw-dialog.png` 모두 "탈퇴하기" |
+| 3 | 새 토큰·컴포넌트 필요 여부 | 새 토큰·컴포넌트 없음 (`word-break: break-all` 한 줄만 더함) |

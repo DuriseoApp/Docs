@@ -1,6 +1,6 @@
 # 디자인 변경 요청서: PRD v0.10
 
-> 상태: 요청됨
+> 상태: 반영 완료 (2026-11-06, 캔버스 버전 41)
 > 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.10.md`
 > 작성일: 2026-11-05
 
@@ -104,11 +104,11 @@ PRD가 v0.10으로 바뀌어서 캔버스를 수정해 줘. 기존 화면은 지
 
 | # | 화면 | 반영 |
 | --- | --- | --- |
-| 1 | SCR-CAL-03: AddEventDatePicker 새 보드, 1950-01-01 ~ 2050-12-31, 미래 허용, 안내 줄 없음, 이미지 1개 | |
-| 2 | SCR-CAL-03: AddEventTimePicker 새 보드, 새 컴포넌트 필요 여부 먼저 물어보기, 이미지 1개 | |
-| 3 | SCR-CAL-03: AddEventReminderSheet 새 보드, 칩 5개(시간)·3개(종일), 이미지 1개 | |
-| 4 | SCR-CAL-02: EventDetailSolo, EventDetailSoloDialog 새 보드, 본문 "삭제하면 되돌릴 수 없어요.", 이미지 2개 | |
-| 5 | SCR-CAL-01: CalendarSnackbar 새 보드, 정한 위치 알림, design-system "스낵바"에 적기, 이미지 1개 | |
-| 6 | SCR-CAL-01: CalendarRefresh 새 보드 (Q-16 조건부), 새 컴포넌트 필요 여부 먼저 물어보기, 이미지 1개 | |
-| 7 | 새 토큰·컴포넌트 필요 여부 | |
-| 8 | 보드 샘플·문구 그대로 | |
+| 1 | SCR-CAL-03: AddEventDatePicker 새 보드, 1950-01-01 ~ 2050-12-31, 미래 허용, 안내 줄 없음, 이미지 1개 | 반영됨 — AddEventDatePicker 새 보드. StartDateSheet와 같은 시트(제목 "시작 날짜", 설명·안내 줄 없음, 버튼 [완료]), 1950~2050. 이미지 `SCR-CAL-03--date-picker.png` |
+| 2 | SCR-CAL-03: AddEventTimePicker 새 보드, 새 컴포넌트 필요 여부 먼저 물어보기, 이미지 1개 | 반영됨 — AddEventTimePicker 새 보드. 하단 시트 시간 휠(오전/오후·시·분). 새 컴포넌트로 design-system에 적음. 이미지 `SCR-CAL-03--time-picker.png` |
+| 3 | SCR-CAL-03: AddEventReminderSheet 새 보드, 칩 5개(시간)·3개(종일), 이미지 1개 | 반영됨 — AddEventReminderSheet 새 보드. 설명 "나에게만 와요", 칩은 EventDetail과 같음(시간 5개, 종일 3개는 보드 상태 설정), [완료]. 이미지 `SCR-CAL-03--reminder-sheet.png` |
+| 4 | SCR-CAL-02: EventDetailSolo, EventDetailSoloDialog 새 보드, 본문 "삭제하면 되돌릴 수 없어요.", 이미지 2개 | 반영됨 — EventDetailSolo, EventDetailSoloDialog 새 보드. 본문 "삭제하면 되돌릴 수 없어요.". 이미지 `SCR-CAL-02--solo.png`, `SCR-CAL-02--solo-delete-dialog.png` |
+| 5 | SCR-CAL-01: CalendarSnackbar 새 보드, 정한 위치 알림, design-system "스낵바"에 적기, 이미지 1개 | 반영됨 — CalendarSnackbar 새 보드(하단 탭 포함). 스낵바 바닥에서 96, FAB은 스낵바 위 16(바닥에서 161). design-system "스낵바"에 적음. 이미지 `SCR-CAL-01--snackbar.png` |
+| 6 | SCR-CAL-01: CalendarRefresh 새 보드 (Q-16 조건부), 새 컴포넌트 필요 여부 먼저 물어보기, 이미지 1개 | 반영됨 — CalendarRefresh 새 보드(Q-16 기본값 유지). 새 컴포넌트로 design-system에 적음. 이미지 `SCR-CAL-01--refresh.png` |
+| 7 | 새 토큰·컴포넌트 필요 여부 | 새 토큰 없음. 새 컴포넌트: 연도·월 선택, 시간 휠, 원형 진행 표시(CircleIndicator), 당겨서 새로고침 (design-system 2026-11-06 절) |
+| 8 | 보드 샘플·문구 그대로 | 반영됨 — 보드 샘플·문구 그대로 |
