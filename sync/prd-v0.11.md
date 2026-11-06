@@ -1,9 +1,9 @@
 # PRD v0.11 영향 분석
 
-> 상태: 진행 중
+> 상태: PR 완료
 > 이전 버전: v0.10 → 새 버전: v0.11
 > 브랜치: sync/prd-v0.11
-> PR: (PR 완료 후 링크)
+> PR: https://github.com/DuriseoApp/Docs/pull/12
 
 이 파일은 `/prd-sync` 팀원들이 읽는 계약이다. 여기 적힌 이름과 할 일을 그대로 따른다.
 
