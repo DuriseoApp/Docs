@@ -23,7 +23,7 @@
 | docs/ERD.md (+ ERD.png) | 리드 | 헤더 PRD v0.11만 (데이터 변경 없음) |
 | docs/API.md | 리드 | 헤더 PRD v0.11만 (API 변경 없음) |
 | docs/SCREENS.md | 리드 | 공통 "요청 중" 규칙을 D-115로 바꿈, SCR-COUPLE-04 "요청 중" 줄, 헤더, PRD와의 차이 표 32번 |
-| 디자인 변경 요청서 | 리드 | 있음: `design/change-requests/prd-v0.11.md` (1건) |
+| 디자인 변경 요청서 | 리드 | 있음: `design/change-requests/archive/prd-v0.11.md` (1건) |
 
 ## 3. 이름 확정
 

@@ -37,7 +37,7 @@
 | docs/ERD.md (+ erd.html, ERD.png) | data | 스키마 변화 없음. 서비스 규칙·수명주기만: 게스트 → 기존 계정 로그인(4.1 생성 표·4.6 세션 표에 행 추가, 게스트는 4.3 탈퇴와 같이 처리), 연동 시 닉네임 규칙(users.nickname 설명), 이름 없을 때 "사용자", 날짜 범위(서비스 검증, DB CHECK 없음), 가져오기 전 해제 시 대기 중 개인 공간 되살리기(4.2), 로그인 만료 기기 푸시 금지(devices 서비스 규칙 + 4.4 정리 작업에서 유효 세션 없는 사용자의 devices 삭제), 탈퇴 시 Kakao 연결 끊기(4.3, 테이블 변화 없음), 새 DB 결정 DB-12~DB-14(아래 3.1), 추적표, 헤더 v0.6. ERD.png는 스키마가 같으면 헤더만 바꿔 다시 렌더 |
 | docs/API.md | api | `POST /auth/switch` 추가(3.2), `/auth/link` 409 `SOCIAL_ALREADY_USED` 뒤 앱 흐름, 연동 시 닉네임 규칙, 소셜 이름 없을 때 "사용자", 날짜 범위 검증(400 `DATE_OUT_OF_RANGE`), 기념일 목록 API 2개(`/anniversaries/upcoming`, `/anniversaries/past`), 처음 만난 날 없는 커플의 기념일 응답, 가져오기 전 해제(4.5), 푸시 전 유효 세션 확인(7장), 탈퇴 시 Kakao 연결 끊기(4.6), 1장 토큰 수명 근거를 D-73으로, 오류 코드 표, 추적표, 헤더 v0.6 |
 | docs/SCREENS.md | screen | 위 결정 반영(아래 3.3), 공통 "알림 권한"에 직접 기념일 저장 추가, 공통에 "날짜 범위 1950~2050", "디자인 없음" 표시를 이번에 그릴 보드 이미지 이름으로(3.4), 연결 완료 시트의 "디자인 제안, 사람 확인 필요" 표시 제거(D-76 확정), SCR-CAL-03 읽기 전용 표시 "사람 확인 필요" 제거(D-77 확정), SCR-ANNIV-02 개인 공간 안내 문구, 헤더 v0.6 |
-| 디자인 변경 요청서 | screen | 있음: `design/change-requests/prd-v0.6.md` (아래 3.4) |
+| 디자인 변경 요청서 | screen | 있음: `design/change-requests/archive/prd-v0.6.md` (아래 3.4) |
 
 ## 3. 이름 확정
 
@@ -101,7 +101,7 @@
 | SCR-ANNIV-02 | 개인 공간 안내 문구 "캘린더와 기념일 목록에 표시되고, 당일 오전 9시에 알려 드려요. 2월 29일은 윤년이 아닌 해에 2월 28일로 표시돼요." (커플은 기존 "두 사람 모두에게" 그대로). 삭제 확인 다이얼로그를 그림: "기념일을 삭제할까요?" / "[기념일 이름]이 캘린더와 기념일 목록에서 사라져요." [취소] [삭제](`danger-700`). 저장 성공 뒤 처음이면 알림 권한 요청 | D-70 |
 | SCR-SET-03 | 개인 공간 상태를 그림: 바꿀 대상은 [나]만, 같은 색 경고 없음, 안내 "연결하면 상대와 함께 색도 고를 수 있어요." | FR-CAL-04.AC5 |
 
-### 3.4 디자인 변경 요청서 (`design/change-requests/prd-v0.6.md`)
+### 3.4 디자인 변경 요청서 (`design/change-requests/archive/prd-v0.6.md`)
 
 [수정] InviteEnter(상대 카드 삭제), Anniversaries·AnniversariesSolo(접힌 "지난 기념일" 행), AnniversaryEdit(커플 문구 그대로, 개인 공간 문구는 새 보드), CalendarLinkedSheet(변경 없음, 확정 표시만).
 [새 보드] AccountGuestExisting(다이얼로그 ①), AccountGuestExistingConfirm(다이얼로그 ②), AccountMember(계정 · 회원), MenuLogoutDialog(로그아웃 확인), InviteCreateNotYet("아직 연결되지 않았어요"), CalendarLinkedSheetNoRecords(기록 없음 시트), CalendarNoStartDate(커플 + 처음 만난 날 없음), StartDateSheet(처음 만난 날 선택 시트), AddEventEdit(내 일정 수정), AddEventError(종료 < 시작 오류), AnniversariesPastOpen(지난 기념일 펼친 상태), AnniversariesNoStartDate(커플 + 처음 만난 날 없음), AnniversaryEditSolo(개인 공간 문구), AnniversaryEditDialog(삭제 확인), ColorSettingsSolo(개인 공간), V06Flow(흐름도: 게스트 → 기존 계정 로그인, 지난 기념일, 처음 만난 날 시트).

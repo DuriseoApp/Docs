@@ -94,7 +94,7 @@
 | docs/API.md | api | 헤더 PRD v0.9 (작성일 줄에 갱신 2026-10-31). 3장 "이름 확정"의 API 몫을 모두 반영: 1장 머리말 7행(3.3 일정도 이 문서에서 정한다), 2장 R-13 문구(3.1), 3.1 `MeSpace`에 `importCounts`·`linkedAt`(3.2), 3.2 `Space.linkedAt`과 팔레트 키 아래 앱 동작(3.3), **3.3을 "일정" 표(새 "요청 → 성공" 형식)와 "기념일" 표(기존 그대로)로 나누고** `Event`·`EventReminder` 정의, 조회 규칙, 쓰기 규칙, 검사 순서, `option`, 알림 시각 계산·다시 계산(3.1), 4.4의 6·8·9·10단계(3.2, 3.3), 4.5의 1·6단계(3.3), 5장 `VALIDATION_FAILED`·`DATE_OUT_OF_RANGE`·`NOT_COUPLE`·`NO_IMPORT_PENDING`·`ALREADY_COUPLED`·`GUEST_NOT_ALLOWED` "언제" 열(3.1, 3.3), 6장 한 줄(3.1), 7장 일정 알림·상대 활동 알림 줄(3.1), 9장 추적표 줄 |
 | docs/SCREENS.md | screen | 헤더 PRD v0.9 (갱신 줄). 3.4의 화면별 항목 반영: SCR-CAL-02·03, SCR-COUPLE-01~04, 처음 만난 날 선택 시트, SCR-NOTI-01, SCR-SET-01(프로필 카드·연결 정보·게스트 행), SCR-SET-03. 요청서로 그릴 상태는 "디자인: 변경 요청됨 (PRD v0.9)"과 `이미지 예정 <이름>`(3.6)으로 표시 |
 | design/design-system.md | screen | 갱신 줄 추가. 3.5의 컴포넌트 수치를 v0.8 3.10처럼 보드 행 번호를 붙여 표로 적는다. **토큰 값은 바꾸지 않는다.** "Android 매핑"에 모르는 팔레트 키 처리 한 줄(3.3) |
-| 디자인 변경 요청서 | screen | 있음: `design/change-requests/prd-v0.9.md` (3.6). 새 상태 7개를 그리고 보드 1개를 정리한다 (screen 집계: 3.6 표 1~5번 + 3.4 `이미지 예정`). 새 토큰·새 화면 ID 없음 |
+| 디자인 변경 요청서 | screen | 있음: `design/change-requests/archive/prd-v0.9.md` (3.6). 새 상태 7개를 그리고 보드 1개를 정리한다 (screen 집계: 3.6 표 1~5번 + 3.4 `이미지 예정`). 새 토큰·새 화면 ID 없음 |
 
 ## 3. 이름 확정
 
@@ -294,7 +294,7 @@
 
 - "Android 매핑"(또는 "사람 색" 절)에 한 줄: 모르는 팔레트 키는 기본 사람 색 토큰(`person-me`·`person-partner`·`person-together`)으로 그린다 (3.3).
 
-### 3.6 디자인 변경 요청서 (`design/change-requests/prd-v0.9.md`)
+### 3.6 디자인 변경 요청서 (`design/change-requests/archive/prd-v0.9.md`)
 
 이전 요청서 형식을 따른다. 상태 "요청됨". **새 토큰·새 화면 ID 없음.** 새 상태 보드를 만들 때 기존 컴포넌트와 토큰만 쓰고, 새 컴포넌트가 필요하면 먼저 묻게 한다. v0.8 요청서(`prd-v0.8.md`)가 아직 "요청됨"이므로, v0.9 요청서에 "v0.8 요청서를 먼저(또는 함께) 반영"이라고 적는다.
 

@@ -39,7 +39,7 @@
 | docs/ERD.md (+ erd.html, ERD.png) | data | invite_codes 변경, memos.memo_date 추가, memo_checklist_items 삭제됨 표시, notifications 신규, notification 정리 작업, 연결 해제·탈퇴 처리에 알림 삭제 추가, "사귄 날" → "처음 만난 날", 추적표(FR-MEMO-04 삭제됨, FR-NOTI-05 추가), 새 DB- ID |
 | docs/API.md | api | 초대코드 재요청 규칙·응답·오류, 코드 정규화, 메모 요청에서 checklist 제거·memoDate 추가, 날짜 범위 메모 조회, 체크리스트 API 삭제됨, 알림 목록 API, R-04 수정, R-12 추가, 알림 발송 7장에 목록 기록·정리, SYNC `NOTIFICATION`, 연결 해제 흐름에 알림 삭제, "사귄 날" → "처음 만난 날", 추적표 |
 | docs/SCREENS.md | screen | 결정 반영, "PRD와의 차이" 표 정리(해결 표시), SCR-NOTI-01 추가, 디자인 상태 갱신 |
-| 디자인 변경 요청서 | screen | 있음: `design/change-requests/prd-v0.4.md` (아래 3.4) |
+| 디자인 변경 요청서 | screen | 있음: `design/change-requests/archive/prd-v0.4.md` (아래 3.4) |
 
 ## 3. 이름 확정
 
