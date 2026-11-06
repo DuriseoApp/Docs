@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt`)
+> 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt` / 2026-11-05 PRD v0.10: 기념일 API 요청·응답(`Anniversary`, `AnniversaryOccurrence`)·조회·쓰기 규칙·검사 순서, 자동 기념일 계산과 같은 날 순서, 커서·`size` 공통 규칙, 일정 저장 순서, SYNC `ANNIVERSARY` 범위)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -29,7 +29,7 @@
 - 앱은 401 `SESSION_REPLACED`를 받으면 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동한다 (FR-AUTH-02.AC3). `SESSION_INVALID`는 안내 없이 SCR-START-01로 보낸다. 이전 기기의 access 토큰이 이미 만료됐다면 `POST /auth/refresh`가 같은 기준으로 `SESSION_REPLACED`를 돌려주므로 안내는 그때 뜬다
 - **세션이 끝날 때 앱의 소셜 SDK 정리 (앱 동작, 서버 API 없음, FR-AUTH-05, FR-AUTH-06).** 로그아웃(204 뒤), 탈퇴(204 뒤), 세션 끊김(401 `SESSION_REPLACED`·`SESSION_INVALID`)이면 앱은 기기의 소셜 SDK 로그인 상태도 지운다: Kakao SDK 로그아웃(기기의 Kakao 토큰 삭제), Google Credential Manager 자격 증명 상태 지우기. 실패는 무시한다. Kakao 앱 연결 끊기는 서버가 한다 (4.6). 로그아웃·탈퇴 요청이 실패했을 때의 앱 동작은 3.1의 `POST /auth/logout`·`DELETE /me`
 - 입력 길이 제한은 NFR-LIMIT-01을 따르고 글자 수는 유니코드 코드 포인트로 센다 (PRD D-82). 넘으면 400 `VALIDATION_FAILED`이며 필드 이름은 `details.fields`에 담는다 (1.1)
-- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 응답 모양은 1.1
+- 목록은 커서 페이지네이션 (`cursor`, `size`, 응답의 `nextCursor`). 규칙은 1.1의 "커서·`size` 공통 규칙", 응답 모양은 1.1
 
 
 ### 1.1 응답 형식
@@ -39,7 +39,7 @@
 | 경우 | 상태 | 본문 |
 | --- | --- | --- |
 | 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
-| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
+| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
 | 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/dated`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
 | 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
 | Kakao 연결 해제 알림 웹훅 (`/webhooks/kakao/unlink`) | 200 | 없음. 위 "204" 규칙의 예외다. Kakao가 3초 안에 `200 OK`를 요구하고 처리 결과·서버 오류와 관계없이 200을 기대한다. 인증 실패만 401 (3.6) |
@@ -47,6 +47,15 @@
 
 - 최상위는 항상 객체다. 배열을 그대로 돌려주지 않는다 (나중에 필드를 더해도 앱이 깨지지 않게).
 - 값이 없는 필드는 빼지 않고 `null`로 보낸다.
+
+**커서·`size` 공통 규칙**
+
+| 항목 | 규칙 |
+| --- | --- |
+| 적용 경로 | `cursor`, `size`를 받는 모든 경로: `GET /anniversaries/upcoming`, `GET /anniversaries/past`, `GET /memos`, `GET /notifications` |
+| `size` | 정수 1 ~ 100. 생략하면 20. 정수가 아니거나 범위 밖이면 400 `VALIDATION_FAILED`(`size`, `INVALID`) |
+| `cursor` | 서버가 만든 불투명 문자열. 서버는 3.3 "커서 정렬 키" 표에 적힌 정렬 키를 담는다. 앱은 해석하지 않고 앞 응답의 `nextCursor`를 그대로 보낸다. 생략하면 첫 페이지. 서버가 읽지 못하면 400 `VALIDATION_FAILED`(`cursor`, `INVALID`) |
+| 마지막 페이지 | `nextCursor`는 `null` |
 
 **오류 객체**
 
@@ -332,6 +341,8 @@
 | `end`·제목·메모·대상만 바뀜 | 알림은 그대로 (`fire_at`은 시작 기준) |
 | 사용자의 `time_zone`이 바뀜 (`PATCH /me`, 단위 1의 `UserTimeZoneChanged`) | 그 사용자의 행 중 `option`이 `ALLDAY_9AM`·`ALLDAY_PREV_9AM`이고 `sent_at IS NULL`인 것만 새 시간대로 다시 계산한다(지났으면 `sent_at` = 지금). 시간 일정 알림은 그대로. 저장 때 이미 지나 `sent_at`이 찍힌 행은 다시 계산하지 않는다. D-91의 "아직 보내지 않은"은 `sent_at IS NULL`로 읽는다 (리드 보충) |
 
+**일정 저장 순서 (앱 동작, FR-CAL-02.AC6, D-108)**: 작성 화면에서 알림을 골랐으면 앱은 `POST /events` 201 뒤 `PUT /events/{id}/reminder`를 보낸다. `PUT`만 실패하면 일정은 그대로 두고 다시 `POST`하지 않는다(화면을 닫고 공통 오류). 수정은 `PATCH` 성공 뒤 바뀐 알림만 `PUT`(또는 "없음"이면 `DELETE …/reminder`)한다. `isAllDay`를 바꾼 `PATCH`는 서버가 모든 알림을 지우므로(D-91) 새로 고른 알림은 그 뒤 `PUT`으로 다시 건다.
+
 **상대 일정 추가 알림** (7장 "상대 활동 알림" 줄, D-92)
 
 - 제목 "[작성자 닉네임]님이 일정을 추가했어요", 본문 "[날짜] · [일정 제목]" (PRD 8장).
@@ -340,13 +351,104 @@
 
 #### 기념일
 
-| 메서드 | 경로 | 설명 | 권한 | FR |
+"요청 → 성공" 열은 일정과 같은 형식이다(`?`는 선택 필드). `Anniversary`, `AnniversaryOccurrence`는 표 아래에 한 번 정의한다. 오류 응답은 1.1과 5장을 따른다.
+
+| 메서드 | 경로 | 요청 → 성공 | 권한 | FR |
 | --- | --- | --- | --- | --- |
-| GET | /anniversaries?from=&to= | **캘린더용.** 날짜 범위의 자동 + 직접 기념일을 합쳐 날짜순으로 (`kind: AUTO` 또는 `CUSTOM`). 범위는 최대 3개월이고 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다. D-N 계산 포함. 개인 공간과 처음 만난 날이 없는 커플 공간에는 `AUTO`가 없고 `CUSTOM`만 나온다 (FR-ANNIV-04.AC2, AC4) | R-01, R-15 | FR-ANNIV-01~04, FR-CAL-01 |
-| GET | /anniversaries/upcoming?cursor=&size= | **기념일 목록(SCR-ANNIV-01)용.** 요청자 시간대 기준 오늘(포함)부터 2050-12-31까지의 자동·직접 기념일 발생일을 날짜순으로 돌려준다. 매년 반복하는 기념일은 해마다 한 항목이다. 항목 `{anniversaryId, kind, name, date, daysLeft, repeatsYearly, authorId}`: `kind`는 `AUTO`·`CUSTOM`, `daysLeft`는 오늘이면 0 (앱이 "D-day"로 표시), `anniversaryId`와 `authorId`는 직접 기념일만 값이 있고 자동은 null. 커서는 (date, kind, anniversaryId). 처음 만난 날이 없는 커플과 개인 공간에는 `AUTO` 항목이 없다. 앱이 처음 만난 날 입력 안내를 보여주는 것은 커플이고 처음 만난 날이 없을 때만이고, 개인 공간은 `AUTO`만 없을 뿐 안내도 없다 (FR-ANNIV-04.AC2, AC4) | R-01 | FR-ANNIV-04.AC1·AC4, D-75 |
-| GET | /anniversaries/past?cursor=&size= | **"지난 기념일"용.** `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 앞인 직접 기념일만, 날짜 최근 순. 항목 `{anniversaryId, name, date, authorId}`. 응답에 `totalCount`(조건에 맞는 지난 1회성 직접 기념일 전체 개수, 페이지와 관계없음)도 넣는다. 앱은 접힌 행 "지난 기념일 N개"에 쓰고 0이면 행을 숨긴다 (D-71). 커서는 (date, anniversaryId). 수정·삭제는 기존 `PATCH, DELETE /anniversaries/{id}`(R-05)로 한다 | R-01 | FR-ANNIV-04.AC3, D-71 |
-| POST | /anniversaries | 직접 기념일 생성. `date`가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE` | R-01, R-15 | FR-ANNIV-03, FR-CAL-01.AC6 |
-| PATCH, DELETE | /anniversaries/{id} | 직접 기념일 수정·삭제. 수정할 `date`도 같은 범위 검사 | R-05, R-15 | FR-ANNIV-03 |
+| GET | /anniversaries?from=&to= | → 200 `{items: AnniversaryOccurrence[]}` (페이지 없음, 1.1) | R-01, R-15 | FR-ANNIV-01~04, FR-CAL-01, FR-CAL-01.AC6 |
+| GET | /anniversaries/upcoming?cursor=&size= | → 200 `{items: AnniversaryOccurrence[], nextCursor}` | R-01 | FR-ANNIV-02, FR-ANNIV-04.AC1·AC2·AC4·AC5, D-75 |
+| GET | /anniversaries/past?cursor=&size= | → 200 `{items: [{anniversaryId, name, date, authorId}], nextCursor, totalCount}` | R-01 | FR-ANNIV-04.AC3, D-71 |
+| POST | /anniversaries | `{name, date, repeatsYearly?}` → 201 `Anniversary` | R-01, R-15 | FR-ANNIV-03, FR-CAL-01.AC6 |
+| PATCH | /anniversaries/{id} | `{name?, date?, repeatsYearly?}` → 200 `Anniversary` | R-01, R-05, R-15 | FR-ANNIV-03 |
+| DELETE | /anniversaries/{id} | 본문 없음 → 204 | R-01, R-05 | FR-ANNIV-03 |
+
+- `GET /anniversaries?from=&to=`는 **캘린더용**이다. 날짜 범위의 자동 + 직접 기념일을 합쳐 날짜순으로 돌려주고(`kind: AUTO` 또는 `CUSTOM`), D-N 계산(`daysLeft`)을 포함한다. 범위는 최대 3개월이고 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다. 개인 공간과 처음 만난 날이 없는 커플 공간에는 `AUTO`가 없고 `CUSTOM`만 나온다 (FR-ANNIV-04.AC2, AC4). 쿼리와 오류는 아래 "조회 규칙".
+- `GET /anniversaries/upcoming?cursor=&size=`는 **기념일 목록(SCR-ANNIV-01)용**이다. 요청자 시간대 기준 오늘(포함)부터 2050-12-31까지의 자동·직접 기념일 발생일을 날짜순으로 돌려준다. 매년 반복하는 기념일은 해마다 한 항목이다. 항목은 `AnniversaryOccurrence`이고 `daysLeft`는 오늘이면 0이다(앱이 "D-day"로 표시). 정렬은 `date` 오름차순 → 3.3 "같은 날 순서". 커서는 이 정렬 키를 1.1 "커서·`size` 공통 규칙"대로 담는다. 처음 만난 날이 없는 커플과 개인 공간에는 `AUTO` 항목이 없다. 앱이 처음 만난 날 입력 안내를 보여주는 것은 커플이고 처음 만난 날이 없을 때만이고, 개인 공간은 `AUTO`만 없을 뿐 안내도 없다 (FR-ANNIV-04.AC2, AC4).
+- `GET /anniversaries/past?cursor=&size=`는 **"지난 기념일"용**이다. `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 앞인 직접 기념일만, 날짜 최근 순으로 돌려준다. 응답에 `totalCount`(조건에 맞는 지난 1회성 직접 기념일 전체 개수, 페이지와 관계없음)도 넣는다. 앱은 접힌 행 "지난 기념일 N개"에 쓰고 0이면 행을 숨긴다 (D-71). 정렬은 `date` 내림차순 → 같은 `date`면 `anniversaryId` 내림차순이다. 커서 (`date`, `anniversaryId`)는 같은 방향으로 "이 값보다 작은 것"을 비교한다 (3.3 "커서 정렬 키"). 1.1 "커서·`size` 공통 규칙"대로 쓴다. 수정·삭제는 `PATCH`·`DELETE /anniversaries/{id}`(R-05)로 한다.
+- 날짜가 1950-01-01 ~ 2050-12-31 밖인 쓰기는 400 `DATE_OUT_OF_RANGE`다 (R-15).
+
+`Anniversary` (직접 기념일. `POST`·`PATCH` 응답)
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `id` | uuid | |
+| `name` | string | 앞뒤 공백을 지운 값 (D-104) |
+| `date` | `YYYY-MM-DD` | 등록한 날짜. 매년 반복이면 이 날짜의 해부터 해마다 발생한다 |
+| `repeatsYearly` | boolean | |
+| `authorId` | uuid | 작성자. 닉네임은 넣지 않는다(`Event.authorId`와 같은 방식) |
+| `createdAt`, `updatedAt` | 일시 | |
+
+- `updatedBy`는 없다 (ERD에 컬럼이 없고 만들지 않는다).
+
+`AnniversaryOccurrence` (발생일 한 건. 캘린더용과 `upcoming`이 같은 모양)
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `anniversaryId` | uuid \| null | 직접 기념일의 `id`. 자동은 `null` |
+| `kind` | string | `AUTO` 또는 `CUSTOM` |
+| `name` | string | 자동은 D-105 이름("100일", "1주년"), 직접은 `Anniversary.name` |
+| `date` | `YYYY-MM-DD` | 이 발생의 날짜 (2월 29일 규칙 적용, 아래 "자동 기념일 계산") |
+| `daysLeft` | integer | `date` − 요청자 `users.time_zone`의 오늘. 오늘이면 0. 캘린더용에서는 지난 날짜가 음수다. `upcoming`은 늘 0 이상 |
+| `repeatsYearly` | boolean | 직접 기념일의 값. 자동은 `false` (`upcoming`도 같다) |
+| `authorId` | uuid \| null | 직접 기념일의 작성자. 자동은 `null` |
+
+**조회 규칙** (`GET /anniversaries`. 일정 조회 규칙과 같다)
+
+| 항목 | 규칙 |
+| --- | --- |
+| 쿼리 | `from`, `to` 모두 필수, `YYYY-MM-DD`. `to`는 포함한다 |
+| 오류 | 없으면 400 `VALIDATION_FAILED`(`from`/`to`, `REQUIRED`), 날짜 형식이 아니면 (`from`/`to`, `INVALID`), `from` > `to`이면 (`to`, `INVALID`), `to` > `from` + 3개월(`from.plusMonths(3)`)이면 (`to`, `INVALID`) |
+| 검사와 잘라내기 | 위 검사는 요청받은 값 그대로 먼저 하고, 그 뒤 1950-01-01 ~ 2050-12-31로 잘라낸다. 잘라낸 구간이 비면 `{items: []}` (R-15) |
+| 항목 | 범위 안의 모든 발생일(자동 + 직접). 기념일 없는 날은 항목이 없다 |
+| 정렬 | `date` 오름차순 → 아래 "같은 날 순서" |
+
+**쓰기 규칙** (`POST`·`PATCH /anniversaries`. 일정 쓰기 규칙과 같은 방식)
+
+| 항목 | 규칙 |
+| --- | --- |
+| `POST` 필수 | `name`, `date`. 없거나 `null`이면 400 `VALIDATION_FAILED`(해당 필드, `REQUIRED`) |
+| `POST` 선택 | `repeatsYearly` 생략 → true (ERD 기본값). `null`이면 (`repeatsYearly`, `REQUIRED`) |
+| `PATCH` | 부분 수정. 없는 필드는 바꾸지 않는다. 어떤 필드든 `null`이면 `REQUIRED` |
+| 이름 (D-104) | 앞뒤 공백을 지운 값으로 저장. 지운 뒤 빈 값이면 (`name`, `REQUIRED`), 코드 포인트 30개 초과면 (`name`, `TOO_LONG`). 길이는 지운 뒤 센다 (NFR-LIMIT-01, D-82) |
+| 날짜 | `YYYY-MM-DD`가 아니면 (`date`, `INVALID`). 범위 밖이면 400 `DATE_OUT_OF_RANGE`(`date`, `OUT_OF_RANGE`, R-15) |
+| `repeatsYearly` 타입 | boolean이 아니면 (`repeatsYearly`, `INVALID`) (일정 `isTogether`와 같다) |
+| 코드 순서 | `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 `DATE_OUT_OF_RANGE`는 그 뒤에 본다 |
+| 모르는 필드 | 무시한다 (`spaceId`, `authorId` 등도 효과 없음) |
+| `details.fields` | 틀린 필드를 모두 담는다 |
+
+**검사 순서** (일정과 같은 원칙: 권한 없는 사용자에게 필드 오류를 보여주지 않는다)
+
+- `POST /anniversaries`: R-01(활성 공간에 만든다) → 값 검사(400 `VALIDATION_FAILED`) → 날짜 범위(400 `DATE_OUT_OF_RANGE`)
+- `PATCH /anniversaries/{id}`: R-01(404 `NOT_FOUND`) → R-05(403 `NOT_AUTHOR`) → 값 검사 → 날짜 범위
+- `DELETE /anniversaries/{id}`: R-01 → R-05
+- 다른 공간·없는 ID·UUID 형식이 아닌 ID는 같은 404다 (ERD DB-05). 자동 기념일은 ID가 없어 이 경로로 가리킬 수 없다 (FR-ANNIV-02 AC3).
+
+**자동 기념일 계산과 같은 날 순서** (ERD DB-01. 자동 기념일은 저장하지 않고 처음 만난 날로 계산한다)
+
+| 항목 | 규칙 | 관련 ID |
+| --- | --- | --- |
+| 일수 기념일 | 처음 만난 날 + (N − 1)일, N = 100, 200, …, 1000 (10개). 이름 "N일" (예: "100일") | FR-ANNIV-02.AC1·AC2·AC4, D-23, D-105 |
+| 주년 | 처음 만난 날 + N년 (N ≥ 1). 이름 "N주년" (예: "1주년"). 처음 만난 날이 2월 29일이고 그 해가 윤년이 아니면 2월 28일 | FR-ANNIV-02.AC1·AC4·AC5, D-105, D-106 |
+| 직접, 매년 반복 | 등록한 `date`의 해부터 해마다 한 번. 2월 29일은 윤년이 아닌 해에 2월 28일. 등록한 해보다 앞의 해에는 없다 | FR-ANNIV-03.AC3, FR-ANNIV-04.AC1 |
+| 직접, 1회 | `date` 하루 | |
+| 범위 | 1950-01-01 ~ 2050-12-31 안의 발생일만. 개인 공간과 처음 만난 날이 없는 커플 공간에는 자동이 없다 | D-74, FR-ANNIV-04.AC2·AC4 |
+| 같은 날 순서 | ① 자동 일수 ② 자동 주년 ③ 직접 기념일(`anniversaryId` 오름차순). ① → ②는 D-106, 자동 → 직접은 Q-15 기본값, 직접끼리는 "늘 같은 순서"(Q-15)를 `anniversaryId`로 맞춘다 | FR-ANNIV-04.AC5, D-106, Q-15 |
+| 커서 정렬 키 | 아래 "커서 정렬 키" 표 | |
+
+**커서 정렬 키** (1.1 "커서·`size` 공통 규칙"이 가리키는 표. 커서는 불투명이고 앱은 해석하지 않는다)
+
+| 경로 | 정렬 | 커서 키 | 다음 페이지 |
+| --- | --- | --- | --- |
+| `GET /anniversaries/upcoming` | `date` 오름차순 → 순번 오름차순 → `anniversaryId` 오름차순 | (`date`, 같은 날 순번, `anniversaryId`). 순번은 ① = 0, ② = 1, ③ = 2. 자동은 `anniversaryId`가 `null`이어도 순번으로 갈린다 | 커서 키보다 큰 것 |
+| `GET /anniversaries/past` | `date` 내림차순 → `anniversaryId` 내림차순 (최신순을 끝까지 뒤집은 순서) | (`date`, `anniversaryId`) | 커서 키보다 **작은** 것 (`date`, `anniversaryId` 모두 내림차순 방향으로 비교) |
+| `GET /memos` | 3.4 | (`created_at`, `id`) | 미정 (서버 단위 5에서 정함) |
+| `GET /notifications` | 3.5 | (`created_at`, `id`) | 미정 (서버 단위 6에서 정함) |
+
+- **리드 보충 (순서 사용)**: 앱은 캘린더용 `GET /anniversaries`, `upcoming`, `past` 응답의 **순서를 그대로** 쓴다. Room에는 응답 배열의 위치(여러 페이지면 페이지를 이어 붙인 순서)를 함께 저장하고, 앱이 이름 등으로 다시 정렬하지 않는다.
+- **리드 보충 (uuid 비교)**: 직접 기념일끼리 `anniversaryId`를 비교할 때는 PostgreSQL `uuid` 비교(부호 없는 바이트 순)를 쓴다. 정렬과 커서 비교 모두 같다.
+
+- 지금 규칙에서 ①과 ②가 같은 날이 되는 경우는 없다(일수는 +99 … +999일, 주년은 +365일 이상이라 겹치지 않는다). 이 순서는 규칙이 바뀔 때를 위한 안전장치다. 같은 날 여러 항목은 자동 + 직접, 직접 + 직접에서 실제로 생긴다.
+- 자동 → 직접 순서는 PRD Q-15 기본값이다. 사람이 다르게 정하면 이 표를 고친다.
 
 ### 3.4 메모
 
@@ -534,8 +636,8 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`, `GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), 범위가 3개월 초과 (`GET /anniversaries`), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04 |
-| 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
+| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`, `GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
+| 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정·기념일 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
 | 401 | SESSION_INVALID | `Authorization` 헤더가 없음, `Bearer` 형식이 아님, access 토큰의 서명이 틀림, 클레임이 없거나 틀림. 또는 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴(Kakao 연결 해제 알림으로 인한 탈퇴 포함, 4.8)로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장, NFR-SEC-01 |
@@ -576,6 +678,7 @@
 - `action`: `CREATED`, `UPDATED`, `DELETED`, `UNLINKED`(`SPACE`만, 앱 초기화 신호), `LINKED`(`SPACE`만, 커플 연결 완료 신호)
 - `LINKED`는 위 원칙(다른 구성원에게)의 예외다. 커플 연결 커밋 뒤 **두 사람의 기기 모두**에 `{"type": "SYNC", "resource": "SPACE", "action": "LINKED"}`를 보낸다 (`id` 없음). 앱은 받으면 `GET /me`로 확인하고 SCR-CAL-01과 연결 완료 시트로 이동한다 (4.4, D-48)
 - `NOTIFICATION`은 위 원칙(공간의 다른 구성원에게)의 예외다. 알림 목록에 행이 생기면 **받는 사람 본인 기기**로 `{"type": "SYNC", "resource": "NOTIFICATION", "id": "<알림 ID>", "action": "CREATED"}`를 보낸다. 푸시를 끈 종류도 보낸다. 앱은 `GET /notifications/unread-count`를 다시 불러온다
+- 자동 기념일 신호: 처음 만난 날이 바뀌면(`PATCH /space`) 신호는 `SPACE`/`UPDATED` 하나이고 `ANNIVERSARY` 신호는 보내지 않는다. 앱은 `SPACE`/`UPDATED`를 받으면 공간 정보와 함께 기념일도 다시 불러온다. `ANNIVERSARY` 신호는 직접 기념일의 생성·수정·삭제에만 쓴다 (FR-COUPLE-04.AC1, FR-ANNIV-02.AC3)
 - 일정 알림(`PUT`·`DELETE /events/{id}/reminder`)은 요청자 본인의 값이라 동기화 신호를 보내지 않는다. `PATCH /events/{id}`가 다른 사용자의 알림을 지우거나 다시 계산해도 신호는 `EVENT`/`UPDATED` 하나다 (3.3)
 - 커밋이 끝난 뒤에 보낸다 (트랜잭션이 실패하면 보내지 않음). 전송 실패는 재시도하지 않는다: 앱이 화면 진입 시 다시 불러오므로 (NFR-SYNC-02)
 
@@ -590,7 +693,7 @@
 | 작업 | 주기 | 내용 | 관련 |
 | --- | --- | --- | --- |
 | 일정 알림 | 1분마다 | `fire_at <= now`이고 `sent_at`이 없는 `event_reminders`마다 `notifications`(`EVENT_REMINDER`) 행을 만들고 `sent_at` 기록. 사용자의 `event_reminder` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. `fire_at`은 저장할 때 3.3 "알림 시각 계산"으로 정해 두고, 저장할 때 이미 지난 시각이면 `sent_at`을 그때 기록해 이 작업이 보내지 않는다 (D-90). 일정 시작이 바뀌면 `PATCH /events/{id}`가, 사용자 시간대가 바뀌면 `PATCH /me`가 3.3 "다시 계산"대로 `fire_at`·`sent_at`을 다시 정해 두고(이미 보낸 알림도 새 시각이 미래면 다시 보냄), 종일 ↔ 시간 일정으로 바뀌면 그 일정의 알림 행을 모두 지운다 (D-91) | FR-CAL-05, D-90, D-91 |
-| 기념일 알림 | 매시 정각 | 각 사용자의 시간대로 지금이 오전 9시인 사용자에게, 오늘이 기념일(자동·직접)이면 `notifications`(`ANNIVERSARY`) 행을 만들고 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 처음 만난 날이 없는 커플과 개인 공간에는 자동 기념일이 없다 (FR-ANNIV-04.AC4). 제목은 둘 다 "오늘은 [기념일 이름]이에요". 본문은 자동 기념일이면 "함께한 지 D+[N]" (N = 그날의 D+ 값, 처음 만난 날 = D+1). 직접 기념일이면 `repeats_yearly`이고 올해가 등록한 `date`의 해보다 뒤일 때 "[N]번째 맞는 날이에요" (N = 올해 − 등록 연도 + 1), 그 밖에는 "오늘이에요" | D-32, D-55 |
+| 기념일 알림 | 매시 정각 | 각 사용자의 시간대로 지금이 오전 9시인 사용자에게, 오늘이 기념일(자동·직접)이면 `notifications`(`ANNIVERSARY`) 행을 만들고 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 처음 만난 날이 없는 커플과 개인 공간에는 자동 기념일이 없다 (FR-ANNIV-04.AC4). 제목은 둘 다 "오늘은 [기념일 이름]이에요". 자동 기념일의 [기념일 이름]은 3.3 "자동 기념일 계산"의 이름이다(예: "오늘은 1주년이에요", D-105). 처음 만난 날이 2월 29일이면 윤년이 아닌 해의 주년 알림은 2월 28일 오전 9시다 (D-106). 본문은 자동 기념일이면 "함께한 지 D+[N]" (N = 그날의 D+ 값, 처음 만난 날 = D+1). 직접 기념일이면 `repeats_yearly`이고 올해가 등록한 `date`의 해보다 뒤일 때 "[N]번째 맞는 날이에요" (N = 올해 − 등록 연도 + 1), 그 밖에는 "오늘이에요" | D-32, D-55 |
 | 상대 활동 알림 | 즉시 | 커플 공간에서 `notifyPartner = true`로 일정·메모를 만들었을 때(`PARTNER_CREATED`), 메모를 고정했을 때(`MEMO_PINNED`) 상대의 `notifications` 행을 만들고, 상대의 `partner_created`, `memo_pinned` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 일정 추가 알림 본문의 [날짜]는 시작 날짜를 "10월 17일 (토)" 서식으로 쓴다: 종일은 `start_date`, 시간 일정은 받는 사람의 `users.time_zone`으로 바꾼 날짜이며 여러 날 일정도 시작 날짜만 쓴다 (3.3 "상대 일정 추가 알림", D-92) | D-27, D-35, D-92 |
 | 연결·해제·탈퇴 알림 | 즉시 | 연결 완료: 두 사람 각자에게 `notifications`(`COUPLE_LINKED`, `space_id` null) 행을 만들고 두 사람 모두에게 푸시. 해제: 상대에게만 `notifications`(`COUPLE_UNLINKED`, `space_id` null) 행을 만들고 푸시. 탈퇴로 인한 해제: 상대에게만 같은 `COUPLE_UNLINKED` 타입으로 만들되 제목 "[상대 이름]님이 탈퇴해 연결이 해제됐어요", 본문 "함께 쓴 기록은 더 이상 볼 수 없어요" (복구 안내 없음). 모두 설정과 관계없이 항상 푸시(받는 사람에게 유효 세션이 있을 때). Kakao 연결 해제 알림(4.8)으로 일어난 탈퇴 해제도 같다. 연결·해제 알림 행(탈퇴 해제 포함)은 `target_type` = `SETTINGS`, `target_id` = null이고 알림 목록의 `targetType`은 `SETTINGS`다. 알림 목록 행과 푸시를 누르면 설정(SCR-SET-01)으로 이동한다 (3.5, D-85) | PRD 8장, D-53, D-85, FR-AUTH-06.AC2·AC4, FR-NOTI-03 |
 | 알림 목록 정리 | 매일 03:00 KST | `created_at`이 30일 지난 `notifications` 삭제. ERD의 정리 작업이 하며 API는 별도로 지우지 않는다 | FR-NOTI-05.AC2, ERD DB-07 |
@@ -632,8 +735,14 @@
 | FR-CAL-04 사람 색 | PATCH /space/colors | R-08, 3.2 (팔레트 키 12개, 검사 순서, `members[i].color` 필드 이름, 모르는 팔레트 키 앱 동작). AC2 [완료]에서 한 번 저장(D-100)과 AC7 기본 색으로 되돌리기(D-101)는 앱 동작이라 API 변경 없음. `NOT_COUPLE`은 4.5 초기화 |
 | FR-CAL-05 일정 알림 | /events/{id}/reminder, PATCH /events/{id} | R-07, 7장, 3.3 (`EventReminder`, `option` 6개, 알림 시각 계산 AC5 D-90, 다시 계산 AC4·AC6 D-91, `PUT` 200 `Event`, `DELETE` 멱등 204), 6장 (알림 변경은 동기화 신호 없음) |
 | FR-NOTI-04 상대 일정 추가 알림 (D-92) | POST /events (`notifyPartner`) | 3.3 "상대 일정 추가 알림" (본문 [날짜] 서식), 7장 |
-| FR-ANNIV-01~04 | /anniversaries | R-05, 7장 (기념일 알림 문구) |
-| FR-ANNIV-04 기념일 목록 (D-71, D-75) | GET /anniversaries/upcoming, GET /anniversaries/past, GET /anniversaries?from=&to= (캘린더용, 3개월) | R-01, R-05, `GET /anniversaries/past`의 `totalCount`, FR-ANNIV-04.AC4 처음 만난 날이 없으면 `AUTO` 없음 |
+| FR-ANNIV-01~04 | /anniversaries | R-01, R-05, 7장 (기념일 알림 문구) |
+| FR-ANNIV-04 기념일 목록 (D-71, D-75) | GET /anniversaries/upcoming, GET /anniversaries/past, GET /anniversaries?from=&to= (캘린더용, 3개월) | R-01, R-05, `GET /anniversaries/past`의 `totalCount`, FR-ANNIV-04.AC4 처음 만난 날이 없으면 `AUTO` 없음, 3.3 (`AnniversaryOccurrence`, 조회 규칙), 1.1 커서·`size` 규칙 |
+| FR-ANNIV-02.AC4·AC5 자동 기념일 이름·2월 29일 (D-105, D-106) | GET /anniversaries, GET /anniversaries/upcoming | 3.3 "자동 기념일 계산과 같은 날 순서" (이름 "N일"·"N주년", 비윤년 주년은 2월 28일), 7장 기념일 알림 이름 |
+| FR-ANNIV-03.AC1 직접 기념일 이름·날짜 필수 (D-104) | POST·PATCH /anniversaries | 3.3 (`Anniversary`, 쓰기 규칙: 앞뒤 공백 제거, 지운 뒤 빈 값 `REQUIRED`, 30자 초과 `TOO_LONG`), 검사 순서 R-01 → R-05 → 값 → 날짜 범위, 5장 |
+| FR-ANNIV-04.AC5 같은 날 순서 (D-106, Q-15) | GET /anniversaries, GET /anniversaries/upcoming | 3.3 "같은 날 순서"(자동 일수 → 자동 주년 → 직접), 커서 정렬 키(날짜, 순번, `anniversaryId`) |
+| FR-CAL-02.AC6 일정 저장 순서 (D-108) | POST /events, PUT·DELETE /events/{id}/reminder | 3.3 "일정 저장 순서" (앱 동작, 서버 변경 없음) |
+| 커서·`size` 공통 규칙 | GET /anniversaries/upcoming·past, GET /memos, GET /notifications | 1.1 (`size` 1 ~ 100 기본 20, 불투명 `cursor`, 400 `VALIDATION_FAILED`) |
+| FR-COUPLE-04.AC1, FR-ANNIV-02.AC3 자동 기념일 동기화 | PATCH /space | 6장 (`SPACE`/`UPDATED`만 보내고 `ANNIVERSARY` 신호는 직접 기념일에만) |
 | FR-MEMO-01~03 | /memos | R-03 |
 | FR-MEMO-04 | 삭제됨 (PRD v0.4). PATCH /memos/{id}/checklist-items/{itemId} 삭제됨 | |
 | FR-MEMO-05 | /memos/pinned, /memos/{id}/pin | R-04 |
