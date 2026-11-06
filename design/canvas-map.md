@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-10-22 · 캔버스 버전 38 · PRD v0.6 |
+| 마지막 반영 | 2026-11-06 · 캔버스 버전 41 · PRD v0.11 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -83,6 +83,21 @@
 | MenuStartDateSheet.dc.html | SCR-SET-01 (처음 만난 날 시트) | SCR-SET-01--start-date-sheet.png |
 | ColorSettingsSolo.dc.html | SCR-SET-03 (개인 공간) | SCR-SET-03--solo.png |
 | V06Flow.dc.html | 화면 흐름 (PRD v0.6: 계정 연동·처음 만난 날·지난 기념일·다른 계정) | flow-prd-v0.6.png |
+| InviteEnterError.dc.html | SCR-COUPLE-03 (없는 코드 오류) | SCR-COUPLE-03--error.png |
+| InviteEnterRateLimited.dc.html | SCR-COUPLE-03 (입력 제한) | SCR-COUPLE-03--rate-limited.png |
+| InviteCreateLoading.dc.html | SCR-COUPLE-02 (코드 받는 중) | SCR-COUPLE-02--loading.png |
+| StartDateSheetYearMonth.dc.html | SCR-SET-01 (처음 만난 날 시트 · 연도·월 선택) | SCR-SET-01--start-date-sheet-year-month.png |
+| CalendarLinkedSheetDate.dc.html | SCR-COUPLE-04 (처음 만난 날이 이미 있음) | SCR-COUPLE-04--date-set.png |
+| MenuNoStartDate.dc.html | SCR-SET-01 (처음 만난 날이 없는 커플) | SCR-SET-01--no-start-date.png |
+| ConnectionInfoNoStartDate.dc.html | SCR-SET-01 (연결 정보 · 처음 만난 날 없음) | SCR-SET-01--couple-no-start-date.png |
+| AddEventDatePicker.dc.html | SCR-CAL-03 (날짜 선택) | SCR-CAL-03--date-picker.png |
+| AddEventTimePicker.dc.html | SCR-CAL-03 (시간 선택) | SCR-CAL-03--time-picker.png |
+| AddEventReminderSheet.dc.html | SCR-CAL-03 (내 알림 시트) | SCR-CAL-03--reminder-sheet.png |
+| EventDetailSolo.dc.html | SCR-CAL-02 (개인 공간) | SCR-CAL-02--solo.png |
+| EventDetailSoloDialog.dc.html | SCR-CAL-02 (개인 공간 삭제 확인) | SCR-CAL-02--solo-delete-dialog.png |
+| CalendarSnackbar.dc.html | SCR-CAL-01 (탭 있는 화면의 스낵바) | SCR-CAL-01--snackbar.png |
+| CalendarRefresh.dc.html | SCR-CAL-01 (당겨서 새로고침) | SCR-CAL-01--refresh.png |
+| AddEventLoading.dc.html | 공통 요청 중 로딩 (예시 SCR-CAL-03) | SCR-CAL-03--loading.png |
 
 이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림)
 
@@ -90,4 +105,4 @@
 
 ## 디자인 없는 화면
 
-없음 (PRD v0.6 기준 모든 화면에 보드가 있어요)
+없음 (PRD v0.11 기준 모든 화면과 요청서의 상태에 보드가 있어요)

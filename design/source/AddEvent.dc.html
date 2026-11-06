@@ -15,7 +15,7 @@ body{margin:0}
 a{color:#5B5666}a:hover{color:#1C1A22}
 </style>
 </helmet>
-<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
 <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
 <a href="Calendar.dc.html" aria-label="닫기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
@@ -136,9 +136,59 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 </sc-if>
 </div>
+<sc-if value="{{datePicker}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px">
+<dc-import name="StartDateSheet" event-date="{{ true }}" hint-size="390px,844px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{timePicker}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(28, 26, 34, 0.48)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="tpTitle" style="position: relative; box-sizing: border-box; padding: 10px 24px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+<h2 id="tpTitle" style="margin: 4px 0 0; font-size: 22px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">시작 시간</h2>
+<div role="group" aria-label="시작 시간 {{startTime}}" style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 88px; height: 44px; border-radius: 14px; background: #F5F3F7"></span>
+<sc-for list="{{wheels}}" as="w" hint-placeholder-count="3">
+<div aria-label="{{w.label}}" style="position: relative; display: flex; flex-direction: column">
+<sc-for list="{{w.items}}" as="it" hint-placeholder-count="5">
+<span style="{{it.style}}">{{it.t}}</span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<button type="button" style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">완료</button>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{reminderSheet}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(28, 26, 34, 0.48)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="rmTitle" style="position: relative; box-sizing: border-box; padding: 10px 24px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="rmTitle" style="margin: 4px 0 0; font-size: 22px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">내 알림</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #5B5666">나에게만 와요</p>
+</div>
+<div role="radiogroup" aria-label="내 알림" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px">
+<sc-for list="{{remOpts}}" as="o" hint-placeholder-count="5">
+<button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+<button type="button" style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">완료</button>
+</section>
+</div>
+</sc-if>
+<sc-if value="{{loading}}" hint-placeholder-val="{{ false }}">
+<div role="progressbar" aria-busy="true" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(28, 26, 34, 0.48)">
+<div style="width: 84px; height: 84px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; align-items: center; justify-content: center">
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true"><circle cx="22" cy="22" r="20" stroke="#EEEBF1" stroke-width="4"></circle><circle cx="22" cy="22" r="20" stroke="#6D4AE0" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.42 125.66" transform="rotate(-90 22 22)"></circle></svg>
+</div>
+</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"kind":{"editor":"enum","options":["event","memo"],"default":"event","section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"memoDate":{"editor":"boolean","default":false,"section":"상태"},"partnerEdit":{"editor":"boolean","default":false,"section":"상태"},"allDay":{"editor":"boolean","default":false,"section":"상태"},"edit":{"editor":"boolean","default":false,"section":"상태"},"endError":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"kind":{"editor":"enum","options":["event","memo"],"default":"event","section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"memoDate":{"editor":"boolean","default":false,"section":"상태"},"partnerEdit":{"editor":"boolean","default":false,"section":"상태"},"allDay":{"editor":"boolean","default":false,"section":"상태"},"edit":{"editor":"boolean","default":false,"section":"상태"},"endError":{"editor":"boolean","default":false,"section":"상태"},"datePicker":{"editor":"boolean","default":false,"section":"상태"},"timePicker":{"editor":"boolean","default":false,"section":"상태"},"reminderSheet":{"editor":"boolean","default":false,"section":"상태"},"loading":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const accent = this.props.accent ?? '#6D4AE0';
@@ -152,6 +202,8 @@ class Component extends DCLogic {
     // 내 일정 수정 (종류 탭·알림 스위치 없음, 대상은 바꿀 수 있음)
     const edit = !!this.props.edit;
     const endError = !!this.props.endError;
+    // 통신 중 로딩: [저장]을 누른 직후. 화면 전체 scrim + 가운데 흰 판(84, radius-lg, shadow-dialog) 안 원형 진행 표시(44, 선 4) (PRD D-115)
+    const loading = !!this.props.loading;
     const who = s.who || 'me';
     const solo = !!this.props.solo;
     const notify = s.notify !== undefined ? !!s.notify : true;
@@ -200,7 +252,7 @@ class Component extends DCLogic {
       partnerEdit,
       showTabs: !partnerEdit && !edit,
       headerTitle: (partnerEdit || edit) ? '일정 수정' : '새로 추가',
-      titleValue: partnerEdit ? '저녁 데이트' : (edit ? '팀 회식' : (endError ? '저녁 데이트' : '')),
+      titleValue: partnerEdit ? '저녁 데이트' : (edit ? '팀 회식' : ((endError || loading) ? '저녁 데이트' : '')),
       memoValue: partnerEdit ? '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' : (edit ? '늦게 끝날 수도 있어요' : ''),
       togetherDot: 'width: 10px; height: 10px; border-radius: 5px; background: ' + colors.both,
       // 시작·종료 행 (PRD D-64). 종일이면 날짜만
@@ -217,6 +269,36 @@ class Component extends DCLogic {
       notify,
       toggleNotify: () => this.setState({ notify: !notify }),
       notifyStyle: notify ? 'background: ' + accent + '; justify-content: flex-end' : 'background: #D9D4DF; justify-content: flex-start',
+      // 날짜 칩을 누른 뒤: 처음 만난 날 시트와 같은 날짜 시트 (PRD FR-CAL-01 AC6, D-74)
+      datePicker: !!this.props.datePicker,
+      // 시간 칩을 누른 뒤: 하단 시트의 휠 3줄(오전/오후 · 시 · 분), 가운데 선택 줄 surface-100 띠 (PRD FR-CAL-02 AC1)
+      timePicker: !!this.props.timePicker,
+      wheels: [
+        { label: '오전 또는 오후', items: ['', '오전', '오후', '', ''] },
+        { label: '시', items: ['5', '6', '7', '8', '9'] },
+        { label: '분', items: ['28', '29', '30', '31', '32'] }
+      ].map((w) => ({
+        label: w.label,
+        items: w.items.map((t, i) => ({
+          t,
+          style: 'height: 44px; display: flex; align-items: center; justify-content: center; ' + (i === 2
+            ? 'font-size: 22px; line-height: 30px; font-weight: 700; color: #1C1A22'
+            : 'font-size: 16px; line-height: 24px; font-weight: 500; color: ' + (i === 1 || i === 3 ? '#77727F' : '#8E8996'))
+        }))
+      })),
+      // 내 알림 행을 누른 뒤의 하단 시트. 칩은 SCR-CAL-02와 같은 모양·문구, 시간 일정 5개 / 종일 일정 3개 (PRD D-107, FR-CAL-02 AC4)
+      reminderSheet: !!this.props.reminderSheet,
+      remOpts: (allDay ? ['없음', '당일 오전 9시', '1일 전 오전 9시'] : ['없음', '정시', '10분 전', '1시간 전', '1일 전']).map((o) => {
+        const on = o === (s.rem || '없음');
+        return {
+          label: o,
+          on,
+          pick: () => this.setState({ rem: o }),
+          style: "height: 40px; padding: 0 14px; border-radius: 999px; font-family: 'IBM Plex Sans KR', sans-serif; font-size: 14px; cursor: pointer; " + (on ? 'border: 0; background: #1C1A22; color: #FFFFFF; font-weight: 600' : 'border: 1px solid #E6E2EA; background: #FFFFFF; color: #4A4553; font-weight: 500')
+        };
+      }),
+      loading,
+      accent,
       allDay,
       showTime: !allDay,
       toggleAllDay: () => this.setState({ allDay: !allDay }),

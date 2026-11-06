@@ -32,19 +32,21 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <span style="width: 42px; height: 56px; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; color: #1C1A22">{{ch.c}}</span>
 </sc-for>
 </div>
+<sc-if value="{{hasCode}}" hint-placeholder-val="{{ true }}">
 <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5B5666">
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
 10분 동안 유효 · {{remainLabel}} 남음
 </span>
+</sc-if>
 <sc-if value="{{renewed}}" hint-placeholder-val="{{ false }}">
 <p role="status" style="margin: 0; width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 12px; background: #FFFFFF; font-size: 13px; line-height: 1.5; font-weight: 600; color: #4A4553; text-align: center">시간이 지나 새 코드를 만들었어요.<br>새 코드를 다시 보내 주세요.</p>
 </sc-if>
 <div style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 4px">
-<button type="button" onClick="{{copy}}" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<button type="button" onClick="{{copy}}" disabled="{{loading}}" style="height: 48px; border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; {{panelBtnStyle}}">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"></rect><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"></path></svg>
 {{copyLabel}}
 </button>
-<button type="button" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<button type="button" disabled="{{loading}}" style="height: 48px; border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; {{panelBtnStyle}}">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5M5 13v6a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6"></path></svg>
 공유하기
 </button>
@@ -75,7 +77,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"cooldown":{"editor":"boolean","default":false,"section":"상태"},"renewed":{"editor":"boolean","default":false,"section":"상태"},"notYet":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"cooldown":{"editor":"boolean","default":false,"section":"상태"},"renewed":{"editor":"boolean","default":false,"section":"상태"},"notYet":{"editor":"boolean","default":false,"section":"상태"},"loading":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const copied = !!(this.state && this.state.copied);
@@ -83,12 +85,18 @@ class Component extends DCLogic {
     // 만료되면 새 코드를 자동으로 받아 보여준다 (PRD D-42). 막 받은 코드라 재요청은 1분 대기
     const renewed = !!this.props.renewed;
     const cooldown = !!this.props.cooldown || renewed;
-    const code = renewed ? 'P4WM7R' : 'K7Q29X';
+    // 코드를 받기 전: 빈 칸 6개, [코드 복사]·[공유하기] 비활성, 남은 시간 줄 없음. 문구·스피너 없음 (PRD D-95, FR-COUPLE-01 AC6)
+    const loading = !!this.props.loading;
+    const code = loading ? '      ' : (renewed ? 'P4WM7R' : 'K7Q29X');
     return {
+      loading,
+      hasCode: !loading,
+      // 비활성은 기존 비활성 버튼(InviteEnter의 [연결하고 시작하기])과 같은 line-100 면 + ink-500 글자
+      panelBtnStyle: loading ? 'border: 1px solid #EEEBF1; background: #EEEBF1; color: #77727F; cursor: default' : 'border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22',
       renewed,
       cooldown,
       canReissue: !cooldown,
-      codeLabel: '초대코드 ' + code,
+      codeLabel: loading ? '초대코드' : '초대코드 ' + code,
       remainLabel: renewed ? '9분 56초' : (cooldown ? '9분 18초' : '8분 12초'),
       cooldownLabel: (renewed ? '56초' : '18초') + ' 뒤에 다시 만들 수 있어요',
       accent: this.props.accent ?? '#6D4AE0',
