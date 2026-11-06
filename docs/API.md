@@ -1,6 +1,6 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.11 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
 > 작성일: 2026-10-17 (갱신: 2026-10-27 공간·커플 응답 모양, 연결 오류 우선순위, Kakao 연결 해제 알림 웹훅 추가 / 2026-10-31 PRD v0.9: 일정 API 응답·쓰기·조회 규칙, 일정 알림 시각 계산, `MeSpace.importCounts`·`linkedAt`, `Space.linkedAt` / 2026-11-05 PRD v0.10: 기념일 API 요청·응답(`Anniversary`, `AnniversaryOccurrence`)·조회·쓰기 규칙·검사 순서, 자동 기념일 계산과 같은 날 순서, 커서·`size` 공통 규칙, 일정 저장 순서, SYNC `ANNIVERSARY` 범위)
 

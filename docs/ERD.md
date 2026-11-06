@@ -1,6 +1,6 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.11 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
 > 작성일: 2026-10-17 (갱신: 2026-11-05)
 
