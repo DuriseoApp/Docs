@@ -149,7 +149,7 @@
 | 내용 | 문구 한 줄만. 행동 버튼("다시 시도" 등)은 없어요 | 두 보드 모두 |
 | 접근성 | 나타나면 스크린리더가 읽어요 | `role="status"` (Compose: `liveRegion = Polite`) |
 
-- **위치**: 보드마다 달라요. `InviteCreate.dc.html`은 아래 고정 버튼 위(바닥에서 112, [연결 확인하기] 버튼 위로 24), `Main.dc.html`은 위에서 40이에요. **탭이 있는 화면(SCR-CAL-01~03)은 바닥에서 96, 좌우 16이에요** (`Calendar.dc.html` 148~150행, `CalendarSnackbar.dc.html`, 이미지 `SCR-CAL-01--snackbar.png`, 하단 탭 포함). 하단 탭(80) 위로 16 떠요. 이 화면의 FAB은 스낵바 위 16으로 올라가요(바닥에서 161 = 스낵바 바닥 96 + 스낵바 높이 49(위아래 14 + 한 줄 21) + 16, `Calendar.dc.html` 364행). 스낵바가 없으면 FAB은 바닥에서 100이에요. 문구는 "인터넷 연결이 필요해요". Android 구현은 이슈 #12로 이 위치에 맞춰요 (사용자 결정 2026-11-06, SCREENS `docs/archive/screens-resolved-diffs.md` 33번).
+- **위치**: 보드마다 달라요. `InviteCreate.dc.html`은 아래 고정 버튼 위(바닥에서 112, [연결 확인하기] 버튼 위로 24), `Main.dc.html`은 위에서 40이에요. **탭이 있는 화면(SCR-CAL-01)은 바닥에서 96, 좌우 16이에요. 탭이 없는 SCR-CAL-02·03은 위에서 40이에요** (`Calendar.dc.html` 148~150행, `CalendarSnackbar.dc.html`, 이미지 `SCR-CAL-01--snackbar.png`, 하단 탭 포함). 하단 탭(80) 위로 16 떠요. 이 화면의 FAB은 스낵바 위 16으로 올라가요(바닥에서 161 = 스낵바 바닥 96 + 스낵바 높이 49(위아래 14 + 한 줄 21) + 16, `Calendar.dc.html` 364행). 스낵바가 없으면 FAB은 바닥에서 100이에요. 문구는 "인터넷 연결이 필요해요". Android 구현은 이슈 #12로 이 위치에 맞춰요 (사용자 결정 2026-11-06, SCREENS `docs/archive/screens-resolved-diffs.md` 33번).
 - **보이는 시간**: 보드에 없어요.
 - 쓰는 곳: 오프라인 안내, 공통 오류, 다른 기기 로그인, 아직 연결되지 않음 (SCREENS 공통 표, SCR-COUPLE-02).
 
