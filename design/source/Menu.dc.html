@@ -48,17 +48,26 @@ body{margin:0}
 <span style="font-size: 16px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">[내 이름]</span>
 <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5B5666"><span style="{{meTagDot}}"></span>나</span>
 </a>
+<sc-if value="{{hasStartDate}}" hint-placeholder-val="{{ true }}">
 <div style="padding-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px" aria-label="함께한 지 D+[N]">
 <svg width="34" height="22" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="#E0612F"></circle><circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path></svg>
 <span style="font-size: 14px; font-weight: 700; color: #4A2FC0">D+[N]</span>
 </div>
+</sc-if>
+<sc-if value="{{noStartDate}}" hint-placeholder-val="{{ false }}">
+<div style="height: 72px; display: flex; align-items: center; justify-content: center; min-width: 64px" aria-hidden="true">
+<svg width="34" height="22" viewBox="22 32 64 44" aria-hidden="true"><circle cx="44" cy="54" r="20" fill="#E0612F"></circle><circle cx="64" cy="54" r="20" fill="#2F6FDB"></circle><path d="M54 36.68A20 20 0 0 1 54 71.32A20 20 0 0 1 54 36.68Z" fill="#6D4AE0"></path></svg>
+</div>
+</sc-if>
 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
 <span style="{{partnerAvatarStyle}}" aria-hidden="true">너</span>
 <span style="font-size: 16px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">[상대 이름]</span>
 <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5B5666"><span style="{{partnerTagDot}}"></span>상대</span>
 </div>
 </div>
+<sc-if value="{{hasStartDate}}" hint-placeholder-val="{{ true }}">
 <p style="margin: 0; text-align: center; font-size: 13px; color: #5B5666">[처음 만난 날]부터 함께하고 있어요</p>
+</sc-if>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
 <a href="ProfileEdit.dc.html" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">내 프로필 수정</a>
 <button type="button" onClick="{{openStartDate}}" style="height: 44px; border-radius: 12px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">처음 만난 날 수정</button>
@@ -160,7 +169,7 @@ body{margin:0}
 </footer>
 <sc-if value="{{startDateSheet}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px">
-<dc-import name="StartDateSheet" hint-size="390px,844px"></dc-import>
+<dc-import name="StartDateSheet" year-month="{{startDateYearMonth}}" hint-size="390px,844px"></dc-import>
 </div>
 </sc-if>
 <sc-if value="{{logoutOpen}}" hint-placeholder-val="{{ false }}">
@@ -178,7 +187,7 @@ body{margin:0}
 </sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"updateAvailable":{"editor":"boolean","default":false,"section":"상태"},"guest":{"editor":"boolean","default":false,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"logoutOpen":{"editor":"boolean","default":false,"section":"상태"},"startDateSheet":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":1080}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"updateAvailable":{"editor":"boolean","default":false,"section":"상태"},"guest":{"editor":"boolean","default":false,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"logoutOpen":{"editor":"boolean","default":false,"section":"상태"},"startDateSheet":{"editor":"boolean","default":false,"section":"상태"},"startDateYearMonth":{"editor":"boolean","default":false,"section":"상태"},"noStartDate":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":1080}}'>
 class Component extends DCLogic {
   renderVals() {
     const me = this.props.meColor ?? '#E0612F';
@@ -217,6 +226,11 @@ class Component extends DCLogic {
       mainH: overlay ? 844 : (this.props.guest ? 1200 : 1080),
       logoutOpen,
       startDateSheet,
+      // 처음 만난 날 시트의 연·월 제목(⌄)을 누른 뒤 (PRD FR-COUPLE-04 AC3, D-74)
+      startDateYearMonth: !!this.props.startDateYearMonth,
+      // 처음 만난 날이 없는 커플: D+N과 "[처음 만난 날]부터 함께하고 있어요" 줄을 숨긴다 (PRD D-99)
+      hasStartDate: !this.props.noStartDate,
+      noStartDate: !!this.props.noStartDate,
       openLogout: () => this.setState({ logoutOpen: true }),
       closeLogout: () => this.setState({ logoutOpen: false }),
       openStartDate: () => this.setState({ startDateSheet: true }),
