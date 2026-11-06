@@ -48,6 +48,8 @@ argument-hint: "[--dry-run]"
 - 열린 질문 (있으면 3단계에서 사용자에게 묻는다)
 - 상태: `승인 대기`
 
+이전 sync의 영향 분석 파일은 그 PR이 머지된 뒤 다음 sync 때 `sync/archive/`로 `git mv`한다 (새 영향 분석 파일은 계속 `sync/`에 만든다).
+
 ## 3. 승인 (사람)
 
 사용자에게 아래를 보여주고, 끝에 "맞으면 **start**, 고칠 게 있으면 말씀해 주세요."라고 묻고 기다린다. start, 진행, ok처럼 승인하는 말이면 진행한다. **승인 전에는 파생 문서를 고치지 않는다.**
@@ -107,11 +109,11 @@ argument-hint: "[--dry-run]"
 2. 모든 파생 문서 헤더가 `PRD v<버전>`인지 본다.
 3. 영향 분석 파일의 모든 할 일이 반영됐는지 본다.
 
-## 7.5 디자인까지 한 번에 (claude.ai 프로젝트 채팅에서 실행할 때만)
+## 7.5 디자인까지 한 번에 (claude.ai 프로젝트 채팅 또는 Artifact 도구가 있는 클라우드 세션에서 실행할 때만)
 
 디자인 변경 요청서(`design/change-requests/prd-v<버전>.md`)가 있을 때, 실행 환경에 따라 나뉜다.
 
-- **claude.ai 프로젝트 채팅** (아티팩트를 읽고 게시하는 도구가 있음): 같은 `sync/prd-v<버전>` 브랜치에서 `.claude/skills/design-sync/SKILL.md`의 3~6단계를 이어서 한다 (캔버스 수정, 화면 PNG, tokens.json, SCREENS.md, 요청서 "반영 완료"). design-sync의 브랜치 만들기(2단계)와 별도 PR(7단계)은 하지 않는다. 문서와 디자인이 **PR 하나**에 들어가고, Android 이슈는 8단계에서 PR과 함께 만든다.
+- **claude.ai 프로젝트 채팅, 또는 Artifact 도구가 있는 클라우드 세션** (아티팩트를 읽고 게시하는 도구가 있음): 같은 `sync/prd-v<버전>` 브랜치에서 `.claude/skills/design-sync/SKILL.md`의 3~6단계를 이어서 한다 (캔버스 수정, 화면 PNG, tokens.json, SCREENS.md, 요청서 "반영 완료"). design-sync의 브랜치 만들기(2단계)와 별도 PR(7단계)은 하지 않는다. 문서와 디자인이 **PR 하나**에 들어가고, Android 이슈는 8단계에서 PR과 함께 만든다.
 - **맥 터미널** (아티팩트 도구 없음): 이 단계를 건너뛴다. 요청서까지만 PR에 넣고, 사용자에게 "머지 후 claude.ai 프로젝트 채팅에서 '디자인 반영해줘'"를 안내한다 (기존 방식).
 
 디자인 반영 뒤 `bash scripts/check-ids.sh`를 다시 돌린다.
