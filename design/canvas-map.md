@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-11-06 · 캔버스 버전 41 · PRD v0.11 |
+| 마지막 반영 | 2026-11-08 · 캔버스 버전 43 · PRD v0.12 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -98,6 +98,14 @@
 | CalendarSnackbar.dc.html | SCR-CAL-01 (탭 있는 화면의 스낵바) | SCR-CAL-01--snackbar.png |
 | CalendarRefresh.dc.html | SCR-CAL-01 (당겨서 새로고침) | SCR-CAL-01--refresh.png |
 | AddEventLoading.dc.html | 공통 요청 중 로딩 (예시 SCR-CAL-03) | SCR-CAL-03--loading.png |
+| OpenSourceLicenses.dc.html | SCR-SET-05 (오픈소스 라이선스) | SCR-SET-05.png |
+| OpenSourceLicensesExpanded.dc.html | SCR-SET-05 (라이선스 펼침) | SCR-SET-05--expanded.png |
+| ProfileEditPhotoError.dc.html | SCR-SET-04 (사진 오류) | SCR-SET-04--photo-error.png |
+| MenuMailDialog.dc.html | SCR-SET-01 (메일 앱 없음 다이얼로그) | SCR-SET-01--mail-dialog.png |
+| MenuAppInfoChecking.dc.html | SCR-SET-01 (업데이트 확인 중) | SCR-SET-01--update-checking.png |
+| MenuAppInfoUnknown.dc.html | SCR-SET-01 (업데이트 확인할 수 없음) | SCR-SET-01--update-unknown.png |
+| NotificationSettingsLoadFailed.dc.html | SCR-SET-02 (서버 값을 받지 못함) | SCR-SET-02--load-failed.png |
+| MemoDetailOtherYear.dc.html | SCR-MEMO-03 (다른 해 날짜 칩) | SCR-MEMO-03--other-year.png |
 
 이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림)
 

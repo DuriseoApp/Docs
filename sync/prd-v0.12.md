@@ -103,7 +103,7 @@ PRD에는 제품 정책·화면 동작·문구(D-116~D-152, Q-19)와 AC·NFR·5�
 | docs/ERD.md (+ ERD.png, erd.html) | data | 12 (+ 공통 1) |
 | docs/API.md | api | 25 (+ 공통 1) |
 | docs/SCREENS.md | screen | 24 (+ 공통 1) |
-| 디자인 변경 요청서 `design/change-requests/prd-v0.12.md` | screen | 있음: 10 |
+| 디자인 변경 요청서 `design/change-requests/archive/prd-v0.12.md` | screen | 있음: 10 |
 
 ### 2.1 docs/ERD.md (data)
 
@@ -158,7 +158,7 @@ PRD에는 제품 정책·화면 동작·문구(D-116~D-152, Q-19)와 AC·NFR·5�
 
 ### 2.3 docs/SCREENS.md (screen)
 
-공통: 헤더를 `PRD v0.12`로, 디자인 기준 줄에 v0.12 요청서(`design/change-requests/prd-v0.12.md`) 대기를 쓴다. 디자인이 바뀌는 항목은 요청서(2.4)와 함께 처리한다.
+공통: 헤더를 `PRD v0.12`로, 디자인 기준 줄에 v0.12 요청서(`design/change-requests/archive/prd-v0.12.md`) 대기를 쓴다. 디자인이 바뀌는 항목은 요청서(2.4)와 함께 처리한다.
 
 | 번호 | 점검 | 할 일 |
 | --- | --- | --- |
@@ -187,7 +187,7 @@ PRD에는 제품 정책·화면 동작·문구(D-116~D-152, Q-19)와 AC·NFR·5�
 | S23 | #7 | SCR-SET-01 연결 해제 확인 다이얼로그 실패: 오프라인 "인터넷 연결이 필요해요", 오류 공통 오류, 둘 다 다이얼로그를 닫고 연결 그대로. 401 `SESSION_*`은 SCR-START-01, `NOT_COUPLE`은 이미 해제로 보고 초기화(D-124) |
 | S24 | #9 | SCR-COUPLE-04 시트와 초기화 뒤 이동: 앱이 꺼진 사이 해제되고 다른 사람과 연결된 경우 초기화 뒤 `GET /me`로 SCR-CAL-01 + 연결 완료 시트(D-125) |
 
-### 2.4 디자인 변경 요청서 `design/change-requests/prd-v0.12.md` (screen)
+### 2.4 디자인 변경 요청서 `design/change-requests/archive/prd-v0.12.md` (screen)
 
 screen이 요청서를 만들고, 캔버스 수정·이미지·`tokens.json`·`design-system.md` 반영은 `/design-sync`가 한다. 이미지 이름은 기존 규칙(`SCR-XXX-NN--상태.png`)으로 `/design-sync`가 정하며 여기서 정하지 않는다. 디자인 토큰 값은 새로 만들지 않는다.
 

@@ -3,7 +3,7 @@
 둘이 함께 쓰는 캘린더와 메모. 커플 정보 공유 앱 **둘이서**(Android 패키지 `com.duriseo.android`)의 디자인 시스템이에요. 화면 데모(로그인 → 연결 → 캘린더 → 메모 → 색상 설정)에서 쓴 값을 그대로 토큰과 컴포넌트로 옮겼어요.
 
 > 이 파일은 claude.ai 디자인 캔버스의 디자인 시스템을 옮긴 것이에요. 실제 값(색 코드 등)은 `design/tokens.json`이 기준이고, `/design-sync`가 갱신해요.
-> 갱신: 2026-11-06 (PRD v0.11, 캔버스 버전 41) — 컴포넌트 명세는 `design/source/` 보드 값에서 읽었어요. 토큰 값은 바꾸지 않았어요. 보드 값이 토큰과 다르면 보드 값을 그대로 적고 다르다고 표시했어요. 변경 이력은 git에 있어요.
+> 갱신: 2026-11-08 (PRD v0.12, 캔버스 버전 43) — 컴포넌트 명세는 `design/source/` 보드 값에서 읽었어요. 토큰 값은 바꾸지 않았어요. 보드 값이 토큰과 다르면 보드 값을 그대로 적고 다르다고 표시했어요. 변경 이력은 git에 있어요.
 
 ## 원칙
 
@@ -108,10 +108,28 @@
 | 컴포넌트 | 클래스 | 규칙 |
 |---|---|---|
 | 안 읽음 점 (Badge) | `dr-unread`, `dr-iconbtn--has-unread` | 지름 8, `brand-500`. 알림 버튼 위에서는 오른쪽 위(위 11, 오른쪽 12)에 `surface-0` 2px 테두리. 숫자는 넣지 않고, 없으면 점을 뺌. 버튼 라벨은 "알림, 안 읽은 알림 있음" |
-| 메모 날짜 칩 (Chip) | `dr-date-chip`, `--on-card`, `--lg` | 달력 아이콘 12 + "10월 17일 (토)". 높이 22, `radius-xs`, 12/600 `ink-700`, 배경 `surface-100`(색 면 위에서는 `surface-0`). 상세 화면은 높이 28, 13. 라벨 "메모 날짜 10월 17일 (토)" |
+| 메모 날짜 칩 (Chip) | `dr-date-chip`, `--on-card`, `--lg` | 달력 아이콘 12 + "10월 17일 (토)". 높이 22, `radius-xs`, 12/600 `ink-700`, 배경 `surface-100`(색 면 위에서는 `surface-0`). 상세 화면은 높이 28, 13. 라벨 "메모 날짜 10월 17일 (토)". 올해가 아니면 연도를 붙여요 (예 "2027년 10월 17일 (일)"). 높이·글자 크기는 그대로이고 폭만 늘어나요 (`MemoDetailOtherYear.dc.html`) |
 | 알림 행 (NotificationItem) | `dr-noti`, `dr-noti--unread` | 아이콘 원 44 + 메타(종류 · 시각, 12/600 `ink-600`) + 제목 15 + 본문 14 두 줄 + 오른쪽 위 안 읽음 점. 안 읽음은 배경 `brand-50`, 제목 700, 아이콘 원 `brand-100`+`brand-700`. 읽음은 `surface-0`, 500, `surface-100`+`ink-600` |
 
 알림 종류 아이콘: 일정 알림=알림 종, 상대 일정 추가=달력, 상대 메모 추가=메모, 메모 고정=핀, 기념일=달력, 연결=링크, 연결 해제=사람.
+
+### 날짜·시각 표기
+
+작성일·받은 시각은 기기 시간대 기준이에요 (NFR-TIME-02, D-129).
+
+| 경우 | 표기 | 예 |
+|---|---|---|
+| 오늘 | "오늘 오전 9:12" | |
+| 어제 | "어제" | |
+| 올해 | "M월 d일" | "10월 17일" |
+| 다른 해 | "yyyy년 M월 d일" | "2026년 10월 17일" |
+| 메모 날짜 칩 | 올해가 아니면 연도를 붙여요 | "2027년 10월 17일 (일)" (`MemoDetailOtherYear.dc.html`) |
+
+알림 문구의 [날짜]는 이 표가 아니에요. 서버가 만드는 문구라 연도 없는 "M월 d일 (요일)"이에요 (D-92).
+
+### 날짜 칸 점 규칙 (SCR-CAL-01)
+
+한 칸의 표시는 기념일 고리와 사람 색 점이에요. 점은 종일 일정 → 시간 일정 → 메모 순으로 훑어 서로 다른 사람 색을 앞에서부터 골라요(같은 색은 한 번만). 메모의 점은 작성자의 사람 색이고 '함께' 색이 아니에요. 점 5, 고리 6 / 선 1.5 `brand-500` (`Calendar.dc.html` 292~300·318행, D-118). 한 칸에 보이는 개수는 SCREENS SCR-CAL-01 "날짜 표시"를 따라요.
 
 ### 하단 탭 (BottomNav)
 
@@ -136,7 +154,7 @@
 
 ### 스낵바 (Snackbar)
 
-보드: `InviteCreate.dc.html` 74행("아직 연결되지 않았어요", SCR-COUPLE-02--not-yet), `Main.dc.html` 51행("다른 기기에서 로그인해서 로그아웃됐어요", SCR-START-01--session-replaced). 두 보드의 모양은 같아요.
+보드: `InviteCreate.dc.html` 76행("아직 연결되지 않았어요", SCR-COUPLE-02--not-yet), `Main.dc.html` 51행("다른 기기에서 로그인해서 로그아웃됐어요", SCR-START-01--session-replaced). 두 보드의 모양은 같아요.
 
 | 부분 | 값 | 토큰 / 보드 |
 |---|---|---|
@@ -149,9 +167,15 @@
 | 내용 | 문구 한 줄만. 행동 버튼("다시 시도" 등)은 없어요 | 두 보드 모두 |
 | 접근성 | 나타나면 스크린리더가 읽어요 | `role="status"` (Compose: `liveRegion = Polite`) |
 
-- **위치**: 보드마다 달라요. `InviteCreate.dc.html`은 아래 고정 버튼 위(바닥에서 112, [연결 확인하기] 버튼 위로 24), `Main.dc.html`은 위에서 40이에요. **탭이 있는 화면(SCR-CAL-01)은 바닥에서 96, 좌우 16이에요. 탭이 없는 SCR-CAL-02·03은 위에서 40이에요** (`Calendar.dc.html` 148~150행, `CalendarSnackbar.dc.html`, 이미지 `SCR-CAL-01--snackbar.png`, 하단 탭 포함). 하단 탭(80) 위로 16 떠요. 이 화면의 FAB은 스낵바 위 16으로 올라가요(바닥에서 161 = 스낵바 바닥 96 + 스낵바 높이 49(위아래 14 + 한 줄 21) + 16, `Calendar.dc.html` 364행). 스낵바가 없으면 FAB은 바닥에서 100이에요. 문구는 "인터넷 연결이 필요해요". Android 구현은 Android PR #13으로 이 위치에 맞췄어요 (사용자 결정 2026-11-06, SCREENS `docs/archive/screens-resolved-diffs.md` 33번).
+- **위치**: 보드마다 달라요. `InviteCreate.dc.html`은 위에서 40, 좌우 16 (D-126)이고, `Main.dc.html`도 위에서 40이에요. **탭이 있는 화면(SCR-CAL-01)은 바닥에서 96, 좌우 16이에요. 탭이 없는 SCR-CAL-02·03은 위에서 40이에요** (`Calendar.dc.html` 148~150행, `CalendarSnackbar.dc.html`, 이미지 `SCR-CAL-01--snackbar.png`, 하단 탭 포함). 하단 탭(80) 위로 16 떠요. 이 화면의 FAB은 스낵바 위 16으로 올라가요(바닥에서 161 = 스낵바 바닥 96 + 스낵바 높이 49(위아래 14 + 한 줄 21) + 16, `Calendar.dc.html` 364행). 스낵바가 없으면 FAB은 바닥에서 100이에요. 문구는 "인터넷 연결이 필요해요". Android 구현은 Android PR #13으로 이 위치에 맞췄어요 (사용자 결정 2026-11-06, SCREENS `docs/archive/screens-resolved-diffs.md` 33번).
 - **보이는 시간**: 보드에 없어요.
 - 쓰는 곳: 오프라인 안내, 공통 오류, 다른 기기 로그인, 아직 연결되지 않음 (SCREENS 공통 표, SCR-COUPLE-02).
+
+### 스위치 비활성 (SCR-SET-02)
+
+보드: `NotificationSettings.dc.html` 72·75행, `NotificationSettingsLoadFailed.dc.html`, 이미지 `SCR-SET-02--load-failed.png`. 서버 값을 한 번도 받지 못했을 때 (D-145).
+
+트랙 `line-100`, 손잡이 26 `surface-0` + 테두리 1 `line-200`(그림자 없음), 손잡이는 왼쪽, 행 제목·설명 `ink-500` (`NotificationSettings.dc.html` 72·75행, D-145). 누르지 않아요.
 
 ### 시작 화면 (SCR-START-01)
 
@@ -275,6 +299,17 @@
 | 확인 버튼 | 파괴적(탈퇴하기, 로그아웃, 삭제하고 로그인)은 `danger-700` 채움 + `on-brand`, 그 밖(그 계정으로 로그인)은 `brand-500` 채움 + `on-brand` | 83·96·109·122행 |
 | 접근성 | 패널은 알림 대화상자로 읽히고, 제목과 본문이 연결돼요 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, `aria-describedby` (78행) |
 
+#### 메일 앱 없음 다이얼로그 (SCR-SET-01, D-150)
+
+보드: `MenuMailDialog.dc.html`(뒤 화면 `Menu.dc.html`), 이미지 `SCR-SET-01--mail-dialog.png`. 위 다이얼로그 표를 따르고 아래만 달라요.
+
+| 부분 | 값 | 토큰 / 보드 |
+|---|---|---|
+| 제목 | "메일 앱을 열 수 없어요" | |
+| 본문 | "아래 주소로 메일을 보내 주세요." | |
+| 주소 상자 | 본문 아래 4. 면 `surface-100`, 모서리 12, 안쪽 12/16, 글자 15 / 24 / 600 `ink-900`. 주소는 PRD Q-10이 정해지지 않아 `[문의 메일 주소]` | `space-1`, `radius-sm` |
+| 버튼 | [닫기](취소 모양) + [복사](`brand-500`) | 위 "취소 버튼"·"확인 버튼" |
+
 ### 연결 방법 카드 (SCR-COUPLE-01)
 
 보드: `Connect.dc.html`. 토큰에 없는 수치는 보드 값 그대로예요.
@@ -296,7 +331,7 @@
 | 패널 안 버튼 [코드 복사] [공유하기] | 두 칸 같은 폭, 사이 8, 높이 48, 모서리 14, 테두리 1 | `size-button-md`, `radius-md`, `line-200` (42·43·47행). 패널 맨 아래에서 위로 4 더 띄워요 |
 | 상태 카드 | 안쪽 위아래 16·좌우 18, 모서리 18, 테두리 1(`line-100`) | 보드 값 (53행). 18은 `radius-fab`와 같은 수치지만 용도가 달라 보드 값으로만 써요 |
 | 하단 버튼 [연결 확인하기] | 높이 56, 모서리 16, 바닥 영역 안쪽 위 16·좌우 24·아래 32 | 높이는 `size-button-lg`와 같아요. **모서리 16은 버튼의 `radius-md`(14)와 달라요.** 14로 바꾸지 않고 보드 값 16으로 그려요(수치는 `radius-lg`와 같음). 토큰은 바꾸지 않아요 (70·71행) |
-| 바닥 스낵바 위치 | 바닥에서 112, 좌우 16 | 74행. 모양은 위 "스낵바" |
+| 스낵바 위치 | 위에서 40, 좌우 16 (D-126) | 76행. 모양은 위 "스낵바" |
 
 - 코드를 받기 전 모양 (`InviteCreate.dc.html` `loading`, 89~99행, `InviteCreateLoading.dc.html`, 이미지 `SCR-COUPLE-02--loading.png`): 코드 칸 6개는 글자 없이 빈 칸이고, "N분 N초 남음" 줄은 빼요. [코드 복사]·[공유하기]는 비활성이에요: 면 `line-100`, 테두리 1 `line-100`, 글자 `ink-500` (95행). 문구와 스피너는 없어요. 이 비활성 모양은 `InviteEnter`의 비활성 [연결하고 시작하기]와 같은 색 조합이에요.
 
@@ -369,6 +404,26 @@
 
 - 처음 만난 날이 없는 커플 (`MenuNoStartDate`, `ConnectionInfoNoStartDate`, 이미지 `SCR-SET-01--no-start-date.png`, `SCR-SET-01--couple-no-start-date.png`): 연결 정보에서는 "처음 만난 날"·"함께한 지" 행을 통째로 숨겨요(라벨만 남기지 않아요). 전체 메뉴 프로필 카드는 D+N과 "…부터 함께하고 있어요" 줄을 빼고, 가운데 로고를 아바타 높이(72) 가운데에 놓아요. [내 프로필 수정]·[처음 만난 날 수정]은 그대로예요.
 
+### 앱 정보 카드 상태 (SCR-SET-01, D-151)
+
+보드: `MenuAppInfoChecking.dc.html`, `MenuAppInfoUnknown.dc.html`, 이미지 `SCR-SET-01--update-checking.png`, `SCR-SET-01--update-unknown.png`. "확인 중"은 최신 여부 줄을 안 보이게만 해 카드 높이를 유지해요. "확인할 수 없음"은 줄을 빼서 카드가 짧아져요.
+
+### 오픈소스 라이선스 목록 (SCR-SET-05)
+
+보드: `OpenSourceLicenses.dc.html`, `OpenSourceLicensesExpanded.dc.html`, 이미지 `SCR-SET-05.png`, `SCR-SET-05--expanded.png` (D-152). 하단 탭 없음.
+
+| 부분 | 값 | 토큰 / 보드 |
+|---|---|---|
+| 앱바 | 높이 64, 제목 17 / 700 | `title-md` |
+| 목록 여백 | 위 4, 좌우 20, 아래 28 | |
+| 행 | 높이 52. 이름 16 / 500, 라이선스 이름 13 `ink-500`, 오른쪽 화살표 18 `ink-400`(펼치기: 위아래) | |
+| 구분선 | 1 `line-100` | |
+| 펼친 칸 | 면 `surface-50`, 모서리 12, 안쪽 16, 글자 13 / 1.6 `ink-600`, 아래 간격 16 | |
+| 설명 줄 | 없어요 (사용자 결정) | |
+| 글꼴 행 | IBM Plex Sans KR, IBM Plex Mono (SIL OFL 1.1). 목록 끝에 놓아요 | |
+
+라이브러리 이름과 라이선스 이름은 구현 때 정해져서 그림에는 `[라이브러리 이름]`, `[라이선스 이름]` 자리표시예요.
+
 ### 연도·월 선택 (YearMonthPicker)
 
 보드: `StartDateSheet.dc.html` 29·45~52행·96~114행 (`yearMonth` 상태), `StartDateSheetYearMonth.dc.html`. 처음 만난 날 시트와 일정 날짜 시트가 같이 써요. 새 토큰은 없어요.
@@ -414,7 +469,7 @@
 | 줄 | 높이 44, 한 휠에 5줄이 보여요(220). 글자는 줄 안 가운데 | `size-touch` |
 | 가운데 줄 | `surface-100` 띠, 모서리 14, 세 휠에 걸쳐 가로로 이어져요. 글자 22 / 30 / 700 `ink-900` | `radius-md`. 띠는 휠 위에서 88 (151행) |
 | 위·아래 첫 줄 | 16 / 24 / 500 `ink-500` | |
-| 위·아래 둘째 줄 | 16 / 24 / 500 `ink-400` | 토큰 설명은 `ink-400`을 글자에 쓰지 않아요 (SCREENS "PRD와의 차이" 35번) |
+| 위·아래 둘째 줄 | 16 / 24 / 500 `ink-400` | D-128: 그림대로 `ink-400`. 선택되지 않은 줄이라 값은 가운데 줄이 전달해요 (토큰 usage의 예외) |
 | 버튼 | 맨 아래 [완료], 높이 56, 모서리 16, `brand-500`, 16 / 700 | `size-button-lg` |
 
 - 샘플: 오후 7:30. 시 휠은 5~9, 분 휠은 28~32가 보여요(**분은 1분 단위, 0~59**. 2026-11-06 사용자 결정). 오전/오후 휠은 가운데가 "오후"이고 위에 "오전"이 있어요.
@@ -436,7 +491,7 @@
 
 ### 로딩 표시 (요청 중, D-115)
 
-보드: `AddEvent.dc.html` 182~188행(`loading`), `AddEventLoading.dc.html`. 이미지 `SCR-CAL-03--loading.png` (예시: 일정 작성에서 [저장]을 누른 직후). 모든 쓰기·계정 요청에 같은 모양을 써요 (SCREENS 공통 "요청 중").
+보드: `AddEvent.dc.html` 182~188행(`loading`), `AddEventLoading.dc.html`. 이미지 `SCR-CAL-03--loading.png` (예시: 일정 작성에서 [저장]을 누른 직후). 모든 쓰기·계정 요청에 같은 모양을 써요 (SCREENS 공통 "요청 중"). 알림 설정 스위치를 저장하는 동안(D-145)과 프로필을 저장하는 동안(D-146)도 같은 모양이에요. 따로 그리지 않아요.
 
 | 부분 | 값 | 토큰 / 보드 |
 |---|---|---|
@@ -492,7 +547,7 @@
 | `surfaceContainerLow` / `surfaceContainer` | `surface-50` / `surface-100` | 카드 / 트랙·패널 |
 | `surfaceContainerHigh` | `surface-0` | 다이얼로그 면 (`Account.dc.html` 78행, `Calendar.dc.html` 174행). M3 `AlertDialog` 기본 면 |
 | `surfaceContainerHighest` | `line-300` | 꺼진 스위치 트랙 (`NotificationSettings.dc.html` 65행). M3 `Switch` 꺼짐 트랙 |
-| `inverseSurface` / `inverseOnSurface` | `ink-900` / `on-brand` | 스낵바 (`InviteCreate.dc.html` 74행, `Main.dc.html` 51행). M3 `Snackbar` 기본 색 |
+| `inverseSurface` / `inverseOnSurface` | `ink-900` / `on-brand` | 스낵바 (`InviteCreate.dc.html` 76행, `Main.dc.html` 51행). M3 `Snackbar` 기본 색 |
 | `inversePrimary` | 쓰지 않음 (core:designsystem 컴포넌트로 그림) | 스낵바에 행동 버튼이 없어요 |
 | `outline` / `outlineVariant` | `line-300` / `line-200` | 입력 테두리 (`AddEvent.dc.html` 35행) / 아웃라인 버튼·칩·카드 |
 | `error` / `onError` | `danger-600` / `on-brand` | 입력 오류 테두리·문구 |

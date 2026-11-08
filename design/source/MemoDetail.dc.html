@@ -61,7 +61,7 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"partner":{"editor":"boolean","default":false,"section":"상태"},"dialogOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"partner":{"editor":"boolean","default":false,"section":"상태"},"dialogOpen":{"editor":"boolean","default":false,"section":"상태"},"otherYear":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const s = this.state || {};
@@ -71,6 +71,8 @@ class Component extends DCLogic {
     const m = this.props.partner
       ? { who: 'partner', title: '장보기', body: '우유, 계란, 두부, 대파, 사과', author: '[상대 이름]', created: '오늘 오전 8:40', memoDate: '', pin: true, fav: false }
       : { who: 'me', title: '선물 아이디어', body: '향수 같이 시향해보기, 지난번에 본 머플러\n생일 전 주말에 같이 보러 가기', author: '[내 이름]', created: '10월 11일', memoDate: '11월 20일 (금)', pin: false, fav: true };
+    // 메모 날짜가 올해가 아니면 칩에 연도를 붙인다. 칩 높이·글자 크기는 그대로 (PRD NFR-TIME-02, D-129)
+    if (this.props.otherYear && m.memoDate) m.memoDate = '2027년 10월 17일 (일)';
     const mine = m.who === 'me';
     const isPinned = s.pin !== undefined ? s.pin : m.pin;
     const isFav = s.fav !== undefined ? s.fav : m.fav;
