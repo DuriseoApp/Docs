@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.11 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.12 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-11-05)
+> 작성일: 2026-10-17 (갱신: 2026-11-08)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -65,7 +65,7 @@
 | id | uuid | PK | |
 | account_type | varchar(10) | not null, CHECK in (`GUEST`, `MEMBER`) | 게스트 연동 시 `MEMBER`로 변경 (FR-AUTH-03) |
 | nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 앞뒤 공백을 지운 값을 저장하고, 글자 수는 유니코드 코드 포인트로 세어 1~10자다. 지운 뒤 빈 값이면 저장하지 않고 거부한다. 소셜 이름이 코드 포인트 10개를 넘으면 앞 10개만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, D-82, NFR-LIMIT-01). 길이와 공백 검사는 서비스에서 하고, `varchar(10)`은 PostgreSQL이 문자 단위로 세므로 같은 기준이다. 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
-| profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01) |
+| profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01). 키는 uuid이고 사진을 바꿀 때마다 새로 만든다. 이 값이 API의 `profileImageVersion`으로 나간다 (컬럼 추가 없음) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |
 | created_at, updated_at | timestamptz | not null | `created_at`은 API `Me.createdAt`(가입일)로 내보낸다. 게스트가 연동한 회원은 계정이 그대로이므로 게스트로 시작한 시각이다 (FR-SET-01) |
@@ -121,6 +121,8 @@
 | updated_at | timestamptz | not null | |
 
 - 서비스: 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다
+- 서비스: 등록(`PUT /me/devices`)은 같은 토큰이면 멱등(upsert)이다
+- 서비스: 푸시를 보낼 때 FCM이 무효 토큰 응답(`UNREGISTERED` 등)을 주면 그 `devices` 행을 삭제한다. 일시 오류는 행을 그대로 두고 로그만 남긴다 (PRD D-50, D-73)
 - 서비스: 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)은 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다. 게스트 연동은 같은 기기라 지우지 않는다 (DB-09, DB-12, PRD D-51, D-67)
 - 서비스: 로그아웃은 그 사용자의 `devices` 행을 모두 지운다. 한 기기 규칙이라 사용자 전체 = 그 기기다 (DB-09, PRD D-50). 그래서 로그아웃한 기기에는 푸시가 가지 않는다
 - 서비스: 로그인이 만료된 기기에는 푸시를 보내지 않는다. 사용자에게 보이는 푸시는 받는 사람에게 유효한 세션(`revoked_at IS NULL AND expires_at > now`)이 있을 때만 보낸다. 이 조건은 보이는 푸시에만 적용하고, 동기화 신호(SYNC)는 그대로 보낸다(기기 정리로 자연히 멈춘다). 알림 목록(`notifications`) 행은 그대로 만든다. 그리고 매일 정리 작업(4.4)이 유효 세션이 없는 사용자의 `devices` 행을 지운다 (DB-14, PRD D-73, NFR-SEC-01)
@@ -149,13 +151,17 @@
 | type | varchar(30) | not null, CHECK in (`EVENT_REMINDER`, `PARTNER_CREATED`, `MEMO_PINNED`, `ANNIVERSARY`, `COUPLE_LINKED`, `COUPLE_UNLINKED`) | PRD 8장 알림 종류 |
 | title | varchar(100) | not null | 푸시 제목과 같음 |
 | body | varchar(200) | null | 푸시 본문과 같음 |
-| target_type | varchar(20) | null, CHECK in (`EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS`) | 누르면 이동할 대상 (FR-NOTI-03). `COUPLE_LINKED`, `COUPLE_UNLINKED`(해제·탈퇴 해제 모두)는 `SETTINGS`이고 `target_id`는 null이다 (PRD D-85). 그 밖에 이동 대상이 없으면 `target_type`, `target_id` 모두 null |
+| target_type | varchar(20) | null, CHECK in (`EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS`) | 누르면 이동할 대상 (FR-NOTI-03). `COUPLE_LINKED`, `COUPLE_UNLINKED`(해제·탈퇴 해제 모두)는 `SETTINGS`이고 `target_id`는 null이다 (PRD D-85). 기념일 알림은 `ANNIVERSARY`이고, 자동 기념일은 `target_id` null, 직접 기념일은 기념일 id다 (둘 다 앱은 SCR-ANNIV-01로 보냄, D-138). 그 밖에 이동 대상이 없으면 `target_type`, `target_id` 모두 null |
 | target_id | uuid | null | `target_type`이 가리키는 행의 ID |
 | read_at | timestamptz | null | 읽은 시각. null이면 안 읽음 (FR-NOTI-05.AC3) |
 | created_at | timestamptz | not null | |
 
 - INDEX (user_id, created_at DESC): 알림 목록 조회
 - 부분 INDEX (user_id) WHERE read_at IS NULL: 안 읽음 점과 개수 조회 (FR-CAL-01.AC4)
+- 서비스(30일, DB-19): 목록 조회와 안 읽음 개수는 `created_at > now − 30일`로 거른다. 매일 정리 작업(4.4)의 삭제는 물리 삭제일 뿐이어서, 정리 전에도 30일이 지난 행은 보이지 않는다 (D-141, FR-NOTI-05.AC2)
+- 서비스(기념일 중복 방지, DB-18): 컬럼을 추가하지 않는다. 기념일 알림을 만들기 전에 사용자 현지 오늘 구간에 같은 (`user_id`, `type`, `title`) 행이 있으면 건너뛴다. `dedupe_key`와 UNIQUE는 두지 않는다 (D-138)
+- 서비스(알림 문자열 고정, D-140): `title`·`body`는 만든 시점의 문자열로 저장한다. 이후 닉네임을 바꿔도 이미 만든 알림은 바뀌지 않는다
+- 서비스(`sent_at` 없음): 이 테이블에는 `sent_at`이 없다. 푸시 생략 기록은 `event_reminders.sent_at`에 남는다
 - 서비스: 알림이 생기면 받는 사람마다 이 행을 먼저 만들고, 그 종류의 설정(`notification_settings`)이 켜져 있을 때만 푸시를 보낸다. 연결·해제 알림은 항상 푸시한다. 설정을 꺼도 행은 남는다 (DB-07). 받는 사람에게 유효한 세션이 없으면 보이는 푸시는 보내지 않고 행만 만든다 (DB-14)
 - 서비스: 조회·읽음 처리는 `user_id`가 요청자일 때만. 아니면 404 (DB-05)
 - `target_id`는 FK가 아니다. 대상 일정·메모가 삭제돼도 알림 기록은 30일까지 남는다
@@ -234,7 +240,7 @@
 
 - INDEX (user_id, attempted_at): 최근 1시간 실패 횟수 조회. 7일 지난 기록은 정리 작업에서 삭제
 - 서비스(미끄러지는 창, D-83): 요청자의 `succeeded = false`이고 `attempted_at > now − 1시간`인 행이 10개 이상이면 입력을 막는다. 1시간은 지금부터 거꾸로 센다. 그중 가장 오래된 실패가 1시간을 지나면 풀린다 (풀리는 시각 계산은 `API.md` 4.4). 고정 시간 구간이나 별도 잠금 컬럼은 없다
-- 서비스(무엇을 남기나): 연결에 쓸 수 없는 코드는 형식이 틀린 코드를 포함해 모두 `succeeded = false` 한 행이다 (`INVITE_NOT_FOUND`, `INVITE_SELF`, `INVITE_USED`, `INVITE_UNAVAILABLE`, `INVITE_EXPIRED`). 실패 행은 연결 트랜잭션과 별도로 커밋해 응답이 오류여도 남긴다. 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 게스트·이미 커플 거부(R-09), 요청 형식 오류(`VALIDATION_FAILED`), 입력 제한(`INVITE_RATE_LIMITED`) 자체 (PRD D-83, NFR-SEC-03)
+- 서비스(무엇을 남기나): 연결에 쓸 수 없는 코드는 형식이 틀린 코드를 포함해 모두 `succeeded = false` 한 행이다 (`INVITE_NOT_FOUND`, `INVITE_SELF`, `INVITE_USED`, `INVITE_UNAVAILABLE`, `INVITE_EXPIRED`). 실패 행은 오류 응답을 보내기 전에 시도 행만 커밋하고 연결은 바꾸지 않는다(`REQUIRES_NEW`로 바꾸지 않는다). 그래서 응답이 오류여도 남는다. 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 게스트·이미 커플 거부(R-09), 요청 형식 오류(`VALIDATION_FAILED`), 입력 제한(`INVITE_RATE_LIMITED`) 자체 (PRD D-83, NFR-SEC-03)
 
 ### 3.3 콘텐츠
 
@@ -271,11 +277,12 @@
 | user_id | uuid | not null, FK users ON DELETE CASCADE | 알림을 받을 사람 |
 | option | varchar(20) | not null, CHECK in (`AT_TIME`, `MIN_10`, `HOUR_1`, `DAY_1`, `ALLDAY_9AM`, `ALLDAY_PREV_9AM`) | "없음"은 행이 없는 것 |
 | fire_at | timestamptz | not null | 보낼 시각. `option`과 일정 시작으로 계산한다 (계산식은 `API.md` 3.3, 아래 "알림 시각 계산"). 일정 시작이나 사용자 시간대가 바뀌면 다시 계산 (FR-CAL-05.AC4~AC6, PRD D-90, D-91). 이미 지난 시각일 수 있다 |
-| sent_at | timestamptz | null | 보냈거나, 저장할 때 이미 지난 시각이라 보내지 않기로 한 시각 (PRD D-90). null이면 아직 안 보냄 |
+| sent_at | timestamptz | null | 보냈거나, 저장할 때 이미 지난 시각이라 보내지 않기로 한 시각 (PRD D-90). 발송 작업이 `fire_at`이 지난 지 10분을 넘긴 행을 처리할 때도 푸시는 생략하고 `sent_at`을 기록한다 (D-137). null이면 아직 안 보냄 |
 | created_at, updated_at | timestamptz | not null | |
 
 - UNIQUE (event_id, user_id): 일정당 사용자별 하나
 - 부분 INDEX (fire_at) WHERE sent_at IS NULL: 1분마다 도는 발송 작업용
+- 서비스(지연 한도, D-137): 발송 작업은 `fire_at`이 `now` − 10분보다 오래 지난 행이면 `notifications` 행은 만들되 푸시는 보내지 않고 `sent_at`을 기록한다 (D-90의 취지). 10분 안이면 평소처럼 푸시한다
 - 서비스(알림 시각 계산, PRD D-90): `AT_TIME` = `start_at`, `MIN_10` = `start_at` − 10분, `HOUR_1` = `start_at` − 1시간, `DAY_1` = `start_at` − 24시간(서머타임이 있는 날도 24시간). `ALLDAY_9AM` = `start_date` 09:00, `ALLDAY_PREV_9AM` = (`start_date` − 1일) 09:00이며 둘 다 **알림 주인**(`event_reminders.user_id`)의 `users.time_zone` 기준으로 UTC로 바꾼다. 저장할 때(설정, 아래 다시 계산 모두) 계산한 `fire_at` <= 지금이면 행은 저장하고 `sent_at` = 지금으로 기록해 보내지 않는다. 미래면 `sent_at` = null. 끝난 일정에도 설정할 수 있다
 - 서비스(다시 계산, PRD D-91. 모두 일정 수정과 같은 트랜잭션):
   - `isAllDay`가 바뀌면 그 일정의 `event_reminders`를 모든 사용자 것 삭제한다("없음"으로 돌아감).
@@ -293,9 +300,10 @@
 | name | varchar(30) | not null | 앞뒤 공백을 지운 값, 지운 뒤 코드 포인트 30개 이하 (PRD D-104, D-82) |
 | date | date | not null | 등록한 날짜. 매년 반복이면 이 날짜의 해부터 해마다 발생 (API.md 3.3) |
 | repeats_yearly | boolean | not null, default true | |
-| created_at, updated_at | timestamptz | not null | |
+| created_at, updated_at | timestamptz | not null | `updated_at`은 저장값과 같은 값만 보내는 수정에서는 갱신하지 않는다 (D-123) |
 
 - INDEX (space_id)
+- 서비스: 직접 기념일 개수 상한은 없다 (D-123)
 - 서비스: `date`는 1950-01-01 ~ 2050-12-31이어야 한다. DB CHECK는 두지 않는다 (DB-13, PRD D-74, FR-CAL-01.AC6). 매년 반복 기념일과 자동 N주년의 발생일은 2050-12-31까지만 계산한다 (FR-ANNIV-02.AC1, FR-ANNIV-04.AC1)
 - 서비스: "지난 기념일"은 `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 이른 행이다. 저장하는 값이 아니라 조회 조건이다 (FR-ANNIV-04.AC3, PRD D-71)
 
@@ -306,17 +314,18 @@
 | id | uuid | PK | |
 | space_id | uuid | not null, FK spaces ON DELETE CASCADE | |
 | author_id | uuid | not null, FK users RESTRICT | |
-| title | varchar(50) | null | |
-| body | varchar(5000) | null | |
+| title | varchar(50) | null | 앞뒤 공백을 지운 값을 저장한다 (D-132) |
+| body | varchar(5000) | null | 공백·줄바꿈은 그대로 두되, 공백·줄바꿈뿐이면 NULL로 저장한다 (D-132) |
 | memo_date | date | null | 메모 날짜(선택). 시간 없이 시간대 없는 날짜로 저장 (NFR-TIME-01, PRD D-38). 있으면 캘린더 그 날에도 보인다 (FR-MEMO-02.AC4) |
-| pinned_at | timestamptz | null | 고정 시각. null이면 고정 안 됨 (PRD D-18, D-21) |
-| pinned_by | uuid | null, FK users RESTRICT | |
-| created_at, updated_at | timestamptz | not null | |
+| pinned_at | timestamptz | null | 고정 시각. null이면 고정 안 됨 (PRD D-18, D-21). 미고정에서 고정으로 바뀔 때만 기록한다. 이미 고정이면 아무것도 바꾸지 않는다 (D-134) |
+| pinned_by | uuid | null, FK users RESTRICT | 고정한 사람. `pinned_at`과 같은 때만 기록한다 (D-134) |
+| created_at, updated_at | timestamptz | not null | `updated_at`은 저장값과 같은 값만 보내는 수정에서는 갱신하지 않는다 (D-123) |
 
 - INDEX (space_id, created_at DESC): 최신순·오래된순 목록
 - 부분 INDEX (space_id, pinned_at DESC) WHERE pinned_at IS NOT NULL: 고정 영역, 최근 고정순
 - 부분 INDEX (space_id, memo_date) WHERE memo_date IS NOT NULL: 캘린더 날짜 범위 조회 (FR-CAL-01)
-- 서비스: 제목, 본문 중 하나 이상 필수 (FR-MEMO-02)
+- 서비스: 제목, 본문 중 하나 이상 필수 (FR-MEMO-02). 위 공백 처리를 한 뒤 둘 다 비면 저장하지 않는다. 수정 결과가 둘 다 비는 경우도 같다 (D-132). 새 제약·컬럼은 없다
+- 서비스(정렬 보조 키): `/memos/dated`, `/memos/pinned`의 보조 정렬 키로 `id`(PostgreSQL `uuid` 비교)를 쓴다. 새 인덱스는 만들지 않는다
 - 서비스: `memo_date`는 1950-01-01 ~ 2050-12-31이어야 한다. DB CHECK는 두지 않는다 (DB-13, PRD D-74)
 
 **memo_checklist_items** — 삭제됨 (PRD v0.4). 체크리스트가 범위 밖이 됨 (PRD D-19, FR-MEMO-04)
@@ -330,6 +339,7 @@
 | created_at | timestamptz | not null | |
 
 - PK (memo_id, user_id)
+- 서비스: 추가·해제는 멱등이다. 이미 있는 즐겨찾기를 또 추가하거나 없는 것을 해제해도 결과가 같고 오류가 아니다 (D-134)
 
 ---
 
@@ -374,6 +384,8 @@
 3. 개인 공간과 가져오기 대기 중인 개인 공간을 지운다. 콘텐츠는 CASCADE로 함께 지워진다.
 4. 사용자를 익명화한다: `deleted_at` 기록, 닉네임 "탈퇴한 사용자", 프로필 사진 파일과 `profile_image_key` 삭제, `social_accounts`, `auth_sessions`, `devices`, `notification_settings`, `notifications`, `memo_favorites`, `event_reminders`, 유효한 `invite_codes` 삭제. `users` 행 자체는 남겨 보관 중인 커플 공간의 작성자 참조를 유지한다.
    - `auth_sessions`는 먼저 `revoked_reason = WITHDRAWN`으로 무효화한 뒤 같은 트랜잭션에서 지운다. 그래서 탈퇴 뒤에 남는 세션 행은 없다.
+   - 초대코드: 탈퇴 때 지워진 코드는 조회되지 않아 404 `INVITE_NOT_FOUND`다. 연결로 이미 무효가 된 코드(DB-16)는 남아 있어 409 `INVITE_EXPIRED`다. 탈퇴 때 상태와 관계없이 모두 지우도록 바꾸지 않는다.
+- 닉네임 순서 (D-140): 상대에게 보내는 탈퇴 해제 알림의 [상대 이름]은 탈퇴 직전 닉네임이다. 4단계에서 닉네임을 "탈퇴한 사용자"로 바꾸기 전에 읽어 알림을 만든다. 알림 `title`·`body`는 만든 시점의 문자열로 고정이라 이후 닉네임을 바꿔도 바뀌지 않는다.
 
 **Kakao 연결 끊기** (FR-AUTH-06.AC3, 회원 탈퇴만): `social_accounts.provider = KAKAO`인 회원이면 탈퇴 트랜잭션이 **커밋된 뒤에** Kakao 연결 끊기 API를 서버의 Kakao 어드민 키로 호출한다 (키는 서버 설정값이며 이 문서에 쓰지 않는다). 행은 트랜잭션 안에서 지워지므로 호출에 필요한 `provider_user_id`는 지우기 전에 읽어 둔다. 호출이 실패해도 탈퇴를 되돌리지 않고 로그만 남긴다. 게스트 삭제(게스트 → 기존 계정 로그인, 게스트 정리)에는 소셜 계정이 없어 해당 없다. 테이블 변화는 없다.
 
@@ -391,8 +403,8 @@
 - 7일 지난 `invite_code_attempts`, 30일 지난 사용·만료·무효 초대코드 삭제
 - 만료된 `auth_sessions` 삭제. 무효화된 세션도 지우되 `REPLACED`는 `expires_at`이 지날 때까지 남긴다 (DB-11)
 - **세션 없는 사용자의 `devices` 삭제** (DB-14, PRD D-73): 바로 위 세션 정리가 끝난 뒤, 유효한(`revoked_at IS NULL AND expires_at > now`) `auth_sessions`가 하나도 없는 사용자의 `devices` 행을 모두 지운다. 이 순서여야 방금 만료돼 지워진 세션의 기기가 같은 실행에서 정리된다. 로그인이 만료된 기기에 푸시가 가지 않게 하는 안전망이다 (푸시를 보낼 때도 유효 세션을 확인한다, 3.1 `devices`)
-- `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2)
-- 어떤 사용자도 참조하지 않는 프로필 사진 파일 삭제
+- `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2). 이 삭제는 물리 삭제일 뿐이다. 조회와 안 읽음 개수는 정리 전에도 `created_at > now − 30일`로 거른다 (D-141, DB-19)
+- **프로필 사진 파일 정리** (NFR-FILE-01, NFR-PRIV-02): 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다. 사진 교체·삭제는 DB 커밋 뒤에 이전 키를 best-effort로 지우고, 실패한 것은 이 작업이 회수한다. 탈퇴는 탈퇴 이벤트가 가진 이전 사진 키로 즉시 삭제한다 (4.3)
 
 ### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
 
@@ -443,6 +455,8 @@
 | DB-15 | Kakao 연결 해제 알림은 `social_accounts`의 (`KAKAO`, `provider_user_id`)로 사용자를 찾아, Kakao가 유일한 로그인 수단이면 4.3 탈퇴로, 다른 수단이 있으면 `KAKAO` 행 삭제로 처리한다. 못 찾으면 아무것도 하지 않는다 (v0.8) | Kakao로만 들어오던 회원은 다시 들어올 방법이 없어 데이터를 남기지 않음 (PRD D-87). 같은 알림이 여러 번 와도 결과가 같다(멱등). 지금은 회원이 로그인 수단을 둘 가질 API가 없지만 UNIQUE (user_id, provider)가 허용하므로 정의해 둔다 |
 | DB-16 | 커플 연결 트랜잭션에서 두 사람의 다른 유효한 초대코드에 `revoked_at`을 기록한다 (v0.8) | 연결 뒤 남은 코드가 해제 직후 다시 쓸 수 있는 코드가 되지 않게. 연결 중인 사람의 코드를 넣으면 `INVITE_UNAVAILABLE`(`API.md` 오류 우선순위) (FR-COUPLE-02.AC3) |
 | DB-17 | 연결한 날은 `spaces.linked_at`에 둔다. `space_members.joined_at`을 쓰지 않는다 (v0.9) | `joined_at`은 소속 행이 생긴 시각이라 복구 때 바뀌지 않고, 연결 시각은 공간 하나에 값 하나라 공간에 두는 것이 맞다 (PRD D-94). 복구하면 `linked_at`을 다시 연결한 시각으로 바꾼다. 개수(`importCounts`)는 저장하지 않고 요청 때 센다 (4.1, PRD D-93) |
+| DB-18 | 기념일 알림 중복 방지는 컬럼 없이 "사용자 현지 오늘 구간에 같은 (user, type, 제목) 행이 있으면 건너뜀"으로 한다 (v0.12) | 기념일마다 알림 1건이고 하루 1번이면 충분해서 `dedupe_key`·UNIQUE를 추가하지 않는다 (PRD D-138). 자동 기념일은 `target_type` `ANNIVERSARY` + `target_id` NULL, 직접 기념일은 `ANNIVERSARY` + 기념일 id |
+| DB-19 | 알림 조회와 안 읽음 개수는 `created_at > now − 30일`로 거르고, 03:00 KST 정리는 물리 삭제일 뿐이다 (v0.12) | 정리 작업이 늦거나 실패해도 30일이 지난 알림이 보이지 않게 (PRD D-141, FR-NOTI-05.AC2, DB-07) |
 
 ---
 
@@ -481,7 +495,10 @@
 | FR-MEMO-06 | memo_favorites |
 | FR-NOTI-01~03 | devices, notification_settings. 로그인 만료 기기 푸시 금지는 auth_sessions 확인 + 정리 작업 (NFR-SEC-01, DB-14) |
 | FR-NOTI-03 알림 이동 | notifications.target_type (연결·해제 알림은 `SETTINGS`, D-85) |
-| FR-NOTI-05 알림 목록 | notifications |
+| FR-NOTI-05 알림 목록 | notifications. AC2 30일 경계는 조회 조건(DB-19), AC6·AC7 읽음·안 읽음 점은 read_at (테이블 변화 없음, D-141) |
+| FR-NOTI-01~03, FR-CAL-05 AC7 (v0.12) | event_reminders.sent_at (10분 넘게 지나면 푸시 생략, D-137), notifications 기념일 중복 방지 (DB-18, D-138), devices 무효 토큰 삭제·멱등 등록. 테이블 변화 없음 |
+| FR-AUTH-07 AC6~AC9 (v0.12) | users.profile_image_key (`profileImageVersion`으로 나감), 사진 파일 정리 (4.4). 테이블 변화 없음 |
+| FR-ANNIV-03 AC6, FR-MEMO-02·03·05·06 (v0.12) | anniversaries.updated_at, memos.title·body·pinned_at·pinned_by·updated_at, memo_favorites 설명만 (D-123, D-132, D-134). 테이블 변화 없음 |
 
 ---
 
