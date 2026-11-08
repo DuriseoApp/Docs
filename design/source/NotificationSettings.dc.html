@@ -15,7 +15,7 @@ body{margin:0}
 a{color:#5B5666}a:hover{color:#1C1A22}
 </style>
 </helmet>
-<main style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
+<main style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22">
 <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px">
 <a href="Menu.dc.html" aria-label="뒤로 가기" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #1C1A22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
 <h1 style="margin: 0; font-size: 17px; font-weight: 700">알림 설정</h1>
@@ -26,11 +26,11 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
 <div style="{{r.rowStyle}}">
 <span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-<span style="font-size: 16px; font-weight: 600">{{r.label}}</span>
-<span style="font-size: 13px; line-height: 1.5; color: #5B5666">{{r.desc}}</span>
+<span style="font-size: 16px; font-weight: 600; {{r.labelColor}}">{{r.label}}</span>
+<span style="font-size: 13px; line-height: 1.5; {{r.descColor}}">{{r.desc}}</span>
 </span>
-<button type="button" role="switch" aria-label="{{r.label}}" aria-checked="{{r.on}}" onClick="{{r.toggle}}" style="width: 52px; height: 32px; flex-shrink: 0; border: 0; border-radius: 16px; padding: 3px; display: flex; font-family: inherit; cursor: pointer; {{r.switchStyle}}">
-<span style="width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(28, 26, 34, 0.25)"></span>
+<button type="button" role="switch" aria-label="{{r.label}}" aria-checked="{{r.on}}" aria-disabled="{{r.disabled}}" disabled="{{r.disabled}}" onClick="{{r.toggle}}" style="width: 52px; height: 32px; flex-shrink: 0; border: 0; border-radius: 16px; padding: 3px; display: flex; font-family: inherit; {{r.switchStyle}}">
+<span style="{{r.knobStyle}}"></span>
 </button>
 </div>
 </sc-for>
@@ -40,9 +40,12 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <li style="display: flex; gap: 8px; font-size: 13px; line-height: 1.6; color: #5B5666"><span style="color: #8E8996; flex-shrink: 0; padding-top: 1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></span>꺼도 알림 목록에는 남아요</li>
 </ul>
 </div>
+<sc-if value="{{loadFailed}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: absolute; left: 16px; right: 16px; top: 40px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; font-size: 14px; line-height: 1.5; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">문제가 생겼어요. 잠시 후 다시 시도해 주세요</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"mixed":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"mixed":{"editor":"boolean","default":false,"section":"상태"},"loadFailed":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const accent = this.props.accent ?? '#6D4AE0';
@@ -56,15 +59,22 @@ class Component extends DCLogic {
     ];
     const init = this.props.mixed ? { reminder: true, partner: false, pin: false, anniv: true } : { reminder: true, partner: true, pin: true, anniv: true };
     const on = s.on || init;
+    // 서버 값을 한 번도 받지 못함 (PRD FR-NOTI-02 AC2, D-145): 스위치 4개 비활성 + 공통 오류 스낵바 위에서 40 (D-88, D-126)
+    // 비활성 스위치: 트랙 line-100, 손잡이 surface-0 + line-200 테두리(그림자 없음), 행 글자 ink-500. 값을 모르니 손잡이는 왼쪽
+    const loadFailed = !!this.props.loadFailed;
     const rows = DEF.map((d, i) => ({
       label: d.label,
       desc: d.desc,
-      on: !!on[d.id],
-      toggle: () => this.setState({ on: { ...on, [d.id]: !on[d.id] } }),
+      on: loadFailed ? false : !!on[d.id],
+      disabled: loadFailed,
+      labelColor: loadFailed ? 'color: #77727F' : '',
+      descColor: 'color: ' + (loadFailed ? '#77727F' : '#5B5666'),
+      knobStyle: loadFailed ? 'box-sizing: border-box; width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF; border: 1px solid #E6E2EA' : 'width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(28, 26, 34, 0.25)',
+      toggle: () => (loadFailed ? null : this.setState({ on: { ...on, [d.id]: !on[d.id] } })),
       rowStyle: 'min-height: 76px; box-sizing: border-box; padding: 14px 16px; display: flex; align-items: center; gap: 12px' + (i ? '; border-top: 1px solid #EEEBF1' : ''),
-      switchStyle: on[d.id] ? 'background: ' + accent + '; justify-content: flex-end' : 'background: #D9D4DF; justify-content: flex-start'
+      switchStyle: loadFailed ? 'background: #EEEBF1; justify-content: flex-start; cursor: default' : (on[d.id] ? 'background: ' + accent + '; justify-content: flex-end; cursor: pointer' : 'background: #D9D4DF; justify-content: flex-start; cursor: pointer')
     }));
-    return { accent, rows };
+    return { accent, rows, loadFailed };
   }
 }
 </script>

@@ -839,6 +839,78 @@
    "w": 390,
    "x": 0,
    "y": 15564
+  },
+  "OpenSourceLicenses.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-05 오픈소스 라이선스",
+   "w": 390,
+   "x": 0,
+   "y": 16864
+  },
+  "OpenSourceLicensesExpanded.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-05 오픈소스 라이선스 · 라이선스 전문 펼침",
+   "w": 390,
+   "x": 470,
+   "y": 16864
+  },
+  "ProfileEditPhotoError.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-04 프로필 수정 · 사진 오류",
+   "w": 390,
+   "x": 940,
+   "y": 16864
+  },
+  "MenuMailDialog.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 메일 앱 없음 (문의하기)",
+   "w": 390,
+   "x": 1410,
+   "y": 16864
+  },
+  "MenuAppInfoChecking.dc.html": {
+   "h": 1080,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 앱 정보 업데이트 확인 중",
+   "w": 390,
+   "x": 1880,
+   "y": 16864
+  },
+  "MenuAppInfoUnknown.dc.html": {
+   "h": 1080,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-01 전체 메뉴 · 앱 정보 확인할 수 없음",
+   "w": 390,
+   "x": 2350,
+   "y": 16864
+  },
+  "NotificationSettingsLoadFailed.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-SET-02 알림 설정 · 서버 값을 받지 못함",
+   "w": 390,
+   "x": 2820,
+   "y": 16864
+  },
+  "MemoDetailOtherYear.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 28,
+   "title": "SCR-MEMO-03 메모 상세 · 다른 해 메모 날짜",
+   "w": 390,
+   "x": 3290,
+   "y": 16864
   }
  },
  "createdOnFiles": {
@@ -937,6 +1009,14 @@
    "w": 240,
    "x": 0,
    "y": 15264
+  },
+  "v012Title": {
+   "kind": "title1",
+   "maxW": 4620,
+   "text": "PRD v0.12 추가 화면",
+   "w": 240,
+   "x": 0,
+   "y": 16564
   }
  },
  "order": [
@@ -1033,7 +1113,15 @@
   "EventDetailSoloDialog.dc.html",
   "CalendarSnackbar.dc.html",
   "CalendarRefresh.dc.html",
-  "AddEventLoading.dc.html"
+  "AddEventLoading.dc.html",
+  "OpenSourceLicenses.dc.html",
+  "OpenSourceLicensesExpanded.dc.html",
+  "ProfileEditPhotoError.dc.html",
+  "MenuMailDialog.dc.html",
+  "MenuAppInfoChecking.dc.html",
+  "MenuAppInfoUnknown.dc.html",
+  "NotificationSettingsLoadFailed.dc.html",
+  "MemoDetailOtherYear.dc.html"
  ],
  "pages": [],
  "title": "커플 공유 앱 데모"
