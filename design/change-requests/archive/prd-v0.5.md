@@ -1,7 +1,7 @@
 # 디자인 변경 요청서: PRD v0.5
 
 > 상태: 반영 완료 (2026-10-22, 캔버스 버전 35)
-> 기준 문서: 둘이서 PRD v0.5 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.5.md`
+> 기준 문서: 둘이서 PRD v0.5 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/archive/prd-v0.5.md`
 > 작성일: 2026-10-21
 
 claude.ai 프로젝트 채팅에서 "디자인 반영해줘"라고 하면 `/design-sync`가 아래 내용대로 디자인 캔버스를 고치고, 이 파일의 상태를 "반영 완료"로 바꿔요.

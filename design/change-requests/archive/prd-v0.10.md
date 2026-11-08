@@ -1,12 +1,12 @@
 # 디자인 변경 요청서: PRD v0.10
 
 > 상태: 반영 완료 (2026-11-06, 캔버스 버전 41)
-> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.10.md`
+> 기준 문서: 둘이서 PRD v0.10 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/archive/prd-v0.10.md`
 > 작성일: 2026-11-05
 
 claude.ai 프로젝트 채팅에서 "디자인 반영해줘"라고 하면 `/design-sync`가 아래 내용대로 디자인 캔버스를 고치고, 이 파일의 상태를 "반영 완료"로 바꿔요.
 
-**v0.8(`design/change-requests/prd-v0.8.md`)과 v0.9(`design/change-requests/prd-v0.9.md`) 요청서가 아직 "요청됨"이에요. 두 요청서를 먼저(또는 함께) 반영해 주세요.** 3번에서 가져다 쓰는 `StartDateSheet.dc.html`의 연도·월 선택은 v0.9 요청서 3번과 같은 모양이어야 해요.
+**v0.8(`design/change-requests/archive/prd-v0.8.md`)과 v0.9(`design/change-requests/archive/prd-v0.9.md`) 요청서가 아직 "요청됨"이에요. 두 요청서를 먼저(또는 함께) 반영해 주세요.** 3번에서 가져다 쓰는 `StartDateSheet.dc.html`의 연도·월 선택은 v0.9 요청서 3번과 같은 모양이어야 해요.
 
 이번 변경은 Android 단위 4(캘린더) 범위 점검에서 나온 빈 곳을 사용자가 정한 결과예요 (PRD D-107, D-109, D-112, Q-16). **새 화면 ID와 새 토큰은 없어요.** 아래 새 보드는 모두 이미 있는 화면의 새 상태예요. 요청은 6건(6번은 Q-16 조건부)이고, 새 보드와 이미지는 7개예요.
 

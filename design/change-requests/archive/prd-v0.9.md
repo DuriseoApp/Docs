@@ -1,12 +1,12 @@
 # 디자인 변경 요청서: PRD v0.9
 
 > 상태: 반영 완료 (2026-11-06, 캔버스 버전 41)
-> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/prd-v0.9.md`
+> 기준 문서: 둘이서 PRD v0.9 (`docs/PRD.md`), `docs/SCREENS.md`, `sync/archive/prd-v0.9.md`
 > 작성일: 2026-11-01
 
 claude.ai 프로젝트 채팅에서 "디자인 반영해줘"라고 하면 `/design-sync`가 아래 내용대로 디자인 캔버스를 고치고, 이 파일의 상태를 "반영 완료"로 바꿔요.
 
-**v0.8 요청서(`design/change-requests/prd-v0.8.md`)가 아직 "요청됨"이에요. v0.8 요청서를 먼저(또는 함께) 반영해 주세요.** 6번의 `ConnectionInfo.dc.html`은 v0.8에서 건드리지 않는 보드라 겹치지 않아요.
+**v0.8 요청서(`design/change-requests/archive/prd-v0.8.md`)가 아직 "요청됨"이에요. v0.8 요청서를 먼저(또는 함께) 반영해 주세요.** 6번의 `ConnectionInfo.dc.html`은 v0.8에서 건드리지 않는 보드라 겹치지 않아요.
 
 이번 변경은 Android 단위 3(커플) 범위 점검에서 나온 빈 곳을 사용자가 정한 결과예요 (PRD D-93~D-103, Q-13). **새 화면 ID와 새 토큰은 없어요.** 아래 새 보드는 모두 이미 있는 화면의 새 상태예요. 새 상태는 이미지 7개이고, 기존 보드 1개(`ConnectionInfo`)에서 안 쓰는 부분을 빼요.
 

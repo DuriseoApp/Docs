@@ -44,7 +44,7 @@
 | docs/ERD.md (+ erd.html, ERD.png) | data | users.nickname 10자, auth_sessions.revoked_reason 추가, 한 기기 로그인·로그아웃 시 세션·devices 처리(4장 수명주기), 게스트 정리(Q-11) 정리 작업, 탈퇴 시 상대 알림 문구 언급, 추적표(FR-AUTH-08·09는 "테이블 없음", FR-SET-02 "테이블 없음"), 헤더 v0.5 |
 | docs/API.md | api | 로그인 2종(게스트 시작, 소셜 로그인)에서 이전 세션·기기 정리(D-51, 게스트 연동은 제외), 401 `SESSION_REPLACED`, access 토큰 `sid` 검사, 로그아웃 시 devices 삭제(D-50), 카카오·구글 토큰 검증 상세(NFR-SEC-01), 커플 연결 시 두 사람에게 SYNC `SPACE`/`LINKED`(D-48)와 앱 동작(5초 확인은 `GET /me`), R-13('함께' 일정 대상 변경은 작성자만), 닉네임 10자, 기념일 알림 본문 규칙(D-55), 탈퇴 해제 알림 문구(D-53), 게스트 알림 설정 허용 명시, 게스트 정리(Q-11)는 ERD 정리 작업 참조, 추적표, 헤더 v0.5 |
 | docs/SCREENS.md | screen | 위 결정 반영(아래 3.3), 오래된 문장 정리("펼친 달력의 메모 표시는 디자인에서 정해요" 삭제 — 이미 그림), 공통에 "문구는 해요체"와 "다른 기기 로그인으로 로그아웃" 안내 추가, 디자인 상태 갱신 |
-| 디자인 변경 요청서 | screen | 있음: `design/change-requests/prd-v0.5.md` (아래 3.4) |
+| 디자인 변경 요청서 | screen | 있음: `design/change-requests/archive/prd-v0.5.md` (아래 3.4) |
 
 ## 3. 이름 확정
 
@@ -95,7 +95,7 @@
 | SCR-SET-04 | 이름 최대 10자 (이미 10자, 근거를 D-56으로) | D-56 |
 | 공통 | 문구는 해요체(NFR-COPY-01), 401 `SESSION_REPLACED` 처리 | D-58, D-51 |
 
-### 3.4 디자인 변경 요청서 (`design/change-requests/prd-v0.5.md`)
+### 3.4 디자인 변경 요청서 (`design/change-requests/archive/prd-v0.5.md`)
 
 [수정] SCR-START-01(동의 문구), SCR-CAL-01(개인 공간 앱바 새 보드, 기념일 카드·표시, 연결 완료 시트가 뜬 상태 새 보드), SCR-CAL-02(여러 날 일정 표시), SCR-CAL-03(시작·종료 행, 알림 기본 없음, 상대가 '함께' 일정 수정 상태 새 보드), SCR-COUPLE-04(전체 화면 → 캘린더 위 시트로 다시 그림, 기존 Connected·ConnectedDialog 보드는 지우지 말고 제목에 "(v0.4)" 붙여 이전 버전 줄로), SCR-ANNIV-01(개인 공간 상태 새 보드), SCR-MEMO-01·02(작성자 닉네임), SCR-NOTI-01(문구 예시). [확인] SCR-SET-01 정보 섹션은 이미 있음, SCR-SET-04 이름 10자. 새 토큰 없이 기존 토큰으로 (기념일 표시는 `brand-500` 고리).
 
