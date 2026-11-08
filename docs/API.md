@@ -697,7 +697,7 @@
 | 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`). 앱은 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, D-95 |
 | 409 | NOT_COUPLE | 커플 공간이 필요한 요청을 개인 공간에서 보냄: `PATCH /space`, 개인 공간에서 `together`나 자기 밖 `userId`가 있는 `PATCH /space/colors`, `DELETE /couple`. 이 세 경로 모두 앱은 이미 해제된 것으로 보고 앱 초기화를 한다 (4.5의 1·6단계, D-103). `POST /couple/import`는 이 코드를 주지 않고 `NO_IMPORT_PENDING`이다 | R-08, R-18, FR-COUPLE-05.AC3·AC5 |
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
-| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 앱은 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다 | NFR-FILE-01, D-147 |
+| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다 | NFR-FILE-01, D-147, D-153 |
 | 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님, 또는 디코드 실패. 형식은 Content-Type이 아니라 실제 디코드로 판정한다. 앱은 D-147 문구 "JPEG나 PNG 사진만 쓸 수 있어요"로 보인다 | NFR-FILE-01, D-147 |
 | 429 | INVITE_RATE_LIMITED | 최근 1시간(지금부터 거꾸로) 초대코드 오입력 실패 10번 (`POST /couple/join`). `details.retryAfterSeconds` = 10번째로 최근 실패의 시각 + 1시간까지 남은 초(올림, 최소 1). 이 429 자체는 실패로 세지 않는다 (4.4의 2단계) | NFR-SEC-03, FR-COUPLE-02.AC4, D-83 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청 (`POST /invite-codes`). `details.retryAfterSeconds` = 최근 `created_at` + 60초까지 남은 초(올림, 최소 1) | FR-COUPLE-01.AC3 |
