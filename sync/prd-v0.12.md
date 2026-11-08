@@ -1,6 +1,6 @@
 # PRD v0.12 영향 분석
 
-> 상태: 승인 대기
+> 상태: 진행 중 (2026-11-08 사용자 승인 "start")
 > 이전 버전: v0.11 → 새 버전: v0.12
 > 브랜치: sync/prd-v0.12
 > PR: (PR 완료 후 링크)
@@ -152,7 +152,7 @@ PRD에는 제품 정책·화면 동작·문구(D-116~D-152, Q-19)와 AC·NFR·5�
 | A20 | #35, #36, #52 | API 3.1·3.2·8장·5장 사진: `PUT /me/profile-image`(멀티파트 `file`) 204, `DELETE` 멱등 204, `GET /users/{id}/profile-image` 직접 스트리밍 `image/jpeg`(R-11을 매번 검사, 사진 없음·권한 없음은 둘 다 404). `Me`·`MePartner`·`SpaceMember`에 `profileImageVersion`. 재인코딩: 회전(Orientation)을 픽셀에 적용한 뒤 메타 제거, 투명은 흰 배경(`surface-0`)에 합성, 형식은 실제 디코드로 판정, 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`, 픽셀 수 상한 초과는 413 `IMAGE_TOO_LARGE`(새 코드 없음), `file` 없음은 400 `VALIDATION_FAILED`(`file`, `REQUIRED`). 413·415는 앱이 D-147 문구로 보인다고 5장 설명에 덧붙인다 |
 | A21 | #37 | API 8장: 어떤 사용자도 참조하지 않는 사진 파일 정리를 ERD E12와 같게 쓴다 |
 | A22 | #46 | API 3.1 devices: `PUT /me/devices`는 로그인 직후·앱 실행 때·`onNewToken` 때 부르는 멱등 요청이고 알림 권한과 관계없이 등록한다(데이터 메시지는 권한이 필요 없음). 실패는 다음 실행에서 재시도, 로그아웃·세션 끊김이면 보내지 않는다 |
-| A23 | #47, #49 | API 6장 SYNC 수신 시 앱 동작: 프로세스가 살아 있을 때만 처리하고 아니면 무시(다음 진입 때 NFR-SYNC-02). 연속 신호는 짧게 모아 한 번만. `EVENT`·`MEMO`는 `id` 단건 `GET`(`DELETED`면 기기에서 삭제), `ANNIVERSARY`는 보이는 범위 + `upcoming`·`past` 다시 조회, `SPACE`는 `GET /me`·`GET /space`·기념일, `LINKED`·`UNLINKED`는 `GET /me` 뒤 A6 경로. `NOTIFICATION`은 `unread-count`를 다시 부르고 알림 목록이 열려 있으면 첫 페이지도 다시 부른다(D-141). "짧게"의 시간 값은 문서에 쓰지 않는다(추천안에 값 없음) |
+| A23 | #47, #49 | API 6장 SYNC 수신 시 앱 동작: 프로세스가 살아 있을 때만 처리하고 아니면 무시(다음 진입 때 NFR-SYNC-02). 연속 신호는 1초 안에 온 것을 모아 한 번만(2026-11-08 사용자 결정). `EVENT`·`MEMO`는 `id` 단건 `GET`(`DELETED`면 기기에서 삭제), `ANNIVERSARY`는 보이는 범위 + `upcoming`·`past` 다시 조회, `SPACE`는 `GET /me`·`GET /space`·기념일, `LINKED`·`UNLINKED`는 `GET /me` 뒤 A6 경로. `NOTIFICATION`은 `unread-count`를 다시 부르고 알림 목록이 열려 있으면 첫 페이지도 다시 부른다(D-141). "짧게"의 시간 값은 문서에 쓰지 않는다(추천안에 값 없음) |
 | A24 | #45 | API 4.4 11단계 알림 권한 시점 문구를 D-144로 고친다: 연결 완료 시트를 닫은 직후, 세 시점 공통 플래그, 거부 뒤 재요청·안내 없음 |
 | A25 | #40 | API 기념일 쓰기: `repeatsYearly` 생략 시 기본 true가 D-122(새 기념일 "매년 반복" 켜짐)와 같은지 확인만 한다(바꾸지 않음) |
 
@@ -293,7 +293,7 @@ screen이 요청서를 만들고, 캔버스 수정·이미지·`tokens.json`·`d
 | API | `DELETE /me/profile-image` | 멱등 204 | #35 |
 | API | `GET /users/{id}/profile-image` | 직접 스트리밍 `image/jpeg`, R-11을 매번 검사, 사진 없음·권한 없음 둘 다 404 | #35 |
 | API 응답 필드 | `profileImageVersion` | `Me`·`MePartner`·`SpaceMember`에 추가. 객체 키 uuid(문자열), 사진이 없으면 null. 앱은 `?v=<version>`을 캐시 키로 쓰고 서버는 `Cache-Control: private, max-age=31536000, immutable` | #35 |
-| 오류 코드 | 413 `IMAGE_TOO_LARGE` | 원본 10MB 초과(기존), 픽셀 수 상한 초과(25MP, 추천안의 예시값 그대로)에도 재사용 | #36 |
+| 오류 코드 | 413 `IMAGE_TOO_LARGE` | 원본 10MB 초과(기존), 픽셀 수 상한 초과(25MP, 2026-11-08 사용자 결정)에도 재사용 | #36 |
 | 오류 코드 | 415 `IMAGE_TYPE_NOT_ALLOWED` | JPEG·PNG가 아님(기존), 디코드 실패에도 재사용. 형식은 Content-Type이 아니라 실제 디코드로 판정 | #36 |
 | 오류 코드 | 400 `VALIDATION_FAILED` (`file`, `REQUIRED`) | 사진 필드 없음 | #36 |
 | 사진 처리 | 재인코딩 | 회전(Orientation)을 픽셀에 적용한 뒤 메타 제거, 투명은 흰 배경(`surface-0`)에 합성 | #36 |
@@ -318,7 +318,7 @@ screen이 요청서를 만들고, 캔버스 수정·이미지·`tokens.json`·`d
 | `notifications` 값 | 기념일 | 자동 `target_type` = `ANNIVERSARY`, `target_id` = null. 직접 `ANNIVERSARY` + 기념일 id. 앱은 둘 다 SCR-ANNIV-01 | D-138, #28 |
 | SYNC 신호 | `MEMO` `CREATED`·`UPDATED`·`DELETED` | 메모 생성·수정·삭제·고정·해제 때 상대에게. 즐겨찾기는 없음. 서버 단위 5가 `Memo*` 이벤트를 발행하고 단위 6이 듣는다(두 PLAN 문구는 Server 레포 일) | D-134, #22 |
 | SYNC 신호 | `SPACE` `UPDATED` | 기존 의미에 "닉네임·사진 변경"을 추가. `PATCH /me`(닉네임), `PUT·DELETE /me/profile-image` 성공 때 커플 공간이면 상대에게. 앱은 `GET /me`·`GET /space`를 다시 읽음 | #34 |
-| SYNC 수신 | 앱 동작 | 프로세스가 살아 있을 때만 처리. 연속 신호는 짧게 모아 한 번만("짧게"의 값 없음). `EVENT`·`MEMO`는 `id` 단건 `GET`(`DELETED`면 기기 삭제), `ANNIVERSARY`는 보이는 범위 + `upcoming`·`past`, `SPACE`는 `GET /me`·`GET /space`·기념일, `LINKED`·`UNLINKED`는 `GET /me` 뒤 D-125 경로, `NOTIFICATION`은 `unread-count` + 열린 목록 첫 페이지 | #47, #49 |
+| SYNC 수신 | 앱 동작 | 프로세스가 살아 있을 때만 처리. 연속 신호는 1초 안에 온 것을 모아 한 번만(2026-11-08 사용자 결정). `EVENT`·`MEMO`는 `id` 단건 `GET`(`DELETED`면 기기 삭제), `ANNIVERSARY`는 보이는 범위 + `upcoming`·`past`, `SPACE`는 `GET /me`·`GET /space`·기념일, `LINKED`·`UNLINKED`는 `GET /me` 뒤 D-125 경로, `NOTIFICATION`은 `unread-count` + 열린 목록 첫 페이지 | #47, #49 |
 | 앱 저장 | 메모 목록 Room | `view`별로 응답 순서를 위치와 함께 저장, 앱이 재정렬하지 않음. 고정·즐겨찾기·삭제·작성 성공 뒤 해당 `view` 첫 페이지와 `/memos/pinned`를 다시 불러옴 | #44 |
 | 앱 동작 | 시간대 (Q-19 기본값) | 실행·포그라운드 복귀 때 시간대가 다르면 `PATCH /me` 재시도, 월 조회는 앞뒤 하루 여유(3개월 상한 안), 표시는 기기 시간대 | Q-19, #5 |
 
@@ -361,8 +361,8 @@ screen이 요청서를 만들고, 캔버스 수정·이미지·`tokens.json`·`d
 사용자에게 새로 물을 질문은 없다(57건 모두 결정됨). 추천안에 값이 없어 문서에 확정하지 않은 것과 확인할 것:
 
 - **채널 ID(식별 문자열), FCM TTL**: 추천안에 없다. 채널 이름 5개만 확정했고 ID·TTL은 문서에 쓰지 않는다. Android·Server 구현에서 정할 때 필요하면 그때 PRD에 올린다.
-- **SYNC "짧게 모아"의 시간 값(#47)**: 추천안에 숫자가 없다. 문서에 숫자를 쓰지 않는다.
-- **픽셀 수 상한 25MP(#36)**: 추천안이 "예 25MP"로 적은 예시값이다. 그대로 채택했으므로 승인 때 확인 권장. 바꾸려면 API 8장·5장의 한 줄만 고친다.
+- 해결: SYNC 모으는 시간 1초(#47), 2026-11-08 사용자 결정.
+- 해결: 픽셀 수 상한 25MP(#36), 2026-11-08 사용자 결정.
 - **문의 메일 주소(Q-10)**: 계속 미정이다. #55 다이얼로그와 메일은 주소 자리만 있다.
 - **사진 오류 문구가 보이는 자리(#52)**: 추천안이 "공통 오류 문구" 대신 새 문구라고만 했다. 공통 오류 안내(D-88)와 같은 자리에 보이는 것으로 적었다. 다른 모양이 필요하면 디자인에서 알려 달라.
 - **차이 표 35번(#16) 처리**: 추천안이 토큰 usage 예외만 적었다. SCREENS에서 D-128로 해결 처리하는 것은 리드의 판단이다(S6).
