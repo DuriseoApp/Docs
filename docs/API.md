@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.11 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.12 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-11-06, 기준 PRD v0.11)
+> 작성일: 2026-10-17 (갱신: 2026-11-08, 기준 PRD v0.12)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -14,7 +14,7 @@
 
 - 모든 경로는 `/api/v1` 아래에 있다
 - access 토큰이 필요 없는 경로는 `/auth/guest`, `/auth/social`, `/auth/refresh`, `/webhooks/kakao/unlink`(Kakao 서버만 부르는 웹훅, 3.6) 넷뿐이고, 나머지는 access 토큰(`Authorization: Bearer …`)이 필요하다. `POST /auth/switch`도 게스트의 access 토큰이 필요하다
-- JSON 필드는 camelCase, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 UTC (`2026-10-17T06:30:00Z`)
+- JSON 필드는 camelCase, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 UTC (`2026-10-17T06:30:00Z`). **일시 형식 (v0.12)**: 요청은 `YYYY-MM-DDTHH:MM:SSZ`만 받고 그 밖의 형식은 400 `VALIDATION_FAILED`(해당 필드, `INVALID`)다. 응답은 항상 초 단위 `Z`로 쓴다
 - **날짜 범위는 1950-01-01 ~ 2050-12-31이다 (PRD D-74, R-15).** 일정, 메모 날짜, 직접 기념일을 만들거나 고칠 때(쓰기) 이 밖의 날짜가 있으면 400 `DATE_OUT_OF_RANGE`다. 날짜 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)는 다르다. 월 달력이 앞뒤 달 날짜도 그리므로 1950년 1월이나 2050년 12월에서는 `from`·`to`가 범위 밖으로 나간다. 이때 오류 없이 범위 안으로 잘라서 조회한다(R-15). 처음 만난 날은 1950-01-01보다 앞일 때만 이 코드이고, 오늘보다 뒤(2050년 이후 포함)면 `VALIDATION_FAILED`다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (ERD DB-13)
 - access 토큰 1시간, refresh 토큰은 회원 30일·게스트 365일, 사용할 때마다 교체 (PRD D-73, NFR-SEC-01, ERD DB-02). 로그인이 만료된 기기에는 푸시를 보내지 않는다 (R-16, 7장). 교체는 같은 세션 행의 토큰 해시와 만료를 갱신하는 것이라 `sid`는 로그인부터 로그아웃까지 바뀌지 않는다. 이전 refresh 토큰을 다시 보내면 401 `SESSION_INVALID`다
 - **토큰 형식 (PRD D-81, NFR-SEC-01).**
@@ -39,7 +39,7 @@
 | 경우 | 상태 | 본문 |
 | --- | --- | --- |
 | 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
-| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`) |
+| 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`, `GET /memos`) |
 | 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/dated`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
 | 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
 | Kakao 연결 해제 알림 웹훅 (`/webhooks/kakao/unlink`) | 200 | 없음. 위 "204" 규칙의 예외다. Kakao가 3초 안에 `200 OK`를 요구하고 처리 결과·서버 오류와 관계없이 200을 기대한다. 인증 실패만 401 (3.6) |
@@ -129,13 +129,14 @@
 | POST | /auth/refresh | `{refreshToken: string}` (access 토큰 불필요) → 200 `AuthTokens` (`isNewUser: false`, 새 refresh 토큰) | refresh 토큰 교체 발급 (같은 세션 행을 갱신하므로 `sid`는 그대로). 그 세션이 `REPLACED`로 끊겼으면 401 `SESSION_REPLACED`, 이전 refresh 토큰 재사용을 포함한 그 밖의 무효는 401 `SESSION_INVALID` | refresh 토큰 | NFR-SEC-01, FR-AUTH-02.AC3 |
 | POST | /auth/logout | 본문 없음 → 204 | 현재 세션 무효화(`LOGOUT`)와 그 사용자의 `devices` 행 삭제. 이후 그 기기에는 푸시가 가지 않는다. 앱의 "다른 계정으로 로그인"(SCR-COUPLE-01, 회원)은 로그아웃 확인 뒤 이 호출을 하고 SCR-START-01로 이동하는 앱 동작이다 (D-80). **앱 동작 (D-86)**: 쓰기와 같이 온라인에서만 부른다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요"를 보여준다. 응답이 401 `SESSION_REPLACED`·`SESSION_INVALID`면 이미 끊긴 세션이므로 1장 규칙대로 로컬을 지우고 SCR-START-01로 간다. 그 밖의 오류(5xx 포함)는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다(기기 데이터와 토큰을 지우지 않는다). 204를 받으면 소셜 SDK 상태도 지운다 (1장) | R-17 (MEMBER만) | FR-AUTH-05.AC4, D-86, D-50 |
 | GET | /me | → 200 `Me` | 내 정보 + 현재 공간 요약 (종류, 공간 ID, 상대, 사람 색, 처음 만난 날, 연결한 날 `linkedAt`, `importPending`, 가져오기 대기 기록 개수 `importCounts`). SCR-COUPLE-02의 연결 확인 호출로도 쓴다 (4.4) | 로그인 | FR-SET-01, FR-COUPLE-02.AC5 |
-| PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다. 시간대가 바뀌면 그 사용자의 종일 일정 알림 `fire_at`을 다시 계산한다 (3.3 "다시 계산", FR-CAL-05.AC6) | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
-| PUT | /me/profile-image | multipart (요청·응답 모양은 OpenAPI 기준) | 프로필 사진 업로드 | 로그인 | FR-AUTH-07.AC3 |
-| DELETE | /me/profile-image | (OpenAPI 기준) | 프로필 사진 삭제 | 로그인 | FR-AUTH-07.AC5 |
-| GET | /users/{id}/profile-image | (OpenAPI 기준) | 프로필 사진 조회 | R-11 | FR-AUTH-07 |
+| PATCH | /me | `{nickname?: string, timeZone?: string}` → 200 `Me`. 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(`REQUIRED`) | 닉네임·시간대 변경. 닉네임은 앞뒤 공백을 지운 값으로 저장하고 코드 포인트 1~10개다: 지운 뒤 빈 값이면 400 `VALIDATION_FAILED`(`nickname`, `REQUIRED`), 10개 초과면 `TOO_LONG` (D-82). 시간대는 Java `ZoneId`로 해석되는 IANA 이름만이고 아니면 `VALIDATION_FAILED`(`timeZone`, `INVALID`). 새 사용자는 `Asia/Seoul`로 시작하고 앱이 실행 때 이 경로로 갱신한다. 시간대가 바뀌면 그 사용자의 종일 일정 알림 `fire_at`을 다시 계산한다 (3.3 "다시 계산", FR-CAL-05.AC6). 닉네임이 바뀌어 성공하고 커플 공간이면 상대에게 SYNC `SPACE`/`UPDATED`를 보낸다 (6장). **앱 동작 (Q-19 기본값)**: 앱은 실행·포그라운드 복귀 때 기기 시간대가 서버에 저장된 값과 다르면 이 경로를 다시 시도한다 | 로그인 | FR-AUTH-07, NFR-LIMIT-01, NFR-TIME-01 |
+| PUT | /me/profile-image | multipart, 필드 `file` 하나 → 204 | 프로필 사진 업로드·교체. 처리는 8장. `file`이 없으면 400 `VALIDATION_FAILED`(`file`, `REQUIRED`), 10MB 초과나 픽셀 수 상한(25MP) 초과는 413 `IMAGE_TOO_LARGE`, JPEG·PNG가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`. 앱은 413·415를 D-147 문구로 보인다(5장). 성공하면 커플 공간일 때 상대에게 SYNC `SPACE`/`UPDATED`를 보낸다 (6장) | 로그인 | FR-AUTH-07.AC3, NFR-FILE-01, D-147 |
+| DELETE | /me/profile-image | 본문 없음 → 204 (멱등: 사진이 없어도 204) | 프로필 사진 삭제. 성공하면 커플 공간일 때 상대에게 SYNC `SPACE`/`UPDATED`를 보낸다 (6장) | 로그인 | FR-AUTH-07.AC5 |
+| GET | /users/{id}/profile-image | → 200 `image/jpeg` (직접 스트리밍) | 프로필 사진 조회. R-11을 요청마다 검사한다. 사진이 없는 경우와 권한이 없는 경우는 둘 다 404 `NOT_FOUND`다. 응답 헤더 `Cache-Control: private, max-age=31536000, immutable`. 앱은 `profileImageVersion`을 `?v=<version>` 캐시 키로 쓴다 | R-11 | FR-AUTH-07, NFR-FILE-01 |
 | DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3). **앱 동작 (D-86)**: `POST /auth/logout`과 같다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요", `SESSION_REPLACED`·`SESSION_INVALID`면 로컬을 지우고 SCR-START-01, 그 밖의 오류는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다. 204를 받으면 로컬 데이터와 소셜 SDK 상태를 지우고 SCR-START-01로 이동한다 | 로그인 | FR-AUTH-06, FR-AUTH-06.AC5, D-86 |
-| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. 알림 권한 요청(Android 13 이상, 일정 알림 설정·커플 연결·직접 기념일 저장 때 처음)은 앱 동작이라 API가 없다 (D-70) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
-| GET, PATCH | /me/notification-settings | (OpenAPI 기준) | 알림 설정 조회·변경. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
+| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. 같은 토큰이면 멱등 upsert다. **앱 동작 (v0.12)**: 로그인 직후, 앱 실행 때, `onNewToken` 때 부르고 알림 권한과 관계없이 등록한다(데이터 메시지는 권한이 필요 없다). 실패하면 다음 실행에서 다시 보내고, 로그아웃되었거나 세션이 끊긴 상태에서는 보내지 않는다. 푸시 전송 때 무효 토큰 응답을 받으면 서버가 이 행을 지운다 (7장). 알림 권한 요청(Android 13 이상)은 앱 동작이라 API가 없고, 시점은 D-144다 (7장) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
+| GET | /me/notification-settings | → 200 `NotificationSettings` | 알림 설정 조회. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
+| PATCH | /me/notification-settings | `{eventReminder?, partnerCreated?, memoPinned?, anniversary?}` (boolean) → 200 `NotificationSettings` (전체 설정) | 알림 설정 변경. 부분 수정이고 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(해당 필드, `REQUIRED`, `PATCH /me`와 같음). 연결·해제 알림은 설정이 없다 (7장) | 로그인 (게스트 포함) | FR-NOTI-02, D-145 |
 
 **공통 응답 모양** (JSON 필드는 camelCase, 일시는 ISO 8601 UTC. 값이 없는 필드는 빼지 않고 `null`로 보낸다, 1.1)
 
@@ -159,6 +160,7 @@
 | `timeZone` | string | IANA 시간대 (`users.time_zone`) |
 | `providers` | (`GOOGLE` \| `KAKAO`)[] | 연결된 로그인 수단. 게스트는 `[]` (FR-SET-01) |
 | `hasProfileImage` | boolean | 프로필 사진이 있는지. 이미지는 `GET /users/{id}/profile-image` |
+| `profileImageVersion` | string \| null | 사진의 객체 키 uuid (`users.profile_image_key`, 교체마다 새로 만듦). 사진이 없으면 `null`. 앱은 `?v=<version>`을 이미지 캐시 키로 쓴다 |
 | `createdAt` | 일시 | 가입일 (`users.created_at` 그대로, not null). 게스트가 연동한 회원은 게스트로 시작한 시각이다(계정이 그대로이므로). 앱은 기기 시간대 날짜로 바꿔 SCR-SET-01 회원 화면에 보여준다 (FR-SET-01) |
 | `space` | `MeSpace` | 현재 활성 공간 요약 |
 
@@ -178,7 +180,9 @@
 
 `ImportCounts`: `events`(integer), `anniversaries`(integer, 직접 기념일 행 수. 자동 기념일은 저장하지 않으므로 세지 않는다), `memos`(integer). 각각 0 이상이고 합은 1 이상이다(대기 공간은 기록이 있는 공간뿐이다, 4.4의 5단계). 서버는 요청 때 대기 공간의 `events`, `anniversaries`, `memos` 행 수를 세고 따로 저장하지 않는다. 앱은 0개인 종류도 보여준다 (PRD Q-13 기본값).
 
-`MePartner`: `id`(uuid), `nickname`(string), `color`(팔레트 키), `hasProfileImage`(boolean)
+`MePartner`: `id`(uuid), `nickname`(string), `color`(팔레트 키), `hasProfileImage`(boolean), `profileImageVersion`(string \| null, `Me.profileImageVersion`과 같은 정의)
+
+`NotificationSettings` (`GET`·`PATCH /me/notification-settings`의 응답 본문): `eventReminder`, `partnerCreated`, `memoPinned`, `anniversary` (모두 boolean, 켜짐이 `true`). 연결·해제 알림은 끌 수 없어 필드가 없다 (PRD 8장)
 
 ### 3.2 공간·커플
 
@@ -224,7 +228,7 @@
 | `linkedAt` | 일시 \| null | `MeSpace.linkedAt`과 같은 정의 (3.1). 커플 공간이 연결된 시각이고 복구하면 다시 연결한 시각, 개인 공간이면 `null` (D-94) |
 | `members` | `SpaceMember`[] | 활성 구성원(`left_at IS NULL`). 개인 공간 1개, 커플 공간 2개. 순서는 뜻이 없고 앱은 `userId`로 나를 찾는다 |
 
-`SpaceMember`: `userId`(uuid), `nickname`(string), `color`(팔레트 키), `hasProfileImage`(boolean)
+`SpaceMember`: `userId`(uuid), `nickname`(string), `color`(팔레트 키), `hasProfileImage`(boolean), `profileImageVersion`(string \| null, `Me.profileImageVersion`과 같은 정의)
 
 - **팔레트 키 12개** (`design/tokens.json`의 `color.pick` 이름 그대로, 이 순서가 팔레트 순서): `pick-orange`, `pick-rose`, `pick-amber`, `pick-mustard`, `pick-green`, `pick-teal`, `pick-blue`, `pick-purple`, `pick-magenta`, `pick-brown`, `pick-gray`, `pick-ink`. 기본값: 나·만든 사람 `pick-orange`, 입력한 사람 `pick-blue`, 함께 `pick-purple` (FR-CAL-04, D-15)
 - **앱 동작: 모르는 팔레트 키.** 앱은 위 12개 밖의 키를 받아도 오류로 보지 않는다. 값은 그대로 저장하고, 그릴 때 그 자리를 기본 사람 색 토큰(나 `person-me`, 상대 `person-partner`, 함께 `person-together`)으로 그리며 디버그 로그만 남긴다 (FR-CAL-04). 서버는 12개 밖의 키를 쓰지 않는다
@@ -283,7 +287,8 @@
 | 오류 | 없으면 400 `VALIDATION_FAILED`(`from`/`to`, `REQUIRED`), 날짜 형식이 아니면 (`from`/`to`, `INVALID`), `from` > `to`이면 (`to`, `INVALID`), `to` > `from` + 3개월(달력 월로 더함, `from.plusMonths(3)`)이면 (`to`, `INVALID`) |
 | 검사와 잘라내기 | 위 검사는 요청받은 값 그대로 먼저 하고, 그 뒤 1950-01-01 ~ 2050-12-31로 잘라낸다. 잘라낸 구간이 비면 `{items: []}` (R-15) |
 | 걸치는 일정 | 범위에 하루라도 걸치는 일정. 종일: `start_date <= to AND end_date >= from`. 시간 일정: 요청자 `users.time_zone` 기준 `from` 00:00 ~ `to` 다음 날 00:00을 UTC로 바꿔 `start_at < 끝 AND end_at >= 시작` |
-| 정렬 | 시작 날짜(종일은 `start_date`, 시간 일정은 요청자 시간대로 바꾼 `start_at`의 날짜) 오름차순 → 같은 날이면 종일 먼저 → 시간 일정은 `start_at` → `id`. 화면의 날짜 목록 순서(FR-CAL-01 AC2)는 앱이 맞춘다 |
+| 정렬 | 시작 날짜(종일은 `start_date`, 시간 일정은 요청자 시간대로 바꾼 `start_at`의 날짜) 오름차순 → 같은 날이면 종일 먼저 → 시간 일정은 `start_at` → `id`. 이 서버 정렬은 바꾸지 않는다. 앱의 날짜 목록 표시 순서(D-119, FR-CAL-01 AC2: 기념일 → 종일 → 시간 일정(카드에 보이는 시각) → 메모)는 이 서버 정렬과 다르고, 앱이 맞춘다 |
+| 시간대 (Q-19 기본값) | 날짜 나눔(시간 일정이 걸치는 날, 시작 날짜)은 서버에 저장된 사용자 시간대(`users.time_zone`) 기준이다. 기기 시간대와 어긋날 수 있어 앱은 월 조회를 앞뒤 하루 여유를 두고 요청한다(`to` ≤ `from` + 3개월 상한 안). 새 API는 없다 |
 
 **쓰기 규칙** (`POST`·`PATCH /events`)
 
@@ -362,7 +367,7 @@
 | PATCH | /anniversaries/{id} | `{name?, date?, repeatsYearly?}` → 200 `Anniversary` | R-01, R-05, R-15 | FR-ANNIV-03 |
 | DELETE | /anniversaries/{id} | 본문 없음 → 204 | R-01, R-05 | FR-ANNIV-03 |
 
-- `GET /anniversaries?from=&to=`는 **캘린더용**이다. 날짜 범위의 자동 + 직접 기념일을 합쳐 날짜순으로 돌려주고(`kind: AUTO` 또는 `CUSTOM`), D-N 계산(`daysLeft`)을 포함한다. 범위는 최대 3개월이고 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다. 개인 공간과 처음 만난 날이 없는 커플 공간에는 `AUTO`가 없고 `CUSTOM`만 나온다 (FR-ANNIV-04.AC2, AC4). 쿼리와 오류는 아래 "조회 규칙".
+- `GET /anniversaries?from=&to=`는 **캘린더용**이다. 날짜 범위의 자동 + 직접 기념일을 합쳐 날짜순으로 돌려주고(`kind: AUTO` 또는 `CUSTOM`), D-N 계산(`daysLeft`)을 포함한다. 범위는 최대 3개월이고 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다. 개인 공간과 처음 만난 날이 없는 커플 공간에는 `AUTO`가 없고 `CUSTOM`만 나온다 (FR-ANNIV-04.AC2, AC4). 쿼리와 오류는 아래 "조회 규칙". `daysLeft`는 서버에 저장된 사용자 시간대 기준이고, 앱은 어긋남을 줄이려고 월 조회를 앞뒤 하루 여유로 요청한다(3개월 상한 안, Q-19 기본값). 새 API는 없다.
 - `GET /anniversaries/upcoming?cursor=&size=`는 **기념일 목록(SCR-ANNIV-01)용**이다. 요청자 시간대 기준 오늘(포함)부터 2050-12-31까지의 자동·직접 기념일 발생일을 날짜순으로 돌려준다. 매년 반복하는 기념일은 해마다 한 항목이다. 항목은 `AnniversaryOccurrence`이고 `daysLeft`는 오늘이면 0이다(앱이 "D-day"로 표시). 정렬은 `date` 오름차순 → 3.3 "같은 날 순서". 커서는 이 정렬 키를 1.1 "커서·`size` 공통 규칙"대로 담는다. 처음 만난 날이 없는 커플과 개인 공간에는 `AUTO` 항목이 없다. 앱이 처음 만난 날 입력 안내를 보여주는 것은 커플이고 처음 만난 날이 없을 때만이고, 개인 공간은 `AUTO`만 없을 뿐 안내도 없다 (FR-ANNIV-04.AC2, AC4).
 - `GET /anniversaries/past?cursor=&size=`는 **"지난 기념일"용**이다. `repeats_yearly = false`이고 `date`가 오늘(요청자 시간대)보다 앞인 직접 기념일만, 날짜 최근 순으로 돌려준다. 응답에 `totalCount`(조건에 맞는 지난 1회성 직접 기념일 전체 개수, 페이지와 관계없음)도 넣는다. 앱은 접힌 행 "지난 기념일 N개"에 쓰고 0이면 행을 숨긴다 (D-71). 정렬은 `date` 내림차순 → 같은 `date`면 `anniversaryId` 내림차순이다. 커서 (`date`, `anniversaryId`)는 같은 방향으로 "이 값보다 작은 것"을 비교한다 (3.3 "커서 정렬 키"). 1.1 "커서·`size` 공통 규칙"대로 쓴다. 수정·삭제는 `PATCH`·`DELETE /anniversaries/{id}`(R-05)로 한다.
 - 날짜가 1950-01-01 ~ 2050-12-31 밖인 쓰기는 400 `DATE_OUT_OF_RANGE`다 (R-15).
@@ -407,8 +412,10 @@
 | 항목 | 규칙 |
 | --- | --- |
 | `POST` 필수 | `name`, `date`. 없거나 `null`이면 400 `VALIDATION_FAILED`(해당 필드, `REQUIRED`) |
-| `POST` 선택 | `repeatsYearly` 생략 → true (ERD 기본값). `null`이면 (`repeatsYearly`, `REQUIRED`) |
+| `POST` 선택 | `repeatsYearly` 생략 → true (ERD 기본값, 새 기념일 화면의 "매년 반복" 켜짐 기본값 D-122과 같다). `null`이면 (`repeatsYearly`, `REQUIRED`) |
 | `PATCH` | 부분 수정. 없는 필드는 바꾸지 않는다. 어떤 필드든 `null`이면 `REQUIRED` |
+| `PATCH` 같은 값 (D-123) | 보낸 값이 모두 저장값과 같으면 200 + 현재 값을 돌려주고 `updated_at`을 유지하며 변경 이벤트·SYNC를 보내지 않는다. 새 오류 코드는 없다. 값 검사는 그대로 먼저 한다 |
+| 개수 상한 (D-123) | 직접 기념일 개수 상한은 없다 |
 | 이름 (D-104) | 앞뒤 공백을 지운 값으로 저장. 지운 뒤 빈 값이면 (`name`, `REQUIRED`), 코드 포인트 30개 초과면 (`name`, `TOO_LONG`). 길이는 지운 뒤 센다 (NFR-LIMIT-01, D-82) |
 | 날짜 | `YYYY-MM-DD`가 아니면 (`date`, `INVALID`). 범위 밖이면 400 `DATE_OUT_OF_RANGE`(`date`, `OUT_OF_RANGE`, R-15) |
 | `repeatsYearly` 타입 | boolean이 아니면 (`repeatsYearly`, `INVALID`) (일정 `isTogether`와 같다) |
@@ -441,8 +448,11 @@
 | --- | --- | --- | --- |
 | `GET /anniversaries/upcoming` | `date` 오름차순 → 순번 오름차순 → `anniversaryId` 오름차순 | (`date`, 같은 날 순번, `anniversaryId`). 순번은 ① = 0, ② = 1, ③ = 2. 자동은 `anniversaryId`가 `null`이어도 순번으로 갈린다 | 커서 키보다 큰 것 |
 | `GET /anniversaries/past` | `date` 내림차순 → `anniversaryId` 내림차순 (최신순을 끝까지 뒤집은 순서) | (`date`, `anniversaryId`) | 커서 키보다 **작은** 것 (`date`, `anniversaryId` 모두 내림차순 방향으로 비교) |
-| `GET /memos` | 3.4 | (`created_at`, `id`) | 미정 (서버 단위 5에서 정함) |
-| `GET /notifications` | 3.5 | (`created_at`, `id`) | 미정 (서버 단위 6에서 정함) |
+| `GET /memos` (`view` = `newest`, `favorites`) | `created_at` 내림차순 → `id` 내림차순. `favorites`의 `created_at`은 메모의 작성 시각이다(즐겨찾기한 시각이 아님) | (`created_at`, `id`) | 커서 키보다 **작은** 것 |
+| `GET /memos` (`view` = `oldest`) | `created_at` 오름차순 → `id` 오름차순 | (`created_at`, `id`) | 커서 키보다 **큰** 것 |
+| `GET /notifications` | `created_at` 내림차순 → `id` 내림차순 | (`created_at`, `id`) | 커서 키보다 **작은** 것 |
+
+- `GET /memos`·`GET /notifications`의 `id` 비교는 PostgreSQL `uuid` 비교다 (아래 "uuid 비교"와 같다).
 
 - **리드 보충 (순서 사용)**: 앱은 캘린더용 `GET /anniversaries`, `upcoming`, `past` 응답의 **순서를 그대로** 쓴다. Room에는 응답 배열의 위치(여러 페이지면 페이지를 이어 붙인 순서)를 함께 저장하고, 앱이 이름 등으로 다시 정렬하지 않는다.
 - **리드 보충 (uuid 비교)**: 직접 기념일끼리 `anniversaryId`를 비교할 때는 PostgreSQL `uuid` 비교(부호 없는 바이트 순)를 쓴다. 정렬과 커서 비교 모두 같다.
@@ -454,16 +464,42 @@
 
 | 메서드 | 경로 | 설명 | 권한 | FR |
 | --- | --- | --- | --- | --- |
-| GET | /memos?view=&cursor=&size= | 고정되지 않은 메모 목록. `view` = `newest`(기본), `oldest`, `favorites`. 커서는 (created_at, id). 각 항목에 `memoDate`(없으면 null) 포함 | R-01, R-06 | FR-MEMO-01 |
-| GET | /memos/pinned | 고정 메모 전체, 최근 고정순. 앱은 3개만 보여주고 4개 이상이면 "더보기". 각 항목에 `memoDate` 포함 | R-01 | FR-MEMO-05 |
-| GET | /memos/dated?from=&to= | 날짜 범위(최대 3개월)에 `memoDate`가 있는 메모. 캘린더용. 각 항목에 `memoDate` 포함. `from` > `to`이거나 범위가 3개월을 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다 | R-01, R-15 | FR-CAL-01.AC2, FR-CAL-01.AC6 |
-| POST | /memos | 메모 생성 `{title, body, memoDate, notifyPartner}`. `memoDate`는 `YYYY-MM-DD` 또는 생략·null이고, 날짜가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE`. 제목, 본문 중 하나 이상 필수 | R-01, R-15 | FR-MEMO-02, FR-NOTI-04, FR-CAL-01.AC6 |
-| GET | /memos/{id} | 메모 상세 (요청자의 즐겨찾기 여부, `memoDate` 포함) | R-01, R-06 | FR-MEMO-03 |
-| PATCH | /memos/{id} | 제목, 본문, 메모 날짜 수정 `{title, body, memoDate}`. `memoDate: null`이면 날짜 제거. 날짜 범위 검사는 POST와 같다 | R-03, R-15 | FR-MEMO-03, FR-CAL-01.AC6 |
-| DELETE | /memos/{id} | 메모 삭제 | R-03 | FR-MEMO-03 |
+| GET | /memos?view=&cursor=&size= | → 200 `{items: Memo[], nextCursor, totalCount, favoriteCount}`. 고정되지 않은 메모 목록(고정 메모는 `favorites`에도 나오지 않는다, D-130). `view` = `newest`(기본), `oldest`, `favorites`. 정렬·커서는 3.3 "커서 정렬 키": `newest`·`favorites`는 (`created_at`, `id`) 내림차순에서 커서보다 작은 것, `oldest`는 오름차순에서 큰 것. `totalCount` = 요청한 `view`의 전체 개수(고정 제외), `favoriteCount` = 내 즐겨찾기 중 고정되지 않은 것의 개수 | R-01, R-06 | FR-MEMO-01 |
+| GET | /memos/pinned | → 200 `{items: Memo[]}`. 고정 메모 전체, `pinned_at` 내림차순 → `id` 내림차순. 앱은 3개만 보여주고 4개 이상이면 "더보기" | R-01 | FR-MEMO-05 |
+| GET | /memos/dated?from=&to= | → 200 `{items: Memo[]}`. 날짜 범위(최대 3개월)에 `memoDate`가 있는 메모. 캘린더용. 정렬은 `memo_date` 오름차순 → `created_at` 내림차순 → `id` 내림차순. `from` > `to`이거나 범위가 3개월을 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다 | R-01, R-15 | FR-CAL-01.AC2, FR-CAL-01.AC6 |
+| POST | /memos | `{title?, body?, memoDate?, notifyPartner?}` → 201 `Memo`. `memoDate`는 `YYYY-MM-DD` 또는 생략·null이고, 날짜가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE`. 제목·본문 규칙은 아래 "메모 쓰기 규칙" | R-01, R-15 | FR-MEMO-02, FR-NOTI-04, FR-CAL-01.AC6 |
+| GET | /memos/{id} | → 200 `Memo` (요청자의 즐겨찾기 여부 `isFavorite` 포함) | R-01, R-06 | FR-MEMO-03 |
+| PATCH | /memos/{id} | `{title?, body?, memoDate?}` → 200 `Memo`. 부분 수정(아래 "메모 쓰기 규칙"). 날짜 범위 검사는 POST와 같다. 저장값과 같은 값만 보내면 200 + 현재 값, `updated_at` 유지, 변경 이벤트·SYNC 없음 (D-123) | R-01, R-03, R-15 | FR-MEMO-03, FR-CAL-01.AC6 |
+| DELETE | /memos/{id} | 본문 없음 → 204. 메모 삭제 | R-01, R-03 | FR-MEMO-03 |
 | PATCH | /memos/{id}/checklist-items/{itemId} | 삭제됨 (PRD v0.4). 체크리스트가 범위 밖이 됨 | — | FR-MEMO-04 |
-| PUT, DELETE | /memos/{id}/pin | 고정·해제 | R-04 | FR-MEMO-05 |
-| PUT, DELETE | /memos/{id}/favorite | 즐겨찾기·해제 | R-06 | FR-MEMO-06 |
+| PUT, DELETE | /memos/{id}/pin | 본문 없음 → 204. 고정·해제. 둘 다 멱등이다(D-134). 이미 고정인 메모의 `PUT`은 `pinned_at`·`pinned_by`를 바꾸지 않고 알림도 보내지 않는다. 미고정에서 고정으로 바뀔 때마다 상대에게 `MEMO_PINNED` 알림을 만든다(고정 → 해제 → 고정을 반복하면 매번, 자기가 쓴 메모도 고정하지 않은 쪽에게, 해제는 알림 없음, D-135). SYNC `MEMO`는 6장 | R-01, R-04 | FR-MEMO-05 |
+| PUT, DELETE | /memos/{id}/favorite | 본문 없음 → 204. 즐겨찾기·해제. 둘 다 멱등이다(D-134). 본인 값이라 SYNC 신호가 없다 (6장) | R-01, R-06 | FR-MEMO-06 |
+
+`Memo` (`/memos`, `/memos/pinned`, `/memos/dated`의 `items`와 상세·생성·수정 응답이 같은 모양. 1.1대로 값이 없으면 `null`)
+
+| 필드 | 타입 | 뜻 |
+| --- | --- | --- |
+| `id` | uuid | |
+| `title` | string \| null | 앞뒤 공백을 지운 값. 없으면 `null` |
+| `body` | string \| null | 본문 전체. 공백·줄바꿈뿐이었으면 `null`. 미리보기는 앱이 자른다 |
+| `memoDate` | 날짜 \| null | 메모 날짜 |
+| `authorId` | uuid | 작성자. 닉네임은 넣지 않는다(`Event.authorId`와 같은 방식) |
+| `isPinned` | boolean | 고정 여부 |
+| `pinnedAt` | 일시 \| null | 고정한 시각. 고정이 아니면 `null` |
+| `isFavorite` | boolean | **요청자 기준** 즐겨찾기 여부 (R-06) |
+| `createdAt`, `updatedAt` | 일시 | |
+
+**메모 쓰기 규칙** (`POST`·`PATCH /memos`, D-132)
+
+| 항목 | 규칙 |
+| --- | --- |
+| 제목 | 앞뒤 공백을 지운 값으로 저장. 코드 포인트 50개 초과면 (`title`, `TOO_LONG`) — 길이는 지운 뒤 센다 |
+| 본문 | 공백·줄바꿈은 보존한다. 공백·줄바꿈뿐이면 빈 값(`null`)으로 본다. 5000개 초과면 (`body`, `TOO_LONG`) |
+| 둘 다 비면 | 제목과 본문이 모두 빈 값이면 `title`·`body` 둘 다 (`REQUIRED`)로 400 `VALIDATION_FAILED`. 저장하지 않는다 |
+| `PATCH` | 부분 수정. 생략한 필드는 그대로, `title`·`body`·`memoDate`의 `null`은 지움. 결과(수정 뒤)가 제목·본문 둘 다 비면 `REQUIRED` |
+| 검사 순서 | R-01(404 `NOT_FOUND`) → R-03(403 `NOT_AUTHOR`, `PATCH`만) → 값 검사(400 `VALIDATION_FAILED`) → 날짜 범위(400 `DATE_OUT_OF_RANGE`) |
+
+**앱 동작 (3.4 목록 저장)**: 앱은 응답 순서를 위치와 함께 `view`별로 Room에 저장하고 다시 정렬하지 않는다. 고정·즐겨찾기·삭제·작성 성공 뒤에는 해당 `view`의 첫 페이지와 `/memos/pinned`를 다시 불러온다. 화면의 개수 표시: 핀 N = `/memos/pinned`의 `items` 길이, "전체 메모 N개" = 현재 `view`의 `totalCount`, "★ 즐겨찾기 N" = `favoriteCount`.
 
 ### 3.5 알림 목록
 
@@ -471,15 +507,18 @@
 
 | 메서드 | 경로 | 설명 | 권한 | FR |
 | --- | --- | --- | --- | --- |
-| GET | /notifications?cursor=&size= | 최근 30일 내 알림, 최신순. 항목 `{id, type, title, body, targetType, targetId, read, createdAt}`. 커서는 (created_at, id) | R-12 | FR-NOTI-05.AC2 |
-| GET | /notifications/unread-count | `{count}`. 캘린더 앱바 알림 버튼의 점 표시용 | R-12 | FR-CAL-01.AC4 |
-| PUT | /notifications/{id}/read | 읽음 처리 | R-12 | FR-NOTI-05.AC3 |
+| GET | /notifications?cursor=&size= | 최근 30일 내 알림, 최신순. 항목 `{id, type, title, body, targetType, targetId, read, createdAt}`. `created_at > now − 30일`로 거른다(D-141, ERD DB-19). 정렬·커서는 (`created_at`, `id`) 내림차순에서 커서보다 작은 것 (3.3 "커서 정렬 키") | R-12 | FR-NOTI-05.AC2 |
+| GET | /notifications/unread-count | `{count}`. 캘린더 앱바 알림 버튼의 점 표시용. 목록과 같이 `created_at > now − 30일`인 안 읽은 알림만 센다 (D-141) | R-12 | FR-CAL-01.AC4 |
+| PUT | /notifications/{id}/read | 본문 없음 → 204. 읽음 처리. 이미 읽음이어도 204(멱등, `read_at` 유지). 푸시를 눌렀을 때도 앱이 `notificationId`로 부른다 (D-142) | R-12 | FR-NOTI-05.AC3 |
+
+- 03:00 KST 정리 작업은 30일 지난 행의 물리 삭제일 뿐이다. 조회와 안 읽음 개수의 30일 경계는 이 작업과 관계없이 위 조건으로 정해진다 (7장, ERD DB-19).
 
 - `type`: `EVENT_REMINDER`, `PARTNER_CREATED`, `MEMO_PINNED`, `ANNIVERSARY`, `COUPLE_LINKED`, `COUPLE_UNLINKED`
 - `targetType`: `EVENT`, `MEMO`, `ANNIVERSARY`, `SETTINGS` (FR-NOTI-03의 이동 대상). `COUPLE_LINKED`, `COUPLE_UNLINKED`(해제·탈퇴로 인한 해제 모두)는 `SETTINGS`이고 `targetId`는 null이다. 앱은 누르면 설정(SCR-SET-01)으로 이동한다. 푸시를 눌러도 같다 (D-85). 그 밖에 이동 대상이 없으면 `targetType`, `targetId`는 둘 다 null
 - 다른 사람의 알림 ID나 없는 ID는 404 `NOT_FOUND`로 같게 응답한다 (R-12)
 - `title`, `body`는 알림을 만들 때 서버가 PRD 8장 "알림 문구" 표대로 채워 저장한다. 푸시에도 같은 값을 보낸다 (D-46). 이름·제목이 나중에 바뀌어도 이미 만든 알림은 그대로다
-- 대상 일정·메모가 지워져도 알림은 지우지 않는다. 앱은 알림을 누르면 먼저 `PUT /notifications/{id}/read`를 부르고, 대상 조회(`GET /events/{id}`, `GET /memos/{id}`)가 404면 "삭제된 일정이에요"·"삭제된 메모예요"를 보여주고 목록에 머문다 (FR-NOTI-05.AC5, D-43)
+- 기념일 알림 행: 자동 기념일은 `target_type` `ANNIVERSARY` + `target_id` null, 직접 기념일은 `ANNIVERSARY` + 기념일 id다. 앱은 둘 다 SCR-ANNIV-01로 보낸다 (D-138).
+- 대상 일정·메모가 지워져도 알림은 지우지 않는다. 앱은 알림을 누르면 먼저 `PUT /notifications/{id}/read`를 부르고, 대상 조회(`GET /events/{id}`, `GET /memos/{id}`)가 404면 "삭제된 일정이에요"·"삭제된 메모예요"를 보여주고 목록에 머문다 (FR-NOTI-05.AC5, D-43). 푸시를 눌러 들어온 경우의 이동(홈을 뒤에 두기, 삭제된 대상, 세션 없음)은 앱 동작이다 (D-143)
 
 ### 3.6 웹훅
 
@@ -543,11 +582,11 @@
    | 6 | 그 코드가 없음 | 404 `INVITE_NOT_FOUND` | 예 |
    | 7 | 만든 사람 = 요청자 (만료·사용 여부와 관계없이) | 409 `INVITE_SELF` | 예 |
    | 8 | 사용된 코드 | 409 `INVITE_USED` | 예 |
-   | 9 | 만든 사람이 지금 커플 공간에 있음 (탈퇴한 사람의 코드는 탈퇴 때 지워져 6번의 404 `INVITE_NOT_FOUND`, ERD 4.3) | 409 `INVITE_UNAVAILABLE` | 예 |
+   | 9 | 만든 사람이 지금 커플 공간에 있음 (탈퇴 때 지워진 초대코드는 조회되지 않아 6번의 404 `INVITE_NOT_FOUND`, 연결로 이미 무효가 된 코드는 남아 있어 10번의 409 `INVITE_EXPIRED`, ERD 4.3) | 409 `INVITE_UNAVAILABLE` | 예 |
    | 10 | 만료됨 또는 무효 (`revoked_at` 있음) | 409 `INVITE_EXPIRED` | 예 |
 
    - **오입력 제한 (NFR-SEC-03, D-83)**: 최근 1시간을 지금부터 거꾸로 센다(미끄러지는 창). 요청자의 `invite_code_attempts` 중 `succeeded = false`이고 `attempted_at > now − 1시간`인 행이 10개 이상이면 429 `INVITE_RATE_LIMITED`다. `details.retryAfterSeconds` = (그 실패 중 **10번째로 최근** 실패의 `attempted_at` + 1시간 − 지금)을 초 단위로 올림한 값이고 최소 1이다.
-   - **시도로 남기는 것**: 실패는 위 표의 5~10번(형식이 틀린 코드를 포함해 연결에 쓸 수 없는 모든 코드)이다. 실패 기록은 연결 트랜잭션과 별도로 커밋된다(응답이 오류여도 남는다). 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 1~3번(R-09 거부, `VALIDATION_FAILED`)과 4번(429 `INVITE_RATE_LIMITED` 자체).
+   - **시도로 남기는 것**: 실패는 위 표의 5~10번(형식이 틀린 코드를 포함해 연결에 쓸 수 없는 모든 코드)이다. 실패 기록은 오류 응답 전에 시도 행만 커밋하고 연결은 바꾸지 않는다(응답이 오류여도 남는다). 성공은 연결 트랜잭션 안에서 `succeeded = true`로 남긴다. **남기지 않는 것**: 1~3번(R-09 거부, `VALIDATION_FAILED`)과 4번(429 `INVITE_RATE_LIMITED` 자체).
    - 7~10번은 코드 행을 잠근 뒤(`SELECT … FOR UPDATE`) 검사한다. 9번을 10번보다 먼저 보는 이유: 4.4의 5단계 "다른 코드 무효화" 때문에 만든 사람이 다른 사람과 연결되면 그 코드에 `revoked_at`이 생겨 10번이 나오게 되는데, 그러면 FR-COUPLE-02.AC3의 "사용할 수 없는 코드"가 깨진다. 만든 사람이 연결을 해제해 다시 개인 공간이면 9번에 걸리지 않고 10번(만료된 코드)이 된다.
 3. 위 표를 통과하면 A와 B가 MEMBER이고 둘 다 개인 공간에 있는 것이다. 실패마다 다른 오류 코드를 돌려준다 (FR-COUPLE-02.AC2, 5장). 재요청이나 연결로 무효가 된 코드(`revoked_at` 있음)는 만료와 같은 `INVITE_EXPIRED`로 응답한다 (PRD D-47).
 4. **복구 확인**: `purge_at`이 지나지 않았고 이전 구성원이 정확히 A와 B인 UNLINKED 커플 공간이 있으면, 그 공간을 다시 ACTIVE로 바꾸고 두 사람의 `space_members.left_at`과 공간의 `unlinked_at`, `purge_at`을 비우고 `linked_at` = 지금(다시 연결한 시각)으로 바꾼다 (FR-COUPLE-06, D-94, ERD 4.2·DB-17). 새 커플 공간을 만들 때는 `linked_at` = 지금으로 넣는다. 없으면 새 커플 공간과 구성원(A 주황, B 파랑, 함께 보라)을 만든다.
@@ -563,14 +602,14 @@
    - **기기에 저장한 확인한 공간 ID (D-98, FR-COUPLE-03.AC6, 리드 보충)**: 앱이 기기에 저장하는 값이고 서버에는 없다. 저장 시점은 아래 세 가지뿐이다.
      1. `GET /me`가 개인 공간(`PERSONAL`)을 돌려줄 때마다 그 공간 ID로 저장한다(처음 설치·로그인 포함).
      2. `GET /me`의 커플 공간 ID가 저장값과 다르면 연결 완료 시트를 띄우고, 사용자가 시트를 닫거나 [시작하기]를 마쳤을 때 커플 공간 ID로 바꾼다. 그 전에는 바꾸지 않는다.
-     3. 해제를 알고 앱을 초기화할 때(4.5의 6단계) 새 개인 공간 ID로 바꾼다. 그래서 같은 해제로 초기화가 반복되지 않는다.
+     3. 해제를 알고 앱을 초기화할 때(4.5의 6단계) 새 개인 공간 ID로 바꾼다. 그래서 같은 해제로 초기화가 반복되지 않는다. 단 초기화 뒤 `GET /me`가 이미 커플 공간이면(앱이 꺼진 사이 해제되고 다른 사람과 연결됨) 저장값을 null로 두고, "저장값 null + 커플 + `importPending`이면 연결 완료 시트"로 SCR-CAL-01에서 시트를 띄운다 (D-125).
      
      처음 로그인한 기기에서 `GET /me`가 처음부터 커플 공간을 돌려주면(저장값 없음) 변화로 보지 않고 `importPending`만 본다. FR-COUPLE-03.AC6 확인: 처음 연결한 사용자는 연결 전에 개인 공간 ID가 1번으로 저장돼 있으므로, 연결 뒤 커플 공간 ID가 저장값과 달라 시트가 뜨고, 기록이 없어도 시트를 닫기 전에 앱을 끄면 저장값이 그대로라 다음 실행 때 시트가 다시 뜬다.
 9. 시트에서 두 사람은 각자 `POST /couple/import`로 고른다. 가져오기 대기 중인 개인 공간이 없으면(이미 정했거나 연결 해제와 겹친 경우 포함) 409 `NO_IMPORT_PENDING`이고 아무것도 바꾸지 않는다 (R-18). `import`가 없거나 `null`이면 400 `VALIDATION_FAILED`(`import`, `REQUIRED`)이고 R-18이 먼저다. 성공은 204다. `import: true`면 자기 개인 공간의 `events`, `anniversaries`, `memos`의 `space_id`를 커플 공간으로 바꾼 뒤 개인 공간을 지운다. `false`면 개인 공간을 지운다 (FR-COUPLE-03). 처음 만난 날은 같은 시트에서 정하며, 건너뛰어도 된다. 서버 저장은 `PATCH /space`이고, 칸을 채우는 시트의 [저장]은 서버를 부르지 않는다 (아래 [시작하기] 순서). 오늘보다 뒤의 날짜는 400 `VALIDATION_FAILED`, 1950-01-01보다 앞의 날짜는 400 `DATE_OUT_OF_RANGE`로 거부한다 (FR-COUPLE-04.AC3, D-74, R-15). 정한 뒤에는 다른 날로 바꿀 수만 있고 지울 수 없다(`null`은 400 `VALIDATION_FAILED`, D-84). 앱은 기록 선택을 [가져오기]로 미리 선택해 보여주고, [시작하기] 전에는 시트를 닫지 못하게 한다 (D-76, 앱 동작).
    - **[시작하기] 순서 (앱 동작, D-98, FR-COUPLE-04.AC4)**: ① 처음 만난 날을 골랐으면 `PATCH /space` ② 기록 선택이 있으면 `POST /couple/import` ③ 시트를 닫고 확인한 공간 ID를 커플 공간 ID로 바꿔 저장한다(8단계 저장 시점 2). 되돌릴 수 없는 삭제를 마지막에 하려는 순서다. 중간에 실패하면 거기서 멈추고 공통 오류(D-88)를 보여주며 시트는 그대로 둔다(다시 누르면 처음부터 하고, 같은 날짜의 `PATCH /space`는 무해하다).
    - **`NO_IMPORT_PENDING` (앱 동작, D-103)**: ②에서 409 `NO_IMPORT_PENDING`을 받으면 이미 정한 것으로 보고 ③으로 간 뒤 `GET /me`를 다시 읽는다. 해제와 겹친 경우면 이 읽기에서 공간이 바뀐 것을 알고 4.5의 6단계 초기화로 이어진다. 이 `GET /me` 다시 읽기는 **리드 보충**이다(근거: FR-COUPLE-03, 해제와 겹친 `NO_IMPORT_PENDING`을 앱이 알아채야 함).
 10. `importPending`은 6단계와 같은 정의다: 가져오기 대기 중인 개인 공간(소속에 `left_at`이 있는 PERSONAL 공간, 곧 기록이 있는 공간)이 남아 있을 때만 true다. true인 사람은 고르기 전에는 시트를 닫을 수 없다(혼자 쓴 기록이 없는 사람은 대기 공간이 없어 false이고 바로 닫을 수 있다). `importPending`이 true인 동안 `GET /me`의 `importCounts`는 그 대기 공간의 개수를 계속 돌려주고(`false`면 `null`), 앱은 시트와 "혼자 쓴 기록을 삭제할까요?" 다이얼로그의 [N]에 쓴다 (D-93). 고르지 않고 앱을 껐다가 다시 열었을 때 대기 공간이 남아 있으면 `GET /me`의 `importPending`이 계속 true이므로 앱이 시트를 다시 띄워 묻는다 (FR-COUPLE-03.AC4). 고르기 전에 연결이 해제되면 4.5의 4단계가 이 공간을 되살린다 (D-78).
-11. 알림 권한: 커플 연결도 앱이 알림 권한을 처음 묻는 시점 중 하나다 (D-70, 앱 동작, API 없음).
+11. 알림 권한 (앱 동작, API 없음, D-144): 연결 완료 시트를 닫은 직후 묻는다. 일정 알림 설정·커플 연결·직접 기념일 저장 세 시점이 공통 플래그 하나를 쓰고 이미 물었으면 다시 묻지 않으며, 거부한 뒤 재요청·안내는 없다.
 12. **낡은 로컬 상태 (앱 동작, D-95)**: `POST /invite-codes`·`GET /invite-codes/current`·`POST /couple/join`이 409 `ALREADY_COUPLED`나 403 `GUEST_NOT_ALLOWED`를 주면 앱은 공통 오류(D-88)를 보여준 뒤 `GET /me`를 다시 읽는다(로컬 정보가 낡은 경우. 공간이 바뀌었으면 시트나 4.5의 6단계 초기화로 이어진다). `POST /couple/join`의 `VALIDATION_FAILED`(`code`, `code`가 아예 없거나 `null`·공백만 있을 때)는 공통 오류다. 앱은 오류의 `code`로 문구를 고른다. 초대코드 오류 코드와 PRD FR-COUPLE-02 "초대코드 오류 문구" 표 6줄의 대응은 다음과 같다(문구는 PRD가 기준이다).
 
     | 오류 코드 | PRD 표의 경우 |
@@ -586,14 +625,14 @@
 
 ### 4.5 연결 해제 (FR-COUPLE-05)
 
-1. 둘 중 한 명이 `DELETE /couple`을 호출한다. 요청자의 활성 공간이 `COUPLE`이 아니면 409 `NOT_COUPLE`이다 (R-18). 둘이 동시에 해제하면 두 번째 요청은 잠금 뒤 개인 공간을 보고 `NOT_COUPLE`이다. 앱은 `NOT_COUPLE`을 이미 해제된 것으로 보고 6단계의 앱 초기화를 한다 (D-37, FR-COUPLE-05.AC3). `DELETE /couple`뿐 아니라 `PATCH /space`, `PATCH /space/colors`의 409 `NOT_COUPLE`도 앱은 상대가 먼저 해제한 것으로 보고 같은 초기화를 한다 (FR-COUPLE-05.AC5, D-103). 성공은 204다.
+1. 둘 중 한 명이 `DELETE /couple`을 호출한다. 요청자의 활성 공간이 `COUPLE`이 아니면 409 `NOT_COUPLE`이다 (R-18). 둘이 동시에 해제하면 두 번째 요청은 잠금 뒤 개인 공간을 보고 `NOT_COUPLE`이다. 앱은 `NOT_COUPLE`을 이미 해제된 것으로 보고 6단계의 앱 초기화를 한다 (D-37, FR-COUPLE-05.AC3). 그 밖의 `DELETE /couple` 실패(오프라인, 오류)는 D-124대로 처리한다: 오프라인이면 "인터넷 연결이 필요해요", 오류면 공통 오류를 보여주고 둘 다 확인 다이얼로그를 닫으며 연결은 그대로다. 401 `SESSION_*`은 SCR-START-01로 간다 (FR-COUPLE-05.AC6). `DELETE /couple`뿐 아니라 `PATCH /space`, `PATCH /space/colors`의 409 `NOT_COUPLE`도 앱은 상대가 먼저 해제한 것으로 보고 같은 초기화를 한다 (FR-COUPLE-05.AC5, D-103). 성공은 204다.
 2. 커플 공간을 UNLINKED로 바꾸고 `unlinked_at` = 지금, `purge_at` = 지금 + 30일로 기록한다. 두 구성원의 소속에 `left_at`을 기록한다.
 3. 그 공간의 `event_reminders`를 삭제한다 (더 이상 볼 수 없는 일정의 알림이 가지 않도록). 같은 트랜잭션에서 그 공간의 `notifications`(`space_id` = 해제한 공간)도 두 사람 모두 삭제한다 (PRD D-45). 이 뒤에 만드는 `COUPLE_UNLINKED` 알림은 `space_id`가 null이라 남는다.
 4. 두 사람 각자의 개인 공간을 정한다 (D-78).
    - **가져오기 대기 중인 개인 공간이 남아 있는 구성원**(소속에 `left_at`이 있는 PERSONAL 공간. 4.4의 5단계에서 기록이 있어 남겨 둔 공간뿐이다. ERD 4.2와 같은 조건): 새 개인 공간을 만들지 않고 그 공간의 `space_members.left_at`을 비워 다시 활성 공간으로 쓴다. 혼자 쓴 기록이 그대로 돌아오고, 사람 색도 소속 행이 그대로라 이전 값이다. 그 사람의 `GET /me`의 `importPending`은 false가 된다.
    - **그 밖의 구성원**(그런 개인 공간이 남아 있지 않은 경우): 새 빈 개인 공간을 만든다. 사람 색은 기본값(주황)으로 시작한다.
 5. 상대에게 `COUPLE_UNLINKED` 알림(`space_id` null, `target_type` `SETTINGS`, `target_id` null, D-85)을 만들고, 상대 기기에 동기화 신호(`SPACE`, `UNLINKED`)와 해제 푸시를 보낸다 (7장). 탈퇴(4.6)로 인한 해제면 같은 `COUPLE_UNLINKED` 타입에 탈퇴 전용 문구를 쓴다: 제목 "[상대 이름]님이 탈퇴해 연결이 해제됐어요", 본문 "함께 쓴 기록은 더 이상 볼 수 없어요" (PRD 8장, D-53). 복구 안내("30일 안에 다시 연결하면…")는 넣지 않는다.
-6. **앱 초기화** (PRD D-37): 해제한 사람은 응답을 받은 직후, 상대는 신호를 받거나 다음 실행 시 `GET /me`로 해제를 확인하면(아래 두 조건 중 하나라도 맞을 때, 이 감지를 먼저 하고 4.4의 8단계 저장 시점 1은 그 뒤에 한다), 로그인 정보를 뺀 로컬 데이터를 지우고 재시작해 자동 로그인한 뒤 SCR-COUPLE-01(연결 방법 선택)로 이동한다. 초기화할 때 확인한 공간 ID를 새 개인 공간 ID로 바꾼다(4.4의 8단계 저장 시점 3, 리드 보충). **"재시작"의 뜻 (D-103, FR-COUPLE-05.AC3)**: 앱 프로세스를 끄지 않고, 토큰·소셜 SDK 상태는 두고 Room·설정을 지운 뒤 화면 이동 기록을 SCR-COUPLE-01 하나로 다시 만드는 것이다. 그 뒤 `GET /me`로 새 개인 공간을 채운다.
+6. **앱 초기화** (PRD D-37): 해제한 사람은 응답을 받은 직후, 상대는 신호를 받거나 다음 실행 시 `GET /me`로 해제를 확인하면(아래 두 조건 중 하나라도 맞을 때, 이 감지를 먼저 하고 4.4의 8단계 저장 시점 1은 그 뒤에 한다), 로그인 정보를 뺀 로컬 데이터를 지우고 재시작해 자동 로그인한 뒤 SCR-COUPLE-01(연결 방법 선택)로 이동한다. 초기화한 뒤 이동처는 `GET /me` 결과로 정한다 (D-125, FR-COUPLE-05.AC3): 개인 공간이면 SCR-COUPLE-01, 이미 다른 사람과 커플이면 SCR-CAL-01 + 연결 완료 시트다. 후자를 위해 초기화 때 확인한 공간 ID는 null로 두고 "저장값 null + 커플 + `importPending`이면 시트"로 판단한다(4.4의 8단계). 개인 공간이면 확인한 공간 ID를 새 개인 공간 ID로 바꾼다(4.4의 8단계 저장 시점 3, 리드 보충). SYNC `LINKED`도 같은 경로다. **"재시작"의 뜻 (D-103, FR-COUPLE-05.AC3)**: 앱 프로세스를 끄지 않고, 토큰·소셜 SDK 상태는 두고 Room·설정을 지운 뒤 화면 이동 기록을 SCR-COUPLE-01 하나로 다시 만드는 것이다. 그 뒤 `GET /me`로 새 개인 공간을 채운다.
    - **해제 감지 조건 (리드 보충, 근거: FR-COUPLE-05.AC3)**: ① `GET /me`의 활성 공간 ID가 기기에 저장한 확인한 공간 ID와 다르다. ② 기기에 저장된 내 정보(Room)의 활성 공간 `type`이 `COUPLE`인데 `GET /me`가 `PERSONAL`을 준다. 둘 중 하나라도 맞으면 해제로 보고 초기화한다. ②가 필요한 이유: 연결 완료 시트를 닫기 전(확인한 공간 ID가 아직 개인 공간 P)에 상대가 해제하면 4단계(D-78)가 같은 개인 공간 P를 되살려 ID가 저장값과 같아지므로 ①만으로는 해제를 알 수 없다. ①②를 보는 것은 4.4의 8단계 저장 시점 1보다 먼저다.
 
 ### 4.6 탈퇴 (FR-AUTH-06)
@@ -636,7 +675,7 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`, `GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
+| 400 | VALIDATION_FAILED | 요청 일시가 `YYYY-MM-DDTHH:MM:SSZ` 형식이 아님 (해당 필드, `INVALID`, 1장), 프로필 사진 `file` 없음 (`PUT /me/profile-image`, `file`, `REQUIRED`), `PATCH /me/notification-settings`의 필드가 `null` (`REQUIRED`), 메모 쓰기: 제목 앞뒤 공백을 지운 뒤 50자 초과 (`title`, `TOO_LONG`)·본문 5000자 초과 (`body`, `TOO_LONG`)·결과가 제목·본문 둘 다 빔 (`title`·`body`, `REQUIRED`, 3.4), 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`, `GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
 | 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정·기념일 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
@@ -648,18 +687,18 @@
 | 403 | GUEST_NOT_ALLOWED | 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름. 커플 연결 경로(`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`)에서는 앱이 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, R-17, D-07, FR-AUTH-05, D-95 |
 | 403 | GUEST_ONLY | 게스트만 부를 수 있는 경로(`/auth/link`, `/auth/switch`)를 회원이 부름. `GUEST_NOT_ALLOWED`와 반대 경우다 | R-14, D-67, FR-AUTH-03 |
 | 404 | NOT_FOUND | 없거나 다른 공간의 리소스. 요청자의 유효한 초대코드가 없을 때의 `GET /invite-codes/current`도 이 코드다(앱은 `POST /invite-codes`를 부른다) | R-01, FR-COUPLE-01.AC5 |
-| 404 | INVITE_NOT_FOUND | 존재하지 않는 초대코드. 공백 제거·대문자 변환 뒤 6자리가 아니거나 코드에 쓰는 31자 집합 밖의 글자가 있는 입력도 이 코드이고 오입력으로 센다 (`POST /couple/join`) | FR-COUPLE-02.AC2, D-83 |
+| 404 | INVITE_NOT_FOUND | 존재하지 않는 초대코드. 공백 제거·대문자 변환 뒤 6자리가 아니거나 코드에 쓰는 31자 집합 밖의 글자가 있는 입력도 이 코드이고 오입력으로 센다 (`POST /couple/join`). 코드를 만든 사람이 탈퇴하면 그 사람의 초대코드는 탈퇴 때 지워져 조회되지 않으므로 이 코드다 (ERD 4.3) | FR-COUPLE-02.AC2, D-83 |
 | 404 | SOCIAL_NOT_REGISTERED | `/auth/switch`에서 그 소셜 계정으로 가입한 회원이 없음. 아무것도 바꾸지 않으며 앱은 `/auth/link`로 연동하면 된다 | D-67, FR-AUTH-03.AC3 |
 | 409 | NO_IMPORT_PENDING | `POST /couple/import`를 불렀는데 가져오기 대기 중인 개인 공간이 없음(이미 정했거나, 연결 해제와 겹침). 아무것도 바꾸지 않는다. 앱은 이미 정한 것으로 보고 `GET /me`를 다시 읽는다. 해제와 겹쳤으면 거기서 공간이 바뀐 것을 알고 4.5의 6단계 초기화로 이어진다 (4.4의 9단계). `POST /couple/import`는 `NOT_COUPLE`을 주지 않는다 | R-18, FR-COUPLE-03, D-78, D-103 |
-| 409 | INVITE_EXPIRED | 만료된 코드(`expires_at <= now`), 또는 재요청으로 바뀐 이전 코드·연결로 무효가 된 코드(`revoked_at` 있음). 만든 사람이 연결 중이면 이 코드가 아니라 `INVITE_UNAVAILABLE`이 먼저다 (4.4의 2단계 순서) | FR-COUPLE-01.AC2, FR-COUPLE-02.AC2 (D-47) |
+| 409 | INVITE_EXPIRED | 만료된 코드(`expires_at <= now`), 또는 재요청으로 바뀐 이전 코드·연결로 무효가 된 코드(`revoked_at` 있음, 만든 사람이 탈퇴해도 연결로 이미 무효가 된 코드는 남아 있어 이 코드, ERD 4.3). 만든 사람이 연결 중이면 이 코드가 아니라 `INVITE_UNAVAILABLE`이 먼저다 (4.4의 2단계 순서) | FR-COUPLE-01.AC2, FR-COUPLE-02.AC2 (D-47) |
 | 409 | INVITE_USED | 이미 사용된 코드 | FR-COUPLE-02.AC2 |
 | 409 | INVITE_SELF | 자신이 만든 코드 (만료·사용 여부와 관계없이) | FR-COUPLE-02.AC2 |
 | 409 | INVITE_UNAVAILABLE | 코드를 만든 사람이 지금 커플 공간에 있음 (탈퇴한 사람의 코드는 지워져 `INVITE_NOT_FOUND`). 만든 사람이 연결을 해제해 다시 개인 공간이면 이 코드가 아니라 `INVITE_EXPIRED`다 | FR-COUPLE-02.AC3, DB-16 |
 | 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`). 앱은 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, D-95 |
 | 409 | NOT_COUPLE | 커플 공간이 필요한 요청을 개인 공간에서 보냄: `PATCH /space`, 개인 공간에서 `together`나 자기 밖 `userId`가 있는 `PATCH /space/colors`, `DELETE /couple`. 이 세 경로 모두 앱은 이미 해제된 것으로 보고 앱 초기화를 한다 (4.5의 1·6단계, D-103). `POST /couple/import`는 이 코드를 주지 않고 `NO_IMPORT_PENDING`이다 | R-08, R-18, FR-COUPLE-05.AC3·AC5 |
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
-| 413 | IMAGE_TOO_LARGE | 프로필 사진 10MB 초과 | NFR-FILE-01 |
-| 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님 | NFR-FILE-01 |
+| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다 | NFR-FILE-01, D-147, D-153 |
+| 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님, 또는 디코드 실패. 형식은 Content-Type이 아니라 실제 디코드로 판정한다. 앱은 D-147 문구 "JPEG나 PNG 사진만 쓸 수 있어요"로 보인다 | NFR-FILE-01, D-147 |
 | 429 | INVITE_RATE_LIMITED | 최근 1시간(지금부터 거꾸로) 초대코드 오입력 실패 10번 (`POST /couple/join`). `details.retryAfterSeconds` = 10번째로 최근 실패의 시각 + 1시간까지 남은 초(올림, 최소 1). 이 429 자체는 실패로 세지 않는다 (4.4의 2단계) | NFR-SEC-03, FR-COUPLE-02.AC4, D-83 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청 (`POST /invite-codes`). `details.retryAfterSeconds` = 최근 `created_at` + 60초까지 남은 초(올림, 최소 1) | FR-COUPLE-01.AC3 |
 | 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao(`access_token_info`, `v2/user/me`)가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다(D-88). 단 `POST /webhooks/kakao/unlink`는 처리 중 서버 오류여도 이 코드 대신 200을 돌려준다 (3.6, 4.8) | 1.1, NFR-SEC-01, D-88 |
@@ -674,13 +713,21 @@
 {"type": "SYNC", "resource": "EVENT", "id": "0192…", "action": "UPDATED"}
 ```
 
-- `resource`: `EVENT`, `ANNIVERSARY`, `MEMO`, `SPACE`(처음 만난 날, 사람 색, 구성원 변경), `NOTIFICATION`
+- `resource`: `EVENT`, `ANNIVERSARY`, `MEMO`, `SPACE`(처음 만난 날, 사람 색, 구성원 변경, 닉네임·사진 변경), `NOTIFICATION`
+- `MEMO` `CREATED`·`UPDATED`·`DELETED`는 메모 생성·수정·삭제·고정·해제 때 보낸다. 즐겨찾기(`PUT`·`DELETE /memos/{id}/favorite`)는 본인 값이라 신호를 보내지 않는다 (D-134). 저장값과 같은 값만 보낸 `PATCH`(직접 기념일·메모)도 신호가 없다 (D-123)
+- `SPACE` `UPDATED`는 `PATCH /me`(닉네임), `PUT·DELETE /me/profile-image` 성공 때 커플 공간이면 상대에게도 보낸다. 앱은 받으면 `GET /me`·`GET /space`를 다시 읽는다
 - `action`: `CREATED`, `UPDATED`, `DELETED`, `UNLINKED`(`SPACE`만, 앱 초기화 신호), `LINKED`(`SPACE`만, 커플 연결 완료 신호)
 - `LINKED`는 위 원칙(다른 구성원에게)의 예외다. 커플 연결 커밋 뒤 **두 사람의 기기 모두**에 `{"type": "SYNC", "resource": "SPACE", "action": "LINKED"}`를 보낸다 (`id` 없음). 앱은 받으면 `GET /me`로 확인하고 SCR-CAL-01과 연결 완료 시트로 이동한다 (4.4, D-48)
-- `NOTIFICATION`은 위 원칙(공간의 다른 구성원에게)의 예외다. 알림 목록에 행이 생기면 **받는 사람 본인 기기**로 `{"type": "SYNC", "resource": "NOTIFICATION", "id": "<알림 ID>", "action": "CREATED"}`를 보낸다. 푸시를 끈 종류도 보낸다. 앱은 `GET /notifications/unread-count`를 다시 불러온다
+- `NOTIFICATION`은 위 원칙(공간의 다른 구성원에게)의 예외다. 알림 목록에 행이 생기면 **받는 사람 본인 기기**로 `{"type": "SYNC", "resource": "NOTIFICATION", "id": "<알림 ID>", "action": "CREATED"}`를 보낸다. 푸시를 끈 종류도 보낸다. 앱은 `GET /notifications/unread-count`를 다시 부르고, 알림 목록이 열려 있으면 첫 페이지도 다시 부른다 (D-141)
 - 자동 기념일 신호: 처음 만난 날이 바뀌면(`PATCH /space`) 신호는 `SPACE`/`UPDATED` 하나이고 `ANNIVERSARY` 신호는 보내지 않는다. 앱은 `SPACE`/`UPDATED`를 받으면 공간 정보와 함께 기념일도 다시 불러온다. `ANNIVERSARY` 신호는 직접 기념일의 생성·수정·삭제에만 쓴다 (FR-COUPLE-04.AC1, FR-ANNIV-02.AC3)
 - 일정 알림(`PUT`·`DELETE /events/{id}/reminder`)은 요청자 본인의 값이라 동기화 신호를 보내지 않는다. `PATCH /events/{id}`가 다른 사용자의 알림을 지우거나 다시 계산해도 신호는 `EVENT`/`UPDATED` 하나다 (3.3)
-- 커밋이 끝난 뒤에 보낸다 (트랜잭션이 실패하면 보내지 않음). 전송 실패는 재시도하지 않는다: 앱이 화면 진입 시 다시 불러오므로 (NFR-SYNC-02)
+- 커밋이 끝난 뒤에 보낸다 (트랜잭션이 실패하면 보내지 않음). 전송 실패는 재시도하지 않는다: 앱이 화면 진입 시 다시 불러오므로 (NFR-SYNC-02). FCM 우선순위는 SYNC가 normal, 보이는 푸시(7장)가 high다
+
+**SYNC 수신 시 앱 동작** (NFR-SYNC-01·02, 2026-11-08 사용자 결정)
+
+- 프로세스가 살아 있을 때만 처리하고 아니면 무시한다(다음 진입 때 NFR-SYNC-02로 다시 읽는다).
+- 연속으로 온 신호는 1초 안에 온 것을 모아 한 번만 처리한다.
+- `EVENT`·`MEMO`: `id`로 단건 `GET`한다. `DELETED`면 기기에서 지운다. `ANNIVERSARY`: 보이는 범위와 `upcoming`·`past`를 다시 조회한다. `SPACE` `UPDATED`: `GET /me`·`GET /space`·기념일을 다시 읽는다. `LINKED`·`UNLINKED`: `GET /me`를 읽은 뒤 4.5의 6단계 경로로 간다(D-125). `NOTIFICATION`: 위 항목대로다.
 
 ---
 
@@ -688,15 +735,19 @@
 
 **모든 알림 작업은 받는 사람마다 `notifications` 행을 먼저 만들고, 푸시는 아래 두 조건을 모두 채울 때만 보낸다.** ① 받는 사람에게 유효한 세션이 있다(`auth_sessions.revoked_at IS NULL AND expires_at > now`, R-16, D-73, ERD DB-14). 로그인이 만료된 기기에는 푸시를 보내지 않는다. ② 그 종류의 푸시 설정이 켜져 있다. 연결·해제 알림만 ②를 보지 않고 설정과 관계없이 항상 푸시한다(①은 똑같이 본다). 푸시를 끈 종류나 유효 세션이 없는 사람의 알림도 알림 목록에는 남는다 (FR-NOTI-05.AC1, D-39). `notifications` 행을 만들 때 받는 사람 본인 기기로 동기화 신호 `NOTIFICATION`도 보낸다 (6장). 동기화 신호는 사용자에게 보이는 푸시가 아니라서 ①의 대상이 아니다.
 
-알림 권한(Android 13 이상)은 앱이 일정 알림 설정, 커플 연결, 직접 기념일 저장 때 처음 한 번 요청한다. API는 없다 (D-70).
+**푸시 전송 형식 (D-136, D-142)**: 보이는 푸시도 data 메시지로 보내고 앱이 알림을 그린다(알림 채널 5개: "일정 알림", "상대 일정·메모 추가", "메모 고정", "기념일", "연결·해제"). data 키는 `type`(값 `"PUSH"`), `notificationId`(알림 id), `kind`(`notifications.type` 값), `title`, `body`(8장·PRD 알림 문구), `targetType`, `targetId`(탭 이동 대상)다. FCM 우선순위는 푸시 high, SYNC normal이다. 사용자가 푸시를 누르면 앱이 `notificationId`로 `PUT /notifications/{id}/read`를 부른다 (3.5). 채널 ID와 FCM TTL은 이 문서에서 정하지 않는다.
+
+**푸시 실패**: 푸시는 재시도하지 않는다(알림 목록에 남으므로). 무효 토큰 응답(`UNREGISTERED` 등)이면 그 `devices` 행을 삭제하고, 일시 오류는 무시하고 로그만 남긴다.
+
+알림 권한(Android 13 이상)은 앱 동작이라 API가 없다. 시점은 연결 완료 시트를 닫은 직후이고 일정 알림 설정·커플 연결·직접 기념일 저장이 공통 플래그 하나를 쓰며 거부 뒤 재요청·안내는 없다 (D-70, D-144).
 
 | 작업 | 주기 | 내용 | 관련 |
 | --- | --- | --- | --- |
-| 일정 알림 | 1분마다 | `fire_at <= now`이고 `sent_at`이 없는 `event_reminders`마다 `notifications`(`EVENT_REMINDER`) 행을 만들고 `sent_at` 기록. 사용자의 `event_reminder` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. `fire_at`은 저장할 때 3.3 "알림 시각 계산"으로 정해 두고, 저장할 때 이미 지난 시각이면 `sent_at`을 그때 기록해 이 작업이 보내지 않는다 (D-90). 일정 시작이 바뀌면 `PATCH /events/{id}`가, 사용자 시간대가 바뀌면 `PATCH /me`가 3.3 "다시 계산"대로 `fire_at`·`sent_at`을 다시 정해 두고(이미 보낸 알림도 새 시각이 미래면 다시 보냄), 종일 ↔ 시간 일정으로 바뀌면 그 일정의 알림 행을 모두 지운다 (D-91) | FR-CAL-05, D-90, D-91 |
-| 기념일 알림 | 매시 정각 | 각 사용자의 시간대로 지금이 오전 9시인 사용자에게, 오늘이 기념일(자동·직접)이면 `notifications`(`ANNIVERSARY`) 행을 만들고 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 처음 만난 날이 없는 커플과 개인 공간에는 자동 기념일이 없다 (FR-ANNIV-04.AC4). 제목은 둘 다 "오늘은 [기념일 이름]이에요". 자동 기념일의 [기념일 이름]은 3.3 "자동 기념일 계산"의 이름이다(예: "오늘은 1주년이에요", D-105). 처음 만난 날이 2월 29일이면 윤년이 아닌 해의 주년 알림은 2월 28일 오전 9시다 (D-106). 본문은 자동 기념일이면 "함께한 지 D+[N]" (N = 그날의 D+ 값, 처음 만난 날 = D+1). 직접 기념일이면 `repeats_yearly`이고 올해가 등록한 `date`의 해보다 뒤일 때 "[N]번째 맞는 날이에요" (N = 올해 − 등록 연도 + 1), 그 밖에는 "오늘이에요" | D-32, D-55 |
-| 상대 활동 알림 | 즉시 | 커플 공간에서 `notifyPartner = true`로 일정·메모를 만들었을 때(`PARTNER_CREATED`), 메모를 고정했을 때(`MEMO_PINNED`) 상대의 `notifications` 행을 만들고, 상대의 `partner_created`, `memo_pinned` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 일정 추가 알림 본문의 [날짜]는 시작 날짜를 "10월 17일 (토)" 서식으로 쓴다: 종일은 `start_date`, 시간 일정은 받는 사람의 `users.time_zone`으로 바꾼 날짜이며 여러 날 일정도 시작 날짜만 쓴다 (3.3 "상대 일정 추가 알림", D-92) | D-27, D-35, D-92 |
-| 연결·해제·탈퇴 알림 | 즉시 | 연결 완료: 두 사람 각자에게 `notifications`(`COUPLE_LINKED`, `space_id` null) 행을 만들고 두 사람 모두에게 푸시. 해제: 상대에게만 `notifications`(`COUPLE_UNLINKED`, `space_id` null) 행을 만들고 푸시. 탈퇴로 인한 해제: 상대에게만 같은 `COUPLE_UNLINKED` 타입으로 만들되 제목 "[상대 이름]님이 탈퇴해 연결이 해제됐어요", 본문 "함께 쓴 기록은 더 이상 볼 수 없어요" (복구 안내 없음). 모두 설정과 관계없이 항상 푸시(받는 사람에게 유효 세션이 있을 때). Kakao 연결 해제 알림(4.8)으로 일어난 탈퇴 해제도 같다. 연결·해제 알림 행(탈퇴 해제 포함)은 `target_type` = `SETTINGS`, `target_id` = null이고 알림 목록의 `targetType`은 `SETTINGS`다. 알림 목록 행과 푸시를 누르면 설정(SCR-SET-01)으로 이동한다 (3.5, D-85) | PRD 8장, D-53, D-85, FR-AUTH-06.AC2·AC4, FR-NOTI-03 |
-| 알림 목록 정리 | 매일 03:00 KST | `created_at`이 30일 지난 `notifications` 삭제. ERD의 정리 작업이 하며 API는 별도로 지우지 않는다 | FR-NOTI-05.AC2, ERD DB-07 |
+| 일정 알림 | 1분마다 | `fire_at <= now`이고 `sent_at`이 없는 `event_reminders`마다 `notifications`(`EVENT_REMINDER`) 행을 만들고 `sent_at` 기록. 사용자의 `event_reminder` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. **지연 한도 (D-137, D-90의 취지)**: `fire_at`이 `now` − 10분보다 오래 지났으면 `notifications` 행은 만들되 푸시는 생략하고 `event_reminders.sent_at`을 기록한다(`notifications`에는 `sent_at`이 없다). `fire_at`은 저장할 때 3.3 "알림 시각 계산"으로 정해 두고, 저장할 때 이미 지난 시각이면 `sent_at`을 그때 기록해 이 작업이 보내지 않는다 (D-90). 일정 시작이 바뀌면 `PATCH /events/{id}`가, 사용자 시간대가 바뀌면 `PATCH /me`가 3.3 "다시 계산"대로 `fire_at`·`sent_at`을 다시 정해 두고(이미 보낸 알림도 새 시각이 미래면 다시 보냄), 종일 ↔ 시간 일정으로 바뀌면 그 일정의 알림 행을 모두 지운다 (D-91). 본문은 "[알림 시점] · [시작 시각]"이다: `AT_TIME` "지금", `MIN_10` "10분 뒤", `HOUR_1` "1시간 뒤", `DAY_1` "내일", `ALLDAY_9AM` "오늘 · 하루 종일", `ALLDAY_PREV_9AM` "내일 · 하루 종일"(종일은 문구 그대로, 시각 없음). [시작 시각]은 "오후 7:30" 형식이고 알림을 설정한 본인의 `users.time_zone` 기준이다 (D-139) | FR-CAL-05, D-90, D-91, D-137, D-139 |
+| 기념일 알림 | 매시 정각 | **판정 (D-138, ERD DB-18)**: 사용자 현지 시(hour)가 9인 사용자 중 오늘 아직 안 보낸 사용자를 매시 처리한다. 중복은 컬럼 없이 사용자 현지 오늘 구간에 같은 (user, type, 제목) 행이 있으면 건너뛴다. 기념일마다 1행·1푸시다. 행의 `target_type`은 `ANNIVERSARY`이고 `target_id`는 자동 기념일이면 null, 직접 기념일이면 기념일 id다(앱은 둘 다 SCR-ANNIV-01로 보냄). 각 사용자의 시간대로 지금이 오전 9시인 사용자에게, 오늘이 기념일(자동·직접)이면 `notifications`(`ANNIVERSARY`) 행을 만들고 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 처음 만난 날이 없는 커플과 개인 공간에는 자동 기념일이 없다 (FR-ANNIV-04.AC4). 제목은 둘 다 "오늘은 [기념일 이름]이에요". 자동 기념일의 [기념일 이름]은 3.3 "자동 기념일 계산"의 이름이다(예: "오늘은 1주년이에요", D-105). 처음 만난 날이 2월 29일이면 윤년이 아닌 해의 주년 알림은 2월 28일 오전 9시다 (D-106). 본문은 자동 기념일이면 "함께한 지 D+[N]" (N = 그날의 D+ 값, 처음 만난 날 = D+1). 직접 기념일이면 `repeats_yearly`이고 올해가 등록한 `date`의 해보다 뒤일 때 "[N]번째 맞는 날이에요" (N = 올해 − 등록 연도 + 1), 그 밖에는 "오늘이에요" | D-32, D-55 |
+| 상대 활동 알림 | 즉시 | 커플 공간에서 `notifyPartner = true`로 일정·메모를 만들었을 때(`PARTNER_CREATED`), 메모를 고정했을 때(`MEMO_PINNED`) 상대의 `notifications` 행을 만들고(고정은 미고정 → 고정으로 바뀔 때마다 보낸다. 고정 → 해제 → 고정을 반복하면 매번, 자기가 쓴 메모도 고정하지 않은 쪽에게 간다. 이미 고정인 메모의 `PUT`과 해제는 알림이 없다, D-134, D-135. 메모 제목이 없으면 알림 제목·본문에 쓰는 "첫 줄"은 본문에서 앞뒤 공백을 지운 뒤 첫 비어 있지 않은 줄을 50 코드 포인트까지 쓰고 넘으면 49자 + "…"이다, D-131), 상대의 `partner_created`, `memo_pinned` 설정이 켜져 있고 유효 세션이 있을 때만 푸시. 일정 추가 알림 본문의 [날짜]는 시작 날짜를 "10월 17일 (토)" 서식으로 쓴다: 종일은 `start_date`, 시간 일정은 받는 사람의 `users.time_zone`으로 바꾼 날짜이며 여러 날 일정도 시작 날짜만 쓴다 (3.3 "상대 일정 추가 알림", D-92) | D-27, D-35, D-92 |
+| 연결·해제·탈퇴 알림 | 즉시 | 연결 완료: 두 사람 각자에게 `notifications`(`COUPLE_LINKED`, `space_id` null) 행을 만들고 두 사람 모두에게 푸시. 해제: 상대에게만 `notifications`(`COUPLE_UNLINKED`, `space_id` null) 행을 만들고 푸시. 탈퇴로 인한 해제: 상대에게만 같은 `COUPLE_UNLINKED` 타입으로 만들되 제목 "[상대 이름]님이 탈퇴해 연결이 해제됐어요", 본문 "함께 쓴 기록은 더 이상 볼 수 없어요" (복구 안내 없음). [상대 이름]은 탈퇴 직전 닉네임을 익명화 전에 읽어 쓰고, 알림 `title`·`body`는 만든 시점의 문자열로 고정이라 이후 닉네임이 바뀌어도 바뀌지 않는다 (D-140). 모두 설정과 관계없이 항상 푸시(받는 사람에게 유효 세션이 있을 때). Kakao 연결 해제 알림(4.8)으로 일어난 탈퇴 해제도 같다. 연결·해제 알림 행(탈퇴 해제 포함)은 `target_type` = `SETTINGS`, `target_id` = null이고 알림 목록의 `targetType`은 `SETTINGS`다. 알림 목록 행과 푸시를 누르면 설정(SCR-SET-01)으로 이동한다 (3.5, D-85) | PRD 8장, D-53, D-85, FR-AUTH-06.AC2·AC4, FR-NOTI-03 |
+| 알림 목록 정리 | 매일 03:00 KST | `created_at`이 30일 지난 `notifications` 물리 삭제. 정리 작업은 물리 삭제일 뿐이고, 조회·안 읽음 개수의 30일 경계는 `created_at > now − 30일` 조건으로 정한다(3.5, D-141, ERD DB-19). ERD의 정리 작업이 하며 API는 별도로 지우지 않는다 | FR-NOTI-05.AC2, ERD DB-07, DB-19 |
 | 로그인 만료 기기 정리 | 매일 | 만료된 세션을 지운 뒤 유효 세션이 없는 사용자의 `devices`를 지운다. ERD 4.4의 정리 작업이 하며 API는 별도로 지우지 않는다. 정리 전에도 푸시는 R-16으로 막힌다 | D-73, ERD DB-14 |
 
 단일 서버 인스턴스를 가정한다 (ERD DB-03). 서버를 여러 대로 늘리면 스케줄러 중복 실행 방지(예: ShedLock)가 필요하다.
@@ -707,7 +758,10 @@
 
 - 업로드된 이미지는 서버에서 긴 변 512px JPEG로 다시 인코딩하고, 원본과 EXIF(촬영 위치 포함)는 버린다 (NFR-FILE-01)
 - 저장소는 인터페이스로 감싸 개발 환경은 로컬 디스크, 운영 환경은 Amazon S3(서울 리전 ap-northeast-2)를 쓴다
-- 객체 키는 `profile/{userId}/{uuid}.jpg`로 매번 새로 만들어 캐시 문제를 피하고, 교체 시 이전 파일을 지운다
+- 객체 키는 `profile/{userId}/{uuid}.jpg`로 매번 새로 만들어 캐시 문제를 피하고, 교체 시 이전 파일을 지운다. 이 uuid가 API의 `profileImageVersion`이다 (`users.profile_image_key`)
+- **재인코딩 순서 (v0.12)**: 실제 디코드로 형식을 판정한다(JPEG·PNG가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`). 원본이 10MB를 넘거나 픽셀 수가 25MP를 넘으면 413 `IMAGE_TOO_LARGE`다. 회전(Orientation)을 픽셀에 적용한 뒤 메타를 제거하고, 투명한 부분은 흰 배경(`surface-0`)에 합성한 다음 긴 변 512px JPEG로 저장한다
+- **교체·삭제**: DB 커밋 뒤 이전 키를 best-effort로 지우고, 실패는 아래 정리 작업이 회수한다. 탈퇴는 탈퇴 이벤트의 이전 사진 키로 즉시 지운다
+- **미참조 파일 정리 (ERD 4.4)**: 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다
 
 ---
 
@@ -720,7 +774,7 @@
 | FR-AUTH-03 게스트 → 회원 연동 (D-67, D-68, D-79) | POST /auth/link, POST /auth/switch | 4.3 (닉네임, 연동 뒤 SCR-COUPLE-01), 4.7, R-14 (403 `GUEST_ONLY`), 409 `SOCIAL_ALREADY_USED`, 404 `SOCIAL_NOT_REGISTERED`, ERD DB-12 |
 | FR-AUTH-05 로그아웃 (D-50, D-80, D-86) | POST /auth/logout | R-17 (게스트는 403 `GUEST_NOT_ALLOWED`), `devices` 삭제, "다른 계정으로 로그인"은 같은 호출 (앱 동작). AC4: 온라인에서만, 오프라인·서버 오류면 로그아웃하지 않음, 이미 끊긴 세션이면 SCR-START-01 (3.1 앱 동작, D-88) |
 | FR-AUTH-06 탈퇴 | DELETE /me, POST·GET /webhooks/kakao/unlink | 4.6 (AC3 Kakao 연결 끊기), 7장 (탈퇴 전용 해제 알림). AC4 Kakao 연결 해제 알림 = 탈퇴처럼, Google도 쓰면 `KAKAO` 행만 삭제 (3.6, 4.8, D-87, 401 `WEBHOOK_UNAUTHORIZED`). AC5: 온라인에서만, 오프라인·서버 오류면 탈퇴하지 않음 (3.1 앱 동작, D-86) |
-| FR-AUTH-07 프로필 | /me, /me/profile-image, /users/{id}/profile-image | R-11, 8장, 닉네임 코드 포인트 10개·앞뒤 공백 제거 (D-82), 이름 없으면 "사용자" (D-69, 4.2, 4.3) |
+| FR-AUTH-07 프로필 (AC6~AC9, D-146~D-149) | /me, /me/profile-image, /users/{id}/profile-image | R-11, 8장, 닉네임 코드 포인트 10개·앞뒤 공백 제거 (D-82), 이름 없으면 "사용자" (D-69, 4.2, 4.3), `profileImageVersion`, 413·415 사진 오류 문구 D-147 (5장), 닉네임·사진 변경 SYNC `SPACE`/`UPDATED` (6장). 저장 순서(이름 `PATCH /me` → 사진 `PUT`/`DELETE`)·로그인 계정 표시·사진 선택은 앱 동작 |
 | FR-AUTH-08 이용 동의, FR-AUTH-09 앱 밖 계정 삭제 요청 | API 없음(앱·웹) | |
 | Q-11 게스트 정리 | API 없음 (정리 작업) | 4.1의 5단계, ERD 4.4 |
 | FR-AUTH-04 게스트 제한 (AC2 연결 메뉴, D-07) | API 변경 없음 | 게스트의 연결 정보 행도 SCR-COUPLE-01(게스트 모양)로 가는 앱 동작. 403 `GUEST_NOT_ALLOWED`는 R-09 |
@@ -728,7 +782,7 @@
 | FR-COUPLE-02.AC4 오입력 제한 (D-83, NFR-SEC-03) | POST /couple/join | 4.4의 2단계 (최근 1시간 실패 10번의 미끄러지는 창, 형식 오류도 실패, `retryAfterSeconds` 계산), 429 `INVITE_RATE_LIMITED` |
 | FR-COUPLE-03 | /couple/import, GET /me | 3.1 (`MeSpace.importCounts`, `ImportCounts`, D-93, Q-13), 4.4의 5·6·8·9·10단계 (빈 개인 공간은 바로 삭제, `importPending` 정의, 개수, AC6 확인한 공간 ID 저장 시점 D-98, 9단계 [시작하기] 순서), R-18, 409 `NO_IMPORT_PENDING` (D-76은 앱 동작) |
 | FR-COUPLE-04 | GET·PATCH /space | 3.2 (`Space`, 지우기 없음 D-84, 검사 순서), R-08, R-15, 4.4의 9단계(미래 날짜 거부, 1950년 이전 `DATE_OUT_OF_RANGE`, AC4 시트의 [저장]은 서버를 부르지 않고 [시작하기]에서 저장 D-98) |
-| FR-COUPLE-05 | DELETE /couple | R-18 (409 `NOT_COUPLE`), 4.5 (알림 삭제 포함, 4단계의 가져오기 대기 중 개인 공간 되살리기 D-78, 1단계 `PATCH /space`·`PATCH /space/colors`의 `NOT_COUPLE`도 초기화 AC5, 6단계 앱 초기화와 "재시작"의 뜻 AC3, D-103) |
+| FR-COUPLE-05 (AC3 D-125, AC6 D-124) | DELETE /couple | R-18 (409 `NOT_COUPLE`), 4.5 (6단계 초기화 뒤 이동처는 `GET /me`로, 1단계 해제 실패 처리), 4.4의 8단계 (알림 삭제 포함, 4단계의 가져오기 대기 중 개인 공간 되살리기 D-78, 1단계 `PATCH /space`·`PATCH /space/colors`의 `NOT_COUPLE`도 초기화 AC5, 6단계 앱 초기화와 "재시작"의 뜻 AC3, D-103) |
 | FR-CAL-01~03 | /events, GET /memos/dated, GET /notifications/unread-count | R-01, R-02, R-10, R-12, R-13, 3.3 (`Event`, 조회 규칙, 쓰기 규칙, 검사 순서 R-01 → R-02 → R-13 → R-10 → 값 → 날짜 범위) |
 | FR-CAL-02.AC1 제목 (D-89) | POST·PATCH /events | 3.3 쓰기 규칙 (앞뒤 공백 제거, 지운 뒤 빈 값은 `REQUIRED`, 50자 초과는 `TOO_LONG`) |
 | FR-CAL-01.AC6 날짜 범위 1950~2050 (D-74) | POST/PATCH /events, /memos, /anniversaries, PATCH /space | R-15, 1장, 쓰기는 400 `DATE_OUT_OF_RANGE`, 범위 조회(GET /events, /anniversaries, /memos/dated)는 `from`·`to`를 범위 안으로 잘라서 조회, ERD DB-13 |
@@ -743,11 +797,20 @@
 | FR-CAL-02.AC6 일정 저장 순서 (D-108) | POST /events, PUT·DELETE /events/{id}/reminder | 3.3 "일정 저장 순서" (앱 동작, 서버 변경 없음) |
 | 커서·`size` 공통 규칙 | GET /anniversaries/upcoming·past, GET /memos, GET /notifications | 1.1 (`size` 1 ~ 100 기본 20, 불투명 `cursor`, 400 `VALIDATION_FAILED`) |
 | FR-COUPLE-04.AC1, FR-ANNIV-02.AC3 자동 기념일 동기화 | PATCH /space | 6장 (`SPACE`/`UPDATED`만 보내고 `ANNIVERSARY` 신호는 직접 기념일에만) |
-| FR-MEMO-01~03 | /memos | R-03 |
+| FR-MEMO-01~03 (D-130~D-132, D-123) | /memos | R-03, 3.4 (`Memo`, `totalCount`·`favoriteCount`, 메모 쓰기 규칙, 같은 값 `PATCH`), 3.3 커서 정렬 키 |
 | FR-MEMO-04 | 삭제됨 (PRD v0.4). PATCH /memos/{id}/checklist-items/{itemId} 삭제됨 | |
-| FR-MEMO-05 | /memos/pinned, /memos/{id}/pin | R-04 |
-| FR-MEMO-06 | /memos/{id}/favorite, ?view=favorites | R-06 |
-| FR-NOTI-01~04 | /me/devices, /me/notification-settings (게스트 포함, D-62), notifyPartner | 6장, 7장, R-16 (유효 세션이 있을 때만 푸시, D-73), 알림 권한은 앱 동작 (D-70) |
+| FR-MEMO-05 (AC5, D-134, D-135) | /memos/pinned, /memos/{id}/pin | R-04, 3.4 (멱등 204, 고정할 때마다 `MEMO_PINNED`), 6장 (`MEMO` 신호) |
+| FR-MEMO-06 (AC2, D-134) | /memos/{id}/favorite, ?view=favorites | R-06, 멱등 204, 동기화 신호 없음 (6장) |
+| FR-NOTI-01~04 | /me/devices, /me/notification-settings (게스트 포함, D-62), notifyPartner | 6장, 7장, R-16 (유효 세션이 있을 때만 푸시, D-73), 알림 권한은 앱 동작 (D-70, D-144), 3.1 (`NotificationSettings`, `PUT /me/devices` 앱 동작), 7장 푸시 전송 형식·실패 (D-136) |
+| FR-NOTI-02 AC2 (D-145) | GET·PATCH /me/notification-settings | 3.1 (부분 수정, `null`은 `REQUIRED`, 응답은 전체 설정). 저장 방식·실패 처리는 앱 동작 |
+| FR-CAL-05 AC7 (D-137) | 일정 알림 스케줄러 | 7장 (10분 넘게 지난 알림은 푸시 생략, `event_reminders.sent_at` 기록) |
+| FR-ANNIV-01 AC3, FR-ANNIV-02 AC6 (D-116, D-117) | API 변경 없음 | 앱이 계산·표시 (D+N) |
+| FR-ANNIV-03 AC4~AC6 (D-122, D-121, D-123) | POST·PATCH /anniversaries | 3.3 쓰기 규칙 (`repeatsYearly` 기본 true, 같은 값 `PATCH`, 개수 상한 없음) |
+| FR-CAL-01 AC2·AC8, FR-CAL-02 AC6, FR-CAL-03 AC7 | API 변경 없음 | 3.3 정렬 주석 (서버 정렬과 앱 표시 순서 구분, D-119), 앱 동작 (D-118, D-120, D-121) |
+| NFR-SYNC-01 (D-134, Q-19) | SYNC 신호 | 6장 (즐겨찾기 신호 없음, `SPACE` 닉네임·사진, 수신 시 앱 동작), 3.3 Q-19 기본값 |
+| NFR-TIME-01 (일시 형식) | 전 경로 | 1장 (요청 `...Z`만, 응답 초 단위 `Z`) |
+| NFR-FILE-01 (D-147) | /me/profile-image | 8장 (재인코딩, 정리 작업), 413·415 (5장) |
+| FR-NOTI-03 AC2·AC3, FR-NOTI-05 AC2·AC5~AC7 (D-141~D-143) | /notifications | 3.5 (30일 경계, 멱등 읽음), 6장 (`NOTIFICATION` 열린 목록 갱신), 7장 |
 | NFR-SEC-01 토큰·세션 (D-73, D-81) | /auth/*, 푸시 전송 | 1장 토큰 수명·토큰 형식(access JWT, refresh 무작위 문자열)·인증 실패 규칙과 검사 순서, 3.1 `AuthTokens`·`Me`, 4.2 (Google `iss` 두 값, Kakao `v2/user/me`, 제공자 장애는 500 `INTERNAL_ERROR`), R-16, 7장, ERD DB-02, DB-14 |
 | NFR-LIMIT-01 글자 수 기준 (D-82) | PATCH /me, 소셜 프로필 이름 | 1장(코드 포인트로 센다), 3.1 `PATCH /me`(앞뒤 공백 제거, 빈 값은 `REQUIRED`, 초과는 `TOO_LONG`), 4.2의 3단계, 4.3의 4단계 |
 | NFR-PRIV-01 소셜 개인정보 최소 수집 | /auth/social, /auth/link | 4.2 (Kakao는 `kakao_account.profile.nickname`만 받음, 동의항목 "닉네임") |
