@@ -1,6 +1,6 @@
 # 해결된 화면 차이 기록 (SCREENS.md "PRD와의 차이"에서 옮김)
 
-> `docs/SCREENS.md` 맨 아래 "PRD와의 차이"에서 해결된 줄을 옮겨 둔 기록이에요. 번호는 그대로예요 (1~35번이 모두 여기 있어요. 아직 정하지 않은 차이는 SCREENS.md에 있어요). 새 구현의 기준이 아니에요. 기준은 PRD와 `docs/SCREENS.md`예요.
+> `docs/SCREENS.md` 맨 아래 "PRD와의 차이"에서 해결된 줄을 옮겨 둔 기록이에요. 번호는 그대로예요 (1~37번이 모두 여기 있어요. 아직 정하지 않은 차이는 SCREENS.md에 있어요). 새 구현의 기준이 아니에요. 기준은 PRD와 `docs/SCREENS.md`예요.
 
 ## PRD와의 차이 (해결됨)
 
@@ -82,4 +82,11 @@ PRD v0.12(2026-11-08)에서 해결한 차이예요. 두 줄 모두 `docs/SCREENS
 | # | 화면 | 디자인 (캔버스 버전 41) | PRD·이 문서 | 해결 (PRD v0.12) |
 | --- | --- | --- | --- | --- |
 | 31 | SCR-COUPLE-01 | 뒤로 링크가 `Main.dc.html`로 감 (`Connect.dc.html` 20행) | 앞 화면이 없는 진입에서는 뒤로 버튼이 없어요 (PRD v0.9, D-96) | 해결: 이미 결정이 적혀 있음 — 구현은 PRD와 `docs/SCREENS.md` SCR-COUPLE-01 "뒤로 버튼"을 따름. 보드는 고치지 않음 |
-| 35 | SCR-CAL-03 (시간 선택) | 시간 휠 위·아래 둘째 줄 글자가 `ink-400` (`AddEvent.dc.html` 286행). 첫 줄은 `ink-500` | 토큰 설명: `ink-400`은 꺼진 상태 아이콘·목록 화살표용이고 글자에는 쓰지 않음 (`tokens.json` usage) | 해결: 사용자 결정(2026-11-08, D-128) — 그림대로 `ink-400` 유지(값은 가운데 줄이 전달). 토큰 설명에 시간 휠 예외를 적는 일은 `design/change-requests/prd-v0.12.md` 2번 |
+| 35 | SCR-CAL-03 (시간 선택) | 시간 휠 위·아래 둘째 줄 글자가 `ink-400` (`AddEvent.dc.html` 286행). 첫 줄은 `ink-500` | 토큰 설명: `ink-400`은 꺼진 상태 아이콘·목록 화살표용이고 글자에는 쓰지 않음 (`tokens.json` usage) | 해결: 사용자 결정(2026-11-08, D-128) — 그림대로 `ink-400` 유지(값은 가운데 줄이 전달). 토큰 설명에 시간 휠 예외를 적는 일은 `design/change-requests/archive/prd-v0.12.md` 2번 |
+
+PRD v0.12 디자인 반영(2026-11-08, 캔버스 버전 43)에서 해결한 차이예요. `docs/SCREENS.md`에 남아 있던 두 줄을 옮겼어요.
+
+| # | 화면 | 디자인 (캔버스 버전 41) | PRD·이 문서 | 해결 (캔버스 버전 43) |
+| --- | --- | --- | --- | --- |
+| 36 | SCR-SET-04 (로그인 계정) | "로그인 계정" 줄이 "Google · [이메일]" (`ProfileEdit.dc.html`) | 이메일 없이 "Google 로그인"·"카카오 로그인"·"게스트"·"Google · 카카오" (PRD v0.12, D-148) | 해결: 캔버스 버전 43 (design/screens/SCR-SET-04.png). 보드를 "Google 로그인"으로 고침 |
+| 37 | SCR-COUPLE-02 (스낵바) | 스낵바가 바닥에서 112, 좌우 16 (`InviteCreate.dc.html` 76행, `SCR-COUPLE-02--not-yet.png`, design-system "초대코드 패널") | 하단 탭이 없는 화면의 스낵바는 위에서 40, 바닥 고정 버튼이 있어도 같음 (PRD v0.12, D-126) | 해결: 캔버스 버전 43 (design/screens/SCR-COUPLE-02--not-yet.png). 보드를 위에서 40으로 고침 (2026-11-08 사용자 결정) |
