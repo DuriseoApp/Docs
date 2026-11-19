@@ -3,7 +3,7 @@
 > 상태: PR 완료 (2026-11-19 승인)
 > 이전 버전: v0.12 → 새 버전: v0.13
 > 브랜치: sync/prd-v0.13
-> PR: (PR 완료 후 링크)
+> PR: https://github.com/DuriseoApp/Docs/pull/18
 
 이 파일은 `/prd-sync` 팀원들이 읽는 계약이다. 여기 적힌 이름과 할 일을 그대로 따른다.
 
