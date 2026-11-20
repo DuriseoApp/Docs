@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.12 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.13 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-11-08, 기준 PRD v0.12)
+> 작성일: 2026-10-17 (갱신: 2026-11-19, 기준 PRD v0.13)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -414,6 +414,7 @@
 | `POST` 필수 | `name`, `date`. 없거나 `null`이면 400 `VALIDATION_FAILED`(해당 필드, `REQUIRED`) |
 | `POST` 선택 | `repeatsYearly` 생략 → true (ERD 기본값, 새 기념일 화면의 "매년 반복" 켜짐 기본값 D-122과 같다). `null`이면 (`repeatsYearly`, `REQUIRED`) |
 | `PATCH` | 부분 수정. 없는 필드는 바꾸지 않는다. 어떤 필드든 `null`이면 `REQUIRED` |
+| `PATCH` 매년 반복의 `date` (D-156) | 앱은 사용자가 바꾼 필드만 보낸다. 날짜를 바꾸지 않으면 `date`를 빼고 보내며, 그러면 등록일이 그대로다. 날짜를 바꾸면 고른 날이 새 등록일이다. `GET /anniversaries`와 캘린더 응답의 `date`는 매년 반복이면 그 해의 발생일이라 등록일이 아니므로, 받은 `date`를 그대로 `PATCH`에 보내면 안 된다(등록일이 발생일로 바뀐다). 바꾼 것이 없으면 앱은 요청 없이 닫는다. 새 필드·경로·오류 코드는 없다 |
 | `PATCH` 같은 값 (D-123) | 보낸 값이 모두 저장값과 같으면 200 + 현재 값을 돌려주고 `updated_at`을 유지하며 변경 이벤트·SYNC를 보내지 않는다. 새 오류 코드는 없다. 값 검사는 그대로 먼저 한다 |
 | 개수 상한 (D-123) | 직접 기념일 개수 상한은 없다 |
 | 이름 (D-104) | 앞뒤 공백을 지운 값으로 저장. 지운 뒤 빈 값이면 (`name`, `REQUIRED`), 코드 포인트 30개 초과면 (`name`, `TOO_LONG`). 길이는 지운 뒤 센다 (NFR-LIMIT-01, D-82) |
@@ -499,7 +500,7 @@
 | `PATCH` | 부분 수정. 생략한 필드는 그대로, `title`·`body`·`memoDate`의 `null`은 지움. 결과(수정 뒤)가 제목·본문 둘 다 비면 `REQUIRED` |
 | 검사 순서 | R-01(404 `NOT_FOUND`) → R-03(403 `NOT_AUTHOR`, `PATCH`만) → 값 검사(400 `VALIDATION_FAILED`) → 날짜 범위(400 `DATE_OUT_OF_RANGE`) |
 
-**앱 동작 (3.4 목록 저장)**: 앱은 응답 순서를 위치와 함께 `view`별로 Room에 저장하고 다시 정렬하지 않는다. 고정·즐겨찾기·삭제·작성 성공 뒤에는 해당 `view`의 첫 페이지와 `/memos/pinned`를 다시 불러온다. 화면의 개수 표시: 핀 N = `/memos/pinned`의 `items` 길이, "전체 메모 N개" = 현재 `view`의 `totalCount`, "★ 즐겨찾기 N" = `favoriteCount`.
+**앱 동작 (3.4 목록 저장)**: 앱은 응답 순서를 위치와 함께 `view`별로 Room에 저장하고 다시 정렬하지 않는다. 고정·즐겨찾기·삭제·작성 성공 뒤에는 해당 `view`의 첫 페이지와 `/memos/pinned`를 다시 불러온다. 화면의 개수 표시: 핀 N = `/memos/pinned`의 `items` 길이, "전체 메모 N개" = 현재 `view`의 `totalCount`, "★ 즐겨찾기 N" = `favoriteCount`. 고정·즐겨찾기가 204(본문 없음)로 성공하면, 앱은 상세를 저장해 둔 메모에 한해 `GET /memos/{id}`로 다시 받아 저장값(`pinnedAt`, `isFavorite`)을 갱신한다 (D-160).
 
 ### 3.5 알림 목록
 
@@ -716,7 +717,8 @@
 - `resource`: `EVENT`, `ANNIVERSARY`, `MEMO`, `SPACE`(처음 만난 날, 사람 색, 구성원 변경, 닉네임·사진 변경), `NOTIFICATION`
 - `MEMO` `CREATED`·`UPDATED`·`DELETED`는 메모 생성·수정·삭제·고정·해제 때 보낸다. 즐겨찾기(`PUT`·`DELETE /memos/{id}/favorite`)는 본인 값이라 신호를 보내지 않는다 (D-134). 저장값과 같은 값만 보낸 `PATCH`(직접 기념일·메모)도 신호가 없다 (D-123)
 - `SPACE` `UPDATED`는 `PATCH /me`(닉네임), `PUT·DELETE /me/profile-image` 성공 때 커플 공간이면 상대에게도 보낸다. 앱은 받으면 `GET /me`·`GET /space`를 다시 읽는다
-- `action`: `CREATED`, `UPDATED`, `DELETED`, `UNLINKED`(`SPACE`만, 앱 초기화 신호), `LINKED`(`SPACE`만, 커플 연결 완료 신호)
+- `action`: `CREATED`, `UPDATED`, `DELETED`, `UNLINKED`(`SPACE`만, 앱 초기화 신호. `id`는 해제된 공간 id, D-160), `LINKED`(`SPACE`만, 커플 연결 완료 신호)
+- `SPACE` `UNLINKED`는 `{"type": "SYNC", "resource": "SPACE", "action": "UNLINKED", "id": "<해제된 공간 id>"}`처럼 `id`에 해제된 커플 공간의 id를 싣는다. `id`가 없는 신호는 `LINKED`뿐이다 (D-160).
 - `LINKED`는 위 원칙(다른 구성원에게)의 예외다. 커플 연결 커밋 뒤 **두 사람의 기기 모두**에 `{"type": "SYNC", "resource": "SPACE", "action": "LINKED"}`를 보낸다 (`id` 없음). 앱은 받으면 `GET /me`로 확인하고 SCR-CAL-01과 연결 완료 시트로 이동한다 (4.4, D-48)
 - `NOTIFICATION`은 위 원칙(공간의 다른 구성원에게)의 예외다. 알림 목록에 행이 생기면 **받는 사람 본인 기기**로 `{"type": "SYNC", "resource": "NOTIFICATION", "id": "<알림 ID>", "action": "CREATED"}`를 보낸다. 푸시를 끈 종류도 보낸다. 앱은 `GET /notifications/unread-count`를 다시 부르고, 알림 목록이 열려 있으면 첫 페이지도 다시 부른다 (D-141)
 - 자동 기념일 신호: 처음 만난 날이 바뀌면(`PATCH /space`) 신호는 `SPACE`/`UPDATED` 하나이고 `ANNIVERSARY` 신호는 보내지 않는다. 앱은 `SPACE`/`UPDATED`를 받으면 공간 정보와 함께 기념일도 다시 불러온다. `ANNIVERSARY` 신호는 직접 기념일의 생성·수정·삭제에만 쓴다 (FR-COUPLE-04.AC1, FR-ANNIV-02.AC3)
@@ -735,7 +737,7 @@
 
 **모든 알림 작업은 받는 사람마다 `notifications` 행을 먼저 만들고, 푸시는 아래 두 조건을 모두 채울 때만 보낸다.** ① 받는 사람에게 유효한 세션이 있다(`auth_sessions.revoked_at IS NULL AND expires_at > now`, R-16, D-73, ERD DB-14). 로그인이 만료된 기기에는 푸시를 보내지 않는다. ② 그 종류의 푸시 설정이 켜져 있다. 연결·해제 알림만 ②를 보지 않고 설정과 관계없이 항상 푸시한다(①은 똑같이 본다). 푸시를 끈 종류나 유효 세션이 없는 사람의 알림도 알림 목록에는 남는다 (FR-NOTI-05.AC1, D-39). `notifications` 행을 만들 때 받는 사람 본인 기기로 동기화 신호 `NOTIFICATION`도 보낸다 (6장). 동기화 신호는 사용자에게 보이는 푸시가 아니라서 ①의 대상이 아니다.
 
-**푸시 전송 형식 (D-136, D-142)**: 보이는 푸시도 data 메시지로 보내고 앱이 알림을 그린다(알림 채널 5개: "일정 알림", "상대 일정·메모 추가", "메모 고정", "기념일", "연결·해제"). data 키는 `type`(값 `"PUSH"`), `notificationId`(알림 id), `kind`(`notifications.type` 값), `title`, `body`(8장·PRD 알림 문구), `targetType`, `targetId`(탭 이동 대상)다. FCM 우선순위는 푸시 high, SYNC normal이다. 사용자가 푸시를 누르면 앱이 `notificationId`로 `PUT /notifications/{id}/read`를 부른다 (3.5). 채널 ID와 FCM TTL은 이 문서에서 정하지 않는다.
+**푸시 전송 형식 (D-136, D-142)**: 보이는 푸시도 data 메시지로 보내고 앱이 알림을 그린다(알림 채널 5개: "일정 알림", "상대 일정·메모 추가", "메모 고정", "기념일", "연결·해제"). data 키는 `type`(값 `"PUSH"`), `notificationId`(알림 id), `kind`(`notifications.type` 값), `title`, `body`(8장·PRD 알림 문구), `targetType`, `targetId`(탭 이동 대상)다. FCM data는 문자열만 담으므로 값이 없는 키(`body`, `targetType`, `targetId`)는 `null`이나 빈 문자열로 보내지 않고 키를 넣지 않는다. 앱은 키가 없으면 값이 없는 것으로 읽는다 (D-160). FCM 우선순위는 푸시 high, SYNC normal이다. 사용자가 푸시를 누르면 앱이 `notificationId`로 `PUT /notifications/{id}/read`를 부른다 (3.5). 채널 ID와 FCM TTL은 이 문서에서 정하지 않는다.
 
 **푸시 실패**: 푸시는 재시도하지 않는다(알림 목록에 남으므로). 무효 토큰 응답(`UNREGISTERED` 등)이면 그 `devices` 행을 삭제하고, 일시 오류는 무시하고 로그만 남긴다.
 
@@ -799,22 +801,22 @@
 | FR-COUPLE-04.AC1, FR-ANNIV-02.AC3 자동 기념일 동기화 | PATCH /space | 6장 (`SPACE`/`UPDATED`만 보내고 `ANNIVERSARY` 신호는 직접 기념일에만) |
 | FR-MEMO-01~03 (D-130~D-132, D-123) | /memos | R-03, 3.4 (`Memo`, `totalCount`·`favoriteCount`, 메모 쓰기 규칙, 같은 값 `PATCH`), 3.3 커서 정렬 키 |
 | FR-MEMO-04 | 삭제됨 (PRD v0.4). PATCH /memos/{id}/checklist-items/{itemId} 삭제됨 | |
-| FR-MEMO-05 (AC5, D-134, D-135) | /memos/pinned, /memos/{id}/pin | R-04, 3.4 (멱등 204, 고정할 때마다 `MEMO_PINNED`), 6장 (`MEMO` 신호) |
+| FR-MEMO-05 (AC5, D-134, D-135, D-160) | /memos/pinned, /memos/{id}/pin | R-04, 3.4 (멱등 204, 고정할 때마다 `MEMO_PINNED`), 6장 (`MEMO` 신호), 3.4 (204 뒤 `GET /memos/{id}` 다시 받기) |
 | FR-MEMO-06 (AC2, D-134) | /memos/{id}/favorite, ?view=favorites | R-06, 멱등 204, 동기화 신호 없음 (6장) |
 | FR-NOTI-01~04 | /me/devices, /me/notification-settings (게스트 포함, D-62), notifyPartner | 6장, 7장, R-16 (유효 세션이 있을 때만 푸시, D-73), 알림 권한은 앱 동작 (D-70, D-144), 3.1 (`NotificationSettings`, `PUT /me/devices` 앱 동작), 7장 푸시 전송 형식·실패 (D-136) |
 | FR-NOTI-02 AC2 (D-145) | GET·PATCH /me/notification-settings | 3.1 (부분 수정, `null`은 `REQUIRED`, 응답은 전체 설정). 저장 방식·실패 처리는 앱 동작 |
 | FR-CAL-05 AC7 (D-137) | 일정 알림 스케줄러 | 7장 (10분 넘게 지난 알림은 푸시 생략, `event_reminders.sent_at` 기록) |
 | FR-ANNIV-01 AC3, FR-ANNIV-02 AC6 (D-116, D-117) | API 변경 없음 | 앱이 계산·표시 (D+N) |
-| FR-ANNIV-03 AC4~AC6 (D-122, D-121, D-123) | POST·PATCH /anniversaries | 3.3 쓰기 규칙 (`repeatsYearly` 기본 true, 같은 값 `PATCH`, 개수 상한 없음) |
+| FR-ANNIV-03 AC4~AC6 (D-122, D-121, D-123, D-156) | POST·PATCH /anniversaries | 3.3 쓰기 규칙 (`repeatsYearly` 기본 true, 같은 값 `PATCH`, 매년 반복 `date` D-156, 개수 상한 없음) |
 | FR-CAL-01 AC2·AC8, FR-CAL-02 AC6, FR-CAL-03 AC7 | API 변경 없음 | 3.3 정렬 주석 (서버 정렬과 앱 표시 순서 구분, D-119), 앱 동작 (D-118, D-120, D-121) |
-| NFR-SYNC-01 (D-134, Q-19) | SYNC 신호 | 6장 (즐겨찾기 신호 없음, `SPACE` 닉네임·사진, 수신 시 앱 동작), 3.3 Q-19 기본값 |
+| NFR-SYNC-01 (D-134, D-160, Q-19) | SYNC 신호 | 6장 (`SPACE` `UNLINKED`의 `id`, 즐겨찾기 신호 없음, `SPACE` 닉네임·사진, 수신 시 앱 동작), 3.3 Q-19 기본값 |
 | NFR-TIME-01 (일시 형식) | 전 경로 | 1장 (요청 `...Z`만, 응답 초 단위 `Z`) |
 | NFR-FILE-01 (D-147) | /me/profile-image | 8장 (재인코딩, 정리 작업), 413·415 (5장) |
 | FR-NOTI-03 AC2·AC3, FR-NOTI-05 AC2·AC5~AC7 (D-141~D-143) | /notifications | 3.5 (30일 경계, 멱등 읽음), 6장 (`NOTIFICATION` 열린 목록 갱신), 7장 |
 | NFR-SEC-01 토큰·세션 (D-73, D-81) | /auth/*, 푸시 전송 | 1장 토큰 수명·토큰 형식(access JWT, refresh 무작위 문자열)·인증 실패 규칙과 검사 순서, 3.1 `AuthTokens`·`Me`, 4.2 (Google `iss` 두 값, Kakao `v2/user/me`, 제공자 장애는 500 `INTERNAL_ERROR`), R-16, 7장, ERD DB-02, DB-14 |
 | NFR-LIMIT-01 글자 수 기준 (D-82) | PATCH /me, 소셜 프로필 이름 | 1장(코드 포인트로 센다), 3.1 `PATCH /me`(앞뒤 공백 제거, 빈 값은 `REQUIRED`, 초과는 `TOO_LONG`), 4.2의 3단계, 4.3의 4단계 |
 | NFR-PRIV-01 소셜 개인정보 최소 수집 | /auth/social, /auth/link | 4.2 (Kakao는 `kakao_account.profile.nickname`만 받음, 동의항목 "닉네임") |
-| FR-NOTI-03 푸시를 눌렀을 때 (D-85) | GET /notifications (`targetType`) | 3.5 (연결·해제 알림은 `SETTINGS`, `targetId` null), 7장 |
+| FR-NOTI-03 푸시를 눌렀을 때 (D-85, D-160) | GET /notifications (`targetType`) | 3.5 (연결·해제 알림은 `SETTINGS`, `targetId` null), 7장 (빈 값 키 생략) |
 | FR-NOTI-05 알림 목록 | /notifications, /notifications/unread-count, /notifications/{id}/read | R-12, 3.5, 6장, 7장 |
 | FR-SET-01 | GET /me, GET /space | 3.1 `Me.createdAt` (가입일), 3.1 `MeSpace.linkedAt` (연결한 날, D-94), 3.2 `Space`, `Space.linkedAt` |
 | D-57 메모 작성자 닉네임 | API 변경 없음 | 앱이 `GET /space`의 구성원 닉네임을 메모의 `author_id`와 맞춰 채운다 |
