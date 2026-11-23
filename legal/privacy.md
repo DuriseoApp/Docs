@@ -49,10 +49,10 @@
 
 | 받는 자 (연락처) | 위탁 업무 | 항목 | 국가·위치 | 이전 시기·방법 |
 | --- | --- | --- | --- | --- |
-| Amazon Web Services, Inc. ([연락처]) | 서버·데이터베이스·사진 저장 | 1장의 모든 항목 | 대한민국(서울 리전) | 국외 이전 없음 |
-| Google LLC (Firebase Cloud Messaging, [연락처]) | 푸시 알림 전송 | 푸시 알림 토큰, 알림 내용 | 미국 등 Google 데이터센터 | 알림을 보낼 때마다 네트워크로 전송 |
-| Google LLC ([연락처]) | Google 로그인 | Google 계정 고유 식별자 | 미국 등 | 로그인할 때 네트워크로 전송 |
-| 주식회사 카카오 ([연락처]) | 카카오 로그인, 탈퇴 때 연결 끊기 | 카카오 계정 고유 식별자 | 대한민국 | 국외 이전 없음 |
+| Amazon Web Services, Inc. (aws-privacy@amazon.com) | 서버·데이터베이스·사진 저장 | 1장의 모든 항목 | 대한민국(서울 리전) | 국외 이전 없음 |
+| Google LLC (Firebase Cloud Messaging, 개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | 푸시 알림 전송 | 푸시 알림 토큰, 알림 내용 | 미국 등 Google 데이터센터 | 알림을 보낼 때마다 네트워크로 전송 |
+| Google LLC (개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | Google 로그인 | Google 계정 고유 식별자 | 미국 등 | 로그인할 때 네트워크로 전송 |
+| 주식회사 카카오 (고객센터 1577-3754) | 카카오 로그인, 탈퇴 때 연결 끊기 | 카카오 계정 고유 식별자 | 대한민국 | 국외 이전 없음 |
 
 - 이전받는 자의 보유 기간은 각 회사의 정책을 따릅니다. 국외 이전을 원하지 않으면 알림을 끄거나 게스트로 이용할 수 있지만, 이 경우 해당 기능을 쓸 수 없습니다.
 
@@ -79,7 +79,7 @@
 | 성명 | 주성현 |
 | 연락처 | jucoding99@gmail.com |
 
-개인정보 침해에 대한 신고나 상담은 개인정보침해신고센터(privacy.kisa.or.kr, 국번 없이 118), 개인정보분쟁조정위원회(www.kopico.go.kr, 1833-6972)에도 할 수 있습니다.
+개인정보 침해에 대한 신고나 상담은 개인정보침해신고센터(privacy.kisa.or.kr, 국번 없이 118), 개인정보분쟁조정위원회(www.kopico.go.kr, 1833-6972), 경찰청(ecrm.police.go.kr, 국번 없이 182)에도 할 수 있습니다.
 
 ## 10. 변경
 
