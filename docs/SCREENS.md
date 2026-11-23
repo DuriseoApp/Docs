@@ -1,12 +1,12 @@
 # 둘이서 화면 명세 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.14 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.15 (`docs/PRD.md`)
 > 디자인 기준: **반영됨 (2026-11-08, 캔버스 버전 43, PRD v0.12)**. 화면과 상태 이미지가 `design/screens/`에 있어요 (재연결 복구 시트는 디자인 없음). PRD v0.13으로 바뀐 SCR-SET-01 앱 정보 카드 버튼과 SCR-CAL-01 메모 카드 그림은 변경 요청 중이에요 (아래 요청서). 디자인이 이 문서·Android 구현과 다른 점은 `차이:`와 "PRD와의 차이"에 있어요.
 > 디자인 원본: claude.ai 디자인 캔버스 "커플 공유 앱 데모" (보드 대응표: `design/canvas-map.md`)
 > 디자인 변경 요청서: `design/change-requests/prd-v0.13.md` (요청 중. 앱 아이콘은 D-162로 기존 대표 아이콘을 써서 그릴 것 없음). 이전 요청서는 `design/change-requests/archive/` (v0.3~v0.12 모두 반영 완료, 최신은 2026-11-08 캔버스 버전 43, `design/change-requests/archive/prd-v0.12.md`). 새 요청서는 `design/change-requests/`에 만들고, 반영이 끝나면 archive로 옮겨요.
 > 보드 원본: `design/source/` (정확한 크기·간격·색은 여기서 읽어요)
 > 함께 보는 문서: `design/design-system.md`, `design/tokens.json`, `design/screens/`
-> 작성일: 2026-10-17 · 갱신: 2026-11-20 (PRD v0.14, 캔버스 버전 43)
+> 작성일: 2026-10-17 · 갱신: 2026-11-23 (PRD v0.15, 캔버스 버전 43)
 
 이 문서는 PRD 5장 화면 목록의 화면별 명세예요. Android·iOS 에이전트는 화면을 만들 때 이 문서를 기준으로 하고, 이미지(`design/screens/<화면 ID>.png`)는 레이아웃 확인용으로 써요. 값과 문구가 이미지와 다르면 이 문서가 우선이에요. PRD와 충돌하면 PRD가 우선이에요.
 
