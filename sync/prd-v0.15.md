@@ -9,13 +9,17 @@
 | ID | 변경 | 내용 |
 | --- | --- | --- |
 | D-154 | 수정 | 운영자·개인정보 보호책임자 이름을 출시 이름 "jucoding"으로 (이전: 실명) |
+| D-163 | 추가 | SCR-CAL-01 펼치기·접기를 쓸기로, 크게 보기 토글 버튼 없앰, 화면 낭독기 접근성 동작 |
+| D-164 | 추가 | SCR-SET-01 앱 정보 카드를 스크롤 밖 화면 맨 아래에 고정 |
 
 ## 2. 문서별 할 일
 
 | 문서 | 담당 | 할 일 |
 | --- | --- | --- |
 | legal/terms.md, legal/privacy.md, legal/account-deletion.md | 리드 | 이름을 "jucoding"으로. 처리방침 5장 위탁사 연락처, 9장 경찰청 |
-| docs/SCREENS.md, docs/API.md, docs/ERD.md(+erd.html, ERD.png) | 리드 | 헤더 v0.15만 |
+| docs/SCREENS.md | 리드 | 헤더 v0.15, SCR-CAL-01 구성·펼치기·접기(D-163)·디자인 줄, SCR-SET-01 앱 정보 카드(D-164)·디자인 줄 |
+| design/change-requests/prd-v0.15.md | 리드 | ① 토글 버튼 빼기 ② 앱 정보 카드 고정 |
+| docs/API.md, docs/ERD.md(+erd.html, ERD.png) | 리드 | 헤더 v0.15만 |
 
 ## 4. 위험 항목
 
@@ -25,4 +29,4 @@
 
 | 회차 | 판정 | Critical | 비고 |
 | --- | --- | --- | --- |
-| - | 리드 확인 | 0 | ID 1개, `check-ids.sh` 통과 |
+| - | 리드 확인 | 0 | ID 3개(작은 변경), `check-ids.sh` 통과 |
