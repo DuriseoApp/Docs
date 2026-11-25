@@ -73,7 +73,7 @@
 <div id="root">
   <h1>둘이서 ERD (MVP v0.1)</h1>
   <div class="sub">모든 콘텐츠는 공간에 속하고, 사용자는 활성 공간 하나에 속한다</div>
-  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.20 · 2026-11-24</div>
+  <div class="meta">PostgreSQL 16 · 15개 테이블 · 기준 문서 PRD v0.21 · 2026-11-25</div>
 
   <div class="zones">
     <!-- 계정 -->
@@ -254,7 +254,6 @@
               <div class="row"><span class="k fk">FK</span><span class="n">space_id</span><span class="t"><b>→ spaces</b></span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">author_id</span><span class="t"><b>→ users</b></span></div>
               <div class="row"><span></span><span class="n">title · body</span><span class="t">50자 · 5,000자</span></div>
-              <div class="row"><span></span><span class="n">memo_date</span><span class="t">date · null</span></div>
               <div class="row"><span></span><span class="n">pinned_at</span><span class="t">null이면 고정 안 됨</span></div>
               <div class="row"><span class="k fk">FK</span><span class="n">pinned_by</span><span class="t"><b>→ users</b></span></div>
             </div>
