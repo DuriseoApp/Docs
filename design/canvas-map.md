@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-11-08 · 캔버스 버전 43 · PRD v0.12 |
+| 마지막 반영 | 2026-11-25 · 캔버스 버전 45 · PRD v0.21 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -37,15 +37,15 @@
 | AddEventAllDay.dc.html | SCR-CAL-03 (하루 종일) | SCR-CAL-03--all-day.png |
 | AddEventPartnerEdit.dc.html | SCR-CAL-03 (상대가 함께 일정 수정) | SCR-CAL-03--partner-edit.png |
 | AddEventMemo.dc.html | SCR-MEMO-04 | SCR-MEMO-04.png |
-| AddEventMemoDate.dc.html | SCR-MEMO-04 (날짜 추가됨) | SCR-MEMO-04--date.png |
+| AddEventMemoDate.dc.html | 이전 버전 (SCR-MEMO-04 날짜 추가됨, PRD v0.21에서 삭제) | — (SCR-MEMO-04--date.png 더 쓰지 않음) |
 | Anniversaries.dc.html | SCR-ANNIV-01 | SCR-ANNIV-01.png |
 | AnniversariesSolo.dc.html | SCR-ANNIV-01 (개인 공간) | SCR-ANNIV-01--solo.png |
 | AnniversariesSoloEmpty.dc.html | SCR-ANNIV-01 (개인 공간 · 빈 상태) | SCR-ANNIV-01--solo-empty.png |
 | AnniversaryEdit.dc.html | SCR-ANNIV-02 | SCR-ANNIV-02.png |
 | Memo.dc.html | SCR-MEMO-01 | SCR-MEMO-01.png |
 | PinnedAll.dc.html | SCR-MEMO-02 | SCR-MEMO-02.png |
-| MemoDetail.dc.html | SCR-MEMO-03 (내 메모, 날짜 있음) | SCR-MEMO-03.png |
-| MemoDetailPartner.dc.html | SCR-MEMO-03 (상대 메모, 날짜 없음) | SCR-MEMO-03--partner.png |
+| MemoDetail.dc.html | SCR-MEMO-03 (내 메모) | SCR-MEMO-03.png |
+| MemoDetailPartner.dc.html | SCR-MEMO-03 (상대 메모) | SCR-MEMO-03--partner.png |
 | MemoDetailDialog.dc.html | SCR-MEMO-03 (삭제 확인) | SCR-MEMO-03--delete-dialog.png |
 | Menu.dc.html | SCR-SET-01 (연결됨) | SCR-SET-01.png |
 | MenuGuest.dc.html | SCR-SET-01 (게스트) | SCR-SET-01--guest.png |
@@ -105,9 +105,15 @@
 | MenuAppInfoChecking.dc.html | SCR-SET-01 (업데이트 확인 중) | SCR-SET-01--update-checking.png |
 | MenuAppInfoUnknown.dc.html | SCR-SET-01 (업데이트 확인할 수 없음) | SCR-SET-01--update-unknown.png |
 | NotificationSettingsLoadFailed.dc.html | SCR-SET-02 (서버 값을 받지 못함) | SCR-SET-02--load-failed.png |
-| MemoDetailOtherYear.dc.html | SCR-MEMO-03 (다른 해 날짜 칩) | SCR-MEMO-03--other-year.png |
+| MemoDetailOtherYear.dc.html | 이전 버전 (SCR-MEMO-03 다른 해 날짜 칩, PRD v0.21에서 삭제) | — (SCR-MEMO-03--other-year.png 더 쓰지 않음) |
+| CalendarMonthPicker.dc.html | SCR-CAL-01 (연도와 월 시트) | SCR-CAL-01--month-picker.png |
+| CalendarTutorial.dc.html | SCR-CAL-01 (튜토리얼 1단계 · 달력) | SCR-CAL-01--tutorial-1.png |
+| CalendarTutorial2.dc.html | SCR-CAL-01 (튜토리얼 2단계 · 추가 버튼) | SCR-CAL-01--tutorial-2.png |
+| CalendarTutorial3.dc.html | SCR-CAL-01 (튜토리얼 3단계 · D-day) | SCR-CAL-01--tutorial-3.png |
+| CalendarTutorial4.dc.html | SCR-CAL-01 (튜토리얼 4단계 · 메모 탭) | SCR-CAL-01--tutorial-4.png |
+| CalendarTutorial5.dc.html | SCR-CAL-01 (튜토리얼 5단계 · 전체 메뉴) | SCR-CAL-01--tutorial-5.png |
 
-이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림)
+이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `AddEventMemoDate.dc.html`·`MemoDetailOtherYear.dc.html`(이전 버전, PRD v0.21), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림)
 
 보드 원본(`.dc.html`, `canvas.json`)은 `design/source/`에 있어요. `/design-sync`가 이미지와 함께 갱신해요.
 
