@@ -57,9 +57,7 @@ body{margin:0}
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
 </button>
 </div>
-<button type="button" onClick="{{toggle}}" aria-expanded="{{expanded}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: transparent; color: #5B5666; display: flex; align-items: center; justify-content: center">
-<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="{{toggleIconPath}}"></path></svg>
-</button>
+<!-- 크게 보기 토글 버튼은 없다: 쓸어서 펼치고 접는다 (PRD D-163). 자리는 비워 둔다 -->
 </div>
 <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 8px; height: 28px; flex-shrink: 0; align-items: center; font-size: 12px; font-weight: 600; color: #77727F; text-align: center">
 <span style="color: #C93545">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
@@ -95,7 +93,7 @@ body{margin:0}
 </div>
 <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
 <div style="padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #77727F; font-size: 14px">
-<span>아직 일정이나 메모가 없어요</span>
+<span>아직 일정이 없어요</span>
 <a href="AddEvent.dc.html" style="font-weight: 600; color: #4A2FC0; text-decoration: none; padding: 10px">+ 이 날에 추가하기</a>
 </div>
 </sc-if>
@@ -148,7 +146,7 @@ body{margin:0}
 <sc-if value="{{snackbar}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 96px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; font-size: 14px; line-height: 1.5; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">인터넷 연결이 필요해요</div>
 </sc-if>
-<a href="AddEvent.dc.html" aria-label="일정 또는 메모 추가" style="position: absolute; right: 20px; bottom: {{fabBottom}}px; width: 56px; height: 56px; border-radius: 18px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">
+<a href="AddEvent.dc.html" aria-label="일정 추가" style="position: absolute; right: 20px; bottom: {{fabBottom}}px; width: 56px; height: 56px; border-radius: 18px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">
 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
 </a>
 <sc-if value="{{linkedSheet}}" hint-placeholder-val="{{ false }}">
@@ -205,9 +203,29 @@ body{margin:0}
 </sc-if>
 </div>
 </sc-if>
+<sc-if value="{{monthPicker}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(28, 26, 34, 0.48)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="mpTitle" style="position: relative; box-sizing: border-box; padding: 10px 24px 28px; border-radius: 24px 24px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 2px; background: #D9D4DF"></span>
+<h2 id="mpTitle" style="margin: 4px 0 0; font-size: 22px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em">연도와 월</h2>
+<div role="group" aria-labelledby="mpTitle" style="position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 88px; height: 44px; border-radius: 14px; background: #F5F3F7"></span>
+<sc-for list="{{monthWheels}}" as="w" hint-placeholder-count="2">
+<div aria-label="{{w.label}}" style="position: relative; display: flex; flex-direction: column">
+<sc-for list="{{w.items}}" as="it" hint-placeholder-count="5">
+<span style="{{it.style}}">{{it.t}}</span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<button type="button" style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer">완료</button>
+</section>
+</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"startExpanded":{"editor":"boolean","default":false,"section":"상태"},"unread":{"editor":"boolean","default":true,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"startSel":{"editor":"number","default":12,"section":"상태"},"linkedSheet":{"editor":"boolean","default":false,"section":"상태"},"sheetDialog":{"editor":"boolean","default":false,"section":"상태"},"noRecords":{"editor":"boolean","default":false,"section":"상태"},"noStartDate":{"editor":"boolean","default":false,"section":"상태"},"sheetDateSet":{"editor":"boolean","default":false,"section":"상태"},"tabs":{"editor":"boolean","default":false,"section":"상태"},"snackbar":{"editor":"boolean","default":false,"section":"상태"},"refreshing":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"],"section":"앱"},"meColor":{"editor":"color","default":"#E0612F","options":["#E0612F","#D6336C","#2F9E44","#F59F00"],"section":"우리 색상"},"partnerColor":{"editor":"color","default":"#2F6FDB","options":["#2F6FDB","#0C8599","#AE3EC9","#8D6E63"],"section":"우리 색상"},"togetherColor":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#D6336C","#2F9E44"],"section":"우리 색상"},"startExpanded":{"editor":"boolean","default":false,"section":"상태"},"unread":{"editor":"boolean","default":true,"section":"상태"},"solo":{"editor":"boolean","default":false,"section":"상태"},"startSel":{"editor":"number","default":12,"section":"상태"},"linkedSheet":{"editor":"boolean","default":false,"section":"상태"},"sheetDialog":{"editor":"boolean","default":false,"section":"상태"},"noRecords":{"editor":"boolean","default":false,"section":"상태"},"noStartDate":{"editor":"boolean","default":false,"section":"상태"},"sheetDateSet":{"editor":"boolean","default":false,"section":"상태"},"tabs":{"editor":"boolean","default":false,"section":"상태"},"snackbar":{"editor":"boolean","default":false,"section":"상태"},"refreshing":{"editor":"boolean","default":false,"section":"상태"},"monthPicker":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
     const accent = this.props.accent ?? '#6D4AE0';
@@ -247,14 +265,11 @@ class Component extends DCLogic {
       9: [{ who: 'me', time: '19:00', title: '팀 회식', memo: '늦게 끝날 수도 있어요' }],
       12: [
         { who: 'partner', time: '14:00', title: '치과 예약', memo: '' },
-        { who: 'both', time: '19:30', title: '저녁 데이트', memo: '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' },
-        { who: 'me', time: '메모', title: '선물 리스트 정리하기', memo: '쉐어 메모장에 올려둘게' }
+        { who: 'both', time: '19:30', title: '저녁 데이트', memo: '[식당 이름] 예약 완료 · 7시 20분 역 앞에서' }
       ],
-      // 순서: 기념일 → 종일 일정 → 시간 순 일정 → 날짜가 있는 메모 (PRD FR-CAL-01, D-65)
-      16: [{ who: 'partner', time: '메모', title: '여행 숙소 후보 정리했어', memo: '세 곳 골라놨는데 주말 전까지 하나 골라줘!' }],
+      // 순서: 기념일 → 종일 일정 → 시간 순 일정. 메모는 캘린더에 없다 (PRD FR-CAL-01, D-65, D-174)
       17: [
-        { who: 'both', time: '종일', title: '1박 2일 여행', memo: '숙소 후보는 메모 핀 참고' },
-        { who: 'partner', time: '메모', title: '여행 준비물', memo: '충전기, 여권 사본, 접이식 우산' }
+        { who: 'both', time: '종일', title: '1박 2일 여행', memo: '숙소 후보는 메모 핀 참고' }
       ],
       18: [{ who: 'both', time: '종일', title: '1박 2일 여행', memo: '' }],
       21: [{ who: 'partner', time: '20:00', title: '운동', memo: '' }],
@@ -264,7 +279,7 @@ class Component extends DCLogic {
       ],
       31: [{ who: 'both', time: '18:00', title: '할로윈 파티', memo: '' }]
     };
-    // 개인 공간에서는 내 일정·메모만 (PRD D-29)
+    // 개인 공간에서는 내 일정만 (PRD D-29)
     const EV = {};
     Object.keys(ALL_EV).forEach((k) => {
       let list = solo ? ALL_EV[k].filter((e) => e.who === 'me') : ALL_EV[k];
@@ -279,7 +294,7 @@ class Component extends DCLogic {
     for (let d = 27; d <= 30; d++) raw.push({ n: d, out: true });
     for (let d = 1; d <= 31; d++) raw.push({ n: d, out: false });
     const size = expanded ? 26 : 34;
-    const base = 'width: ' + size + 'px; height: ' + size + 'px; border-radius: ' + (size / 2) + 'px; display: flex; align-items: center; justify-content: center; align-self: center; flex-shrink: 0; font-size: ' + (expanded ? 13 : 15) + 'px; ';
+    const base = 'width: ' + size + 'px; height: ' + size + 'px; border-radius: ' + (size / 2) + 'px; display: flex; align-items: center; justify-content: center; align-self: center; flex-shrink: 0; font-size: 15px; ';
     const cellCollapsed = 'height: 52px; border: 0; background: transparent; padding: 4px 0 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; font-family: inherit; cursor: pointer; overflow: hidden; transition: height 220ms ease';
     const cellExpanded = 'height: 88px; border: 0; border-top: 1px solid #F1EEF4; background: transparent; padding: 4px 2px 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; font-family: inherit; cursor: pointer; overflow: hidden; transition: height 220ms ease';
     const barStyle = (c) => 'display: block; height: 16px; border-radius: 4px; padding: 0 3px; background: ' + c + '; color: ' + onColor(c) + '; font-size: 10px; line-height: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-align: left';
@@ -287,9 +302,9 @@ class Component extends DCLogic {
     const annBarStyle = 'display: block; height: 16px; border-radius: 4px; padding: 0 3px; background: #F3F0FD; box-shadow: inset 0 0 0 1px ' + accent + '; color: #4A2FC0; font-size: 10px; line-height: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-align: left';
     const cardBase = 'flex-grow: 1; min-width: 0; display: flex; gap: 14px; padding: 14px 16px; border-radius: 16px; align-items: flex-start; text-decoration: none; color: #1C1A22; ';
     const timeBase = 'width: 38px; flex-shrink: 0; padding-top: 1px; font-size: 13px; font-weight: 600; ';
-    // 날짜 칸 점 (D-118, FR-CAL-01 AC8): 종일 일정 → 시간 일정 → 메모 순으로 훑어 서로 다른 사람 색만 앞에서부터 고른다(같은 색은 한 번만).
-    // 메모의 점은 작성자의 사람 색(who가 작성자 기준). 표시는 고리 포함 최대 3개(기념일이 있으면 고리 1 + 점 2, 없으면 점 3)
-    const kindRank = (e) => (e.time === '종일' ? 0 : (e.time === '메모' ? 2 : 1));
+    // 날짜 칸 점 (D-118, FR-CAL-01 AC8): 종일 일정 → 시간 일정 순으로 훑어 서로 다른 사람 색만 앞에서부터 고른다(같은 색은 한 번만).
+    // 메모의 점은 없다 (D-174). 표시는 고리 포함 최대 3개(기념일이 있으면 고리 1 + 점 2, 없으면 점 3)
+    const kindRank = (e) => (e.time === '종일' ? 0 : 1);
     const dotColors = (list) => {
       const out = [];
       list.map((e, i) => ({ e, i })).sort((a, b) => kindRank(a.e) - kindRank(b.e) || a.i - b.i).forEach(({ e }) => {
@@ -314,7 +329,7 @@ class Component extends DCLogic {
         cellStyle: expanded ? cellExpanded : cellCollapsed,
         showDots: !expanded,
         showBars: expanded,
-        label: (d.out ? '9월 ' : '10월 ') + d.n + '일' + (anns.length ? ', 기념일 ' + anns.map((a) => a.name).join(', ') : '') + (evs.length ? ', 일정·메모 ' + evs.length + '개: ' + evs.map((e) => WHO[e.who].label + ' ' + e.title).join(', ') : ''),
+        label: (d.out ? '9월 ' : '10월 ') + d.n + '일' + (anns.length ? ', 기념일 ' + anns.map((a) => a.name).join(', ') : '') + (evs.length ? ', 일정 ' + evs.length + '개: ' + evs.map((e) => WHO[e.who].label + ' ' + e.title).join(', ') : ''),
         dots: anns.slice(0, 1).map(() => ({ style: ringStyle })).concat(dotColors(evs).slice(0, 3 - Math.min(anns.length, 1)).map((c) => ({ style: 'width: 5px; height: 5px; border-radius: 3px; background: ' + c }))),
         bars: anns.map((a) => ({ title: a.name, style: annBarStyle })).concat(evs.map((e) => ({ title: e.title, style: barStyle(WHO[e.who].color) }))).slice(0, 2),
         hasMore: anns.length + evs.length > 2,
@@ -342,7 +357,7 @@ class Component extends DCLogic {
       title: e.title,
       memo: e.memo,
       hasMemo: !!e.memo,
-      href: e.time === '메모' ? 'MemoDetail.dc.html' : 'EventDetail.dc.html',
+      href: 'EventDetail.dc.html',
       whoLabel: WHO[e.who].label,
       hasDot: true,
       dotStyle: 'width: 8px; height: 8px; border-radius: 4px; flex-shrink: 0; background: ' + WHO[e.who].color,
@@ -375,6 +390,20 @@ class Component extends DCLogic {
       fabBottom: snackbar ? 161 : (tabs ? 100 : 24),
       // 당겨서 새로고침: 목록 위쪽에 흰 원형 판(44, shadow-sm) 안 원형 진행 표시(24, 선 2, brand-500 호 + line-100 트랙) (PRD Q-16, NFR-SYNC-02)
       refreshing: !!this.props.refreshing,
+      // 월 제목을 누른 뒤: "연도와 월" 하단 시트. SCR-CAL-03 시간 선택 시트와 같은 모양, 휠 2줄(연도 1950~2050 · 월 1~12), 가운데 줄 surface-100 띠, [오늘] 없음 (PRD D-167)
+      monthPicker: !!this.props.monthPicker,
+      monthWheels: [
+        { label: '연도', items: ['2024년', '2025년', '2026년', '2027년', '2028년'] },
+        { label: '월', items: ['9월', '10월', '11월', '12월', '1월'] }
+      ].map((w) => ({
+        label: w.label,
+        items: w.items.map((t, i) => ({
+          t,
+          style: 'height: 44px; display: flex; align-items: center; justify-content: center; ' + (i === 2
+            ? 'font-size: 22px; line-height: 30px; font-weight: 700; color: #1C1A22'
+            : 'font-size: 16px; line-height: 24px; font-weight: 500; color: ' + (i === 1 || i === 3 ? '#77727F' : '#8E8996'))
+        }))
+      })),
       ddayHref: noStartDate ? 'MenuStartDateSheet.dc.html' : 'Anniversaries.dc.html',
       noRecords,
       hasRecords: !noRecords,

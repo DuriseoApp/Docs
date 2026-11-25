@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쉐어 캘린더 · 튜토리얼</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22; background: #FFFFFF">
+<dc-import name="Calendar" tabs="{{ true }}" hint-size="390px,844px"></dc-import>
+<div role="dialog" aria-modal="true" aria-label="{{progress}}" onClick="{{next}}" style="position: absolute; inset: 0; cursor: pointer">
+<div aria-hidden="true" style="{{holeStyle}}"></div>
+<div style="{{bubbleStyle}}">
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin: -12px 0 0">
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; color: #77727F">{{progress}}</span>
+<button type="button" onClick="{{skip}}" style="min-width: 44px; height: 44px; margin-right: -8px; padding: 0 8px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #77727F; cursor: pointer">건너뛰기</button>
+</div>
+<p aria-live="polite" style="margin: 0; font-size: 15px; line-height: 24px; font-weight: 400; color: #1C1A22">{{text}}</p>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"step":{"editor":"number","default":1,"min":1,"max":5,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // 캘린더 튜토리얼 (PRD FR-CAL-06, D-168, SCREENS SCR-CAL-01 "튜토리얼"). 하단 탭까지 화면 전체를 scrim 덮개로 덮고
+    // 설명할 곳만 구멍(대상 둘레 8, 모서리는 대상 모양)으로 보인다. 말풍선은 구멍 아래(대상이 아래쪽 반이면 위) 12, 좌우 20,
+    // surface-0 · radius-lg · shadow-dialog · 안쪽 16, 진행 표시 caption ink-500, [건너뛰기] label ink-500, 문구 body-md ink-900, 꼬리 없음.
+    // 아무 곳이나 누르면 다음 단계, 5단계에서 누르면 닫힌다. [건너뛰기]·뒤로 가기는 닫기. 커플 공간 기준(개인 공간의 3단계는 "기념일 ›")
+    const s = this.state || {};
+    const step = Math.min(5, Math.max(1, s.step || this.props.step || 1));
+    const steps = [
+      // 요일 행 + 월간 달력 (요일 행 위 120 ~ 달력 아래 408)
+      { box: [0, 120, 390, 288], radius: 16, text: '옆으로 쓸면 다른 달로 가고, 아래로 쓸어 내리면 달력을 크게 볼 수 있어요.' },
+      // FAB (탭이 있는 화면: 바닥에서 100)
+      { box: [314, 688, 56, 56], radius: 18, text: '여기를 누르면 일정을 추가할 수 있어요.' },
+      // 앱바 "함께한 지 D+N ›" 줄
+      { box: [88, 35.5, 100.6, 17], radius: 999, text: '함께한 날과 기념일은 여기서 볼 수 있어요.' },
+      // 하단 탭의 메모 (아이콘 56×30 + 이름, 탭 칸 가운데)
+      { box: [264.5, 779, 56, 50], radius: 999, text: '메모는 여기서 모아 볼 수 있어요.' },
+      // 앱바의 전체 메뉴 버튼
+      { box: [334, 8, 48, 48], radius: 999, text: '프로필과 알림 설정은 전체 메뉴에서 바꿀 수 있어요.' }
+    ];
+    const cur = steps[step - 1];
+    const [x, y, w, h] = cur.box;
+    const pad = 8;
+    const hole = { left: x - pad, top: y - pad, width: w + pad * 2, height: h + pad * 2 };
+    const lower = y + h / 2 > 844 / 2;
+    const bubbleBase = 'position: absolute; left: 20px; right: 20px; box-sizing: border-box; padding: 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 4px; cursor: default; ';
+    return {
+      progress: step + '/5',
+      text: cur.text,
+      holeStyle: 'position: absolute; left: ' + hole.left + 'px; top: ' + hole.top + 'px; width: ' + hole.width + 'px; height: ' + hole.height + 'px; border-radius: ' + cur.radius + 'px; box-shadow: 0 0 0 2000px rgba(28, 26, 34, 0.48); transition: all 220ms ease',
+      bubbleStyle: bubbleBase + (lower
+        ? 'bottom: ' + (844 - hole.top + 12) + 'px'
+        : 'top: ' + (hole.top + hole.height + 12) + 'px'),
+      next: () => this.setState({ step: step >= 5 ? 1 : step + 1 }),
+      skip: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ step: 1 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
