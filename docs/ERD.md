@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.20 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.21 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-11-24)
+> 작성일: 2026-10-17 (갱신: 2026-11-25)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -16,7 +16,7 @@
 | --- | --- |
 | DB | PostgreSQL 16, 마이그레이션은 Flyway (`db/migration/V{n}__{설명}.sql`) |
 | 기본 키 | 모든 테이블 UUID (애플리케이션에서 UUIDv7 생성, 시간순 정렬 가능) |
-| 시간 | 일시는 `timestamptz`(UTC), 종일 일정·기념일·처음 만난 날·메모 날짜는 `date` (NFR-TIME-01) |
+| 시간 | 일시는 `timestamptz`(UTC), 종일 일정·기념일·처음 만난 날은 `date` (NFR-TIME-01) |
 | 날짜 범위 | 날짜 컬럼은 1950-01-01 ~ 2050-12-31만 허용한다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (DB-13, PRD D-74) |
 | 사용자 시간대 | `users.time_zone`(IANA, 기본 `Asia/Seoul`)에 저장하고 앱 실행 시 갱신. 오전 9시 알림 계산에 쓴다 |
 | 삭제 | 콘텐츠는 물리 삭제(hard delete). 보관이 필요한 것은 공간 단위(`spaces.purge_at`)와 사용자 익명화로만 다룬다 (4장) |
@@ -316,17 +316,15 @@
 | author_id | uuid | not null, FK users RESTRICT | |
 | title | varchar(50) | null | 앞뒤 공백을 지운 값을 저장한다 (D-132) |
 | body | varchar(5000) | null | 공백·줄바꿈은 그대로 두되, 공백·줄바꿈뿐이면 NULL로 저장한다 (D-132) |
-| memo_date | date | null | 메모 날짜(선택). 시간 없이 시간대 없는 날짜로 저장 (NFR-TIME-01, PRD D-38). 있으면 캘린더 그 날에도 보인다 (FR-MEMO-02.AC4) |
 | pinned_at | timestamptz | null | 고정 시각. null이면 고정 안 됨 (PRD D-18, D-21). 미고정에서 고정으로 바뀔 때만 기록한다. 이미 고정이면 아무것도 바꾸지 않는다 (D-134) |
 | pinned_by | uuid | null, FK users RESTRICT | 고정한 사람. `pinned_at`과 같은 때만 기록한다 (D-134) |
 | created_at, updated_at | timestamptz | not null | `updated_at`은 저장값과 같은 값만 보내는 수정에서는 갱신하지 않는다 (D-123) |
 
 - INDEX (space_id, created_at DESC): 최신순·오래된순 목록
 - 부분 INDEX (space_id, pinned_at DESC) WHERE pinned_at IS NOT NULL: 고정 영역, 최근 고정순
-- 부분 INDEX (space_id, memo_date) WHERE memo_date IS NOT NULL: 캘린더 날짜 범위 조회 (FR-CAL-01)
 - 서비스: 제목, 본문 중 하나 이상 필수 (FR-MEMO-02). 위 공백 처리를 한 뒤 둘 다 비면 저장하지 않는다. 수정 결과가 둘 다 비는 경우도 같다 (D-132). 새 제약·컬럼은 없다
-- 서비스(정렬 보조 키): `/memos/dated`, `/memos/pinned`의 보조 정렬 키로 `id`(PostgreSQL `uuid` 비교)를 쓴다. 새 인덱스는 만들지 않는다
-- 서비스: `memo_date`는 1950-01-01 ~ 2050-12-31이어야 한다. DB CHECK는 두지 않는다 (DB-13, PRD D-74)
+- 서비스(정렬 보조 키): `/memos/pinned`의 보조 정렬 키로 `id`(PostgreSQL `uuid` 비교)를 쓴다. 새 인덱스는 만들지 않는다
+- 삭제됨 (PRD v0.21): `memo_date` 컬럼, 부분 INDEX (space_id, memo_date), `memo_date` 날짜 범위 검사. 메모와 캘린더를 나눴다 (PRD D-174, DB-20). 메모에는 날짜가 없다
 
 **memo_checklist_items** — 삭제됨 (PRD v0.4). 체크리스트가 범위 밖이 됨 (PRD D-19, FR-MEMO-04)
 
@@ -457,6 +455,7 @@
 | DB-17 | 연결한 날은 `spaces.linked_at`에 둔다. `space_members.joined_at`을 쓰지 않는다 (v0.9) | `joined_at`은 소속 행이 생긴 시각이라 복구 때 바뀌지 않고, 연결 시각은 공간 하나에 값 하나라 공간에 두는 것이 맞다 (PRD D-94). 복구하면 `linked_at`을 다시 연결한 시각으로 바꾼다. 개수(`importCounts`)는 저장하지 않고 요청 때 센다 (4.1, PRD D-93) |
 | DB-18 | 기념일 알림 중복 방지는 컬럼 없이 "사용자 현지 오늘 구간에 같은 (user, type, 제목) 행이 있으면 건너뜀"으로 한다 (v0.12) | 기념일마다 알림 1건이고 하루 1번이면 충분해서 `dedupe_key`·UNIQUE를 추가하지 않는다 (PRD D-138). 자동 기념일은 `target_type` `ANNIVERSARY` + `target_id` NULL, 직접 기념일은 `ANNIVERSARY` + 기념일 id |
 | DB-19 | 알림 조회와 안 읽음 개수는 `created_at > now − 30일`로 거르고, 03:00 KST 정리는 물리 삭제일 뿐이다 (v0.12) | 정리 작업이 늦거나 실패해도 30일이 지난 알림이 보이지 않게 (PRD D-141, FR-NOTI-05.AC2, DB-07) |
+| DB-20 | 메모 날짜를 없애고 `memos.memo_date` 컬럼과 부분 INDEX (space_id, memo_date)를 지운다 (v0.21) | 메모와 캘린더를 나눴다 (PRD D-174). 새 Flyway 버전으로 컬럼과 인덱스를 삭제하고, 이미 머지된 마이그레이션은 고치지 않는다. 출시 전이라 실사용 데이터가 없어 데이터 이전은 하지 않는다. 컬럼 삭제로 기존 메모의 날짜 값은 사라진다 |
 
 ---
 
@@ -479,8 +478,8 @@
 | FR-SET-01 연결한 날 (AC1) | spaces.linked_at (D-94, DB-17). 복구하면 다시 연결한 시각 |
 | FR-COUPLE-05 | spaces.status, unlinked_at, purge_at, space_members.left_at. AC4 가져오기 전 해제는 space_members.left_at을 비워 개인 공간을 되살림 (4.2) |
 | FR-CAL-01~03 | events (`updated_by`는 생성 때 null, 수정할 때 수정자). FR-CAL-02.AC1 제목 앞뒤 공백 제거는 서비스 검사 (D-89, 테이블 변화 없음) |
-| FR-CAL-01.AC6 날짜 범위 | events, memos.memo_date, anniversaries.date, spaces.start_date (서비스 검사, DB-13) |
-| FR-CAL-01 날짜 있는 메모 | memos.memo_date |
+| FR-CAL-01.AC6 날짜 범위 | events, anniversaries.date, spaces.start_date (서비스 검사, DB-13). 메모 날짜는 삭제됨 (PRD v0.21, D-174) |
+| FR-CAL-01 날짜 있는 메모 | 삭제됨 (PRD v0.21). 캘린더에 메모가 없다 (D-174, DB-20) |
 | FR-CAL-01.AC4 안 읽음 점 | notifications.read_at |
 | FR-CAL-04 사람 색 | space_members.color, spaces.together_color |
 | FR-CAL-05 일정 알림 | event_reminders. AC4 종일↔시간 전환 시 모든 사용자 행 삭제와 일시 변경 때 다시 계산 (D-91), AC5 `fire_at` 계산과 지난 시각이면 `sent_at` = 지금 (D-90), AC6 시간대 변경 때 보내지 않은 종일 알림만 다시 계산 (D-91). 테이블 변화 없음 |
@@ -489,7 +488,7 @@
 | FR-ANNIV-03 AC1 | anniversaries.name (앞뒤 공백 제거, 코드 포인트 30자 이하, D-104, D-82), anniversaries.date. 테이블 변화 없음 |
 | D-104 ~ D-106 | D-104 anniversaries.name, D-105·D-106 DB-01 (계산, 테이블 변화 없음) |
 | FR-MEMO-01~03 | memos |
-| FR-MEMO-02 메모 날짜 | memos.memo_date |
+| FR-MEMO-02 메모 날짜 (AC3·AC4) | 삭제됨 (PRD v0.21). `memos.memo_date` 컬럼 삭제 (D-174, DB-20) |
 | FR-MEMO-04 | 삭제됨 (PRD v0.4) |
 | FR-MEMO-05 | memos.pinned_at, pinned_by |
 | FR-MEMO-06 | memo_favorites |

@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.20 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.21 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-11-24, 기준 PRD v0.20)
+> 작성일: 2026-10-17 (갱신: 2026-11-25, 기준 PRD v0.21)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -15,7 +15,7 @@
 - 모든 경로는 `/api/v1` 아래에 있다
 - access 토큰이 필요 없는 경로는 `/auth/guest`, `/auth/social`, `/auth/refresh`, `/webhooks/kakao/unlink`(Kakao 서버만 부르는 웹훅, 3.6) 넷뿐이고, 나머지는 access 토큰(`Authorization: Bearer …`)이 필요하다. `POST /auth/switch`도 게스트의 access 토큰이 필요하다
 - JSON 필드는 camelCase, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 UTC (`2026-10-17T06:30:00Z`). **일시 형식 (v0.12)**: 요청은 `YYYY-MM-DDTHH:MM:SSZ`만 받고 그 밖의 형식은 400 `VALIDATION_FAILED`(해당 필드, `INVALID`)다. 응답은 항상 초 단위 `Z`로 쓴다
-- **날짜 범위는 1950-01-01 ~ 2050-12-31이다 (PRD D-74, R-15).** 일정, 메모 날짜, 직접 기념일을 만들거나 고칠 때(쓰기) 이 밖의 날짜가 있으면 400 `DATE_OUT_OF_RANGE`다. 날짜 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)는 다르다. 월 달력이 앞뒤 달 날짜도 그리므로 1950년 1월이나 2050년 12월에서는 `from`·`to`가 범위 밖으로 나간다. 이때 오류 없이 범위 안으로 잘라서 조회한다(R-15). 처음 만난 날은 1950-01-01보다 앞일 때만 이 코드이고, 오늘보다 뒤(2050년 이후 포함)면 `VALIDATION_FAILED`다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (ERD DB-13)
+- **날짜 범위는 1950-01-01 ~ 2050-12-31이다 (PRD D-74, R-15).** 일정, 직접 기념일을 만들거나 고칠 때(쓰기) 이 밖의 날짜가 있으면 400 `DATE_OUT_OF_RANGE`다. 날짜 범위 조회(`GET /events`, `/anniversaries`)는 다르다. 월 달력이 앞뒤 달 날짜도 그리므로 1950년 1월이나 2050년 12월에서는 `from`·`to`가 범위 밖으로 나간다. 이때 오류 없이 범위 안으로 잘라서 조회한다(R-15). 처음 만난 날은 1950-01-01보다 앞일 때만 이 코드이고, 오늘보다 뒤(2050년 이후 포함)면 `VALIDATION_FAILED`다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (ERD DB-13)
 - access 토큰 1시간, refresh 토큰은 회원 30일·게스트 365일, 사용할 때마다 교체 (PRD D-73, NFR-SEC-01, ERD DB-02). 로그인이 만료된 기기에는 푸시를 보내지 않는다 (R-16, 7장). 교체는 같은 세션 행의 토큰 해시와 만료를 갱신하는 것이라 `sid`는 로그인부터 로그아웃까지 바뀌지 않는다. 이전 refresh 토큰을 다시 보내면 401 `SESSION_INVALID`다
 - **토큰 형식 (PRD D-81, NFR-SEC-01).**
   - **access 토큰**은 JWT다. HS256으로 서버 비밀 키로 서명하고, 클레임은 `sub`(사용자 ID, uuid 문자열), `sid`(세션 ID = `auth_sessions.id`), `iat`, `exp`(발급 + 1시간)다. **계정 종류(GUEST·MEMBER)는 토큰에 넣지 않는다.** 연동(`POST /auth/link`) 직후 같은 토큰으로 판단이 바뀌어야 하므로 서버가 요청마다 DB에서 읽는다 (R-14, R-17).
@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
 | 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`, `GET /memos`) |
-| 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/dated`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
+| 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
 | 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
 | Kakao 연결 해제 알림 웹훅 (`/webhooks/kakao/unlink`) | 200 | 없음. 위 "204" 규칙의 예외다. Kakao가 3초 안에 `200 OK`를 요구하고 처리 결과·서버 오류와 관계없이 200을 기대한다. 인증 실패만 401 (3.6) |
 | 모든 오류 (4xx, 5xx) | 5장의 상태 | 오류 객체 (아래) |
@@ -91,7 +91,7 @@
 | --- | --- | --- | --- |
 | R-01 | 모든 콘텐츠 조회·변경: 리소스의 `space_id` = 요청자의 활성 공간(`space_members.left_at IS NULL`) | 404 `NOT_FOUND` | NFR-SEC-02 |
 | R-02 | 일정 수정·삭제: 요청자 = `author_id`, 또는 `is_together = true` | 403 `NOT_AUTHOR` | D-12, D-34 |
-| R-03 | 메모의 제목·본문·메모 날짜 수정, 메모 삭제: 요청자 = `author_id` | 403 `NOT_AUTHOR` | D-17 |
+| R-03 | 메모의 제목·본문 수정, 메모 삭제: 요청자 = `author_id` | 403 `NOT_AUTHOR` | D-17 |
 | R-04 | 메모 고정·해제: 공간 구성원이면 허용 | (R-01만) | D-21 |
 | R-05 | 직접 기념일 수정·삭제: 요청자 = `author_id` | 403 `NOT_AUTHOR` | FR-ANNIV-03 |
 | R-06 | 즐겨찾기: 요청자 본인의 행만 만들고 지운다. 목록 조회 시 다른 사용자의 즐겨찾기는 응답에 넣지 않는다 | — | D-24 |
@@ -103,7 +103,7 @@
 | R-12 | 알림 조회·읽음 처리: `notifications.user_id` = 요청자. 알림 목록은 공간이 아니라 받은 사람 기준이므로 R-01 대신 이 규칙만 적용한다 | 404 `NOT_FOUND` | FR-NOTI-05.AC4 |
 | R-13 | 일정 수정에서 `isTogether` 값을 바꾸는 요청은 요청자 = `author_id`일 때만. '함께' 일정을 상대가 수정할 때는 `isTogether`를 바꿀 수 없다 (R-02는 통과해도 R-13에서 거부). 값을 바꾸지 않는 요청은 R-02만 적용한다. 바꾸는 요청인지는 요청의 `isTogether`를 저장된 값과 비교해 정한다. 같은 값을 보내면 바꾸지 않는 요청이라 R-02만 적용한다 | 403 `NOT_AUTHOR` | D-52, FR-CAL-03.AC4 |
 | R-14 | 게스트 전용 경로(`POST /auth/link`, `POST /auth/switch`): 요청자 = `account_type = GUEST`. 회원이 부르면 거부하고 아무것도 바꾸지 않는다 | 403 `GUEST_ONLY` | D-67, FR-AUTH-03 |
-| R-15 | 날짜 범위: `events`의 시작·종료 날짜(일시는 요청자 `users.time_zone` 기준 날짜), `memos.memoDate`(null이 아닐 때), `anniversaries.date`, `spaces.start_date`는 1950-01-01 ~ 2050-12-31 안이어야 한다. 이 검사와 `DATE_OUT_OF_RANGE`는 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `GET /anniversaries`, `GET /memos/dated`)의 `from`·`to`가 이 범위 밖이면 오류 없이 범위 안으로 잘라서 조회한다(`from`은 1950-01-01 이상, `to`는 2050-12-31 이하로). `from` > `to`와 3개월 초과 검사는 요청받은 값 그대로 먼저 하고, 잘라낸 뒤 조회 구간이 비면 빈 목록을 돌려준다. 처음 만난 날(`PATCH /space`)이 오늘보다 뒤면 범위와 관계없이 기존대로 `VALIDATION_FAILED`이고(2050년 이후 포함), `DATE_OUT_OF_RANGE`는 1950-01-01보다 앞일 때 나온다 | 400 `DATE_OUT_OF_RANGE` | D-74, FR-CAL-01.AC6, FR-COUPLE-04.AC3 |
+| R-15 | 날짜 범위: `events`의 시작·종료 날짜(일시는 요청자 `users.time_zone` 기준 날짜), `anniversaries.date`, `spaces.start_date`는 1950-01-01 ~ 2050-12-31 안이어야 한다. 이 검사와 `DATE_OUT_OF_RANGE`는 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `GET /anniversaries`)의 `from`·`to`가 이 범위 밖이면 오류 없이 범위 안으로 잘라서 조회한다(`from`은 1950-01-01 이상, `to`는 2050-12-31 이하로). `from` > `to`와 3개월 초과 검사는 요청받은 값 그대로 먼저 하고, 잘라낸 뒤 조회 구간이 비면 빈 목록을 돌려준다. 처음 만난 날(`PATCH /space`)이 오늘보다 뒤면 범위와 관계없이 기존대로 `VALIDATION_FAILED`이고(2050년 이후 포함), `DATE_OUT_OF_RANGE`는 1950-01-01보다 앞일 때 나온다 | 400 `DATE_OUT_OF_RANGE` | D-74, FR-CAL-01.AC6, FR-COUPLE-04.AC3 |
 | R-16 | 푸시 전송: 받는 사람에게 유효한 세션(`auth_sessions.revoked_at IS NULL AND expires_at > now`)이 있을 때만 보낸다. 알림 목록 행(`notifications`)은 세션과 관계없이 그대로 만든다. 동기화 신호(6장)는 그대로 보낸다 | (푸시 안 보냄, 오류 아님) | D-73, ERD DB-14, NFR-SEC-01 |
 | R-17 | 회원 전용 `POST /auth/logout`: 요청자 = `account_type = MEMBER`. 게스트가 부르면 거부하고 아무것도 바꾸지 않는다. (커플 연결의 회원 전용 검사는 R-09) | 403 `GUEST_NOT_ALLOWED` | FR-AUTH-05, D-07 |
 | R-18 | 커플 연결 해제(`DELETE /couple`): 요청자의 활성 공간이 `COUPLE`일 것. 기록 가져오기(`POST /couple/import`): 요청자에게 가져오기 대기 중인 개인 공간이 있을 것(그런 공간은 커플 공간에 있는 동안만 있다, D-78). 게스트·회원 구분 없이 이 조건만 본다. 둘이 동시에 해제하면 두 번째 요청은 잠금 뒤 개인 공간을 보고 `NOT_COUPLE`이다 | 409 `NOT_COUPLE` (`DELETE /couple`) / 409 `NO_IMPORT_PENDING` (`POST /couple/import`) | FR-COUPLE-05, FR-COUPLE-03, D-78 |
@@ -467,23 +467,22 @@
 | --- | --- | --- | --- | --- |
 | GET | /memos?view=&cursor=&size= | → 200 `{items: Memo[], nextCursor, totalCount, favoriteCount}`. 고정되지 않은 메모 목록(고정 메모는 `favorites`에도 나오지 않는다, D-130). `view` = `newest`(기본), `oldest`, `favorites`. 정렬·커서는 3.3 "커서 정렬 키": `newest`·`favorites`는 (`created_at`, `id`) 내림차순에서 커서보다 작은 것, `oldest`는 오름차순에서 큰 것. `totalCount` = 요청한 `view`의 전체 개수(고정 제외), `favoriteCount` = 내 즐겨찾기 중 고정되지 않은 것의 개수 | R-01, R-06 | FR-MEMO-01 |
 | GET | /memos/pinned | → 200 `{items: Memo[]}`. 고정 메모 전체, `pinned_at` 내림차순 → `id` 내림차순. 앱은 3개만 보여주고 4개 이상이면 "더보기" | R-01 | FR-MEMO-05 |
-| GET | /memos/dated?from=&to= | → 200 `{items: Memo[]}`. 날짜 범위(최대 3개월)에 `memoDate`가 있는 메모. 캘린더용. 정렬은 `memo_date` 오름차순 → `created_at` 내림차순 → `id` 내림차순. `from` > `to`이거나 범위가 3개월을 넘으면 400 `VALIDATION_FAILED`, `from`·`to`가 1950-01-01 ~ 2050-12-31 밖이면 오류 없이 범위 안으로 잘라서 조회한다 | R-01, R-15 | FR-CAL-01.AC2, FR-CAL-01.AC6 |
-| POST | /memos | `{title?, body?, memoDate?, notifyPartner?}` → 201 `Memo`. `memoDate`는 `YYYY-MM-DD` 또는 생략·null이고, 날짜가 1950-01-01 ~ 2050-12-31 밖이면 400 `DATE_OUT_OF_RANGE`. 제목·본문 규칙은 아래 "메모 쓰기 규칙" | R-01, R-15 | FR-MEMO-02, FR-NOTI-04, FR-CAL-01.AC6 |
+| GET | /memos/dated?from=&to= | 삭제됨 (PRD v0.21, D-174). 캘린더에 메모를 보이지 않는다. | — | FR-CAL-01.AC2 |
+| POST | /memos | `{title?, body?, notifyPartner?}` → 201 `Memo`. 제목·본문 규칙은 아래 "메모 쓰기 규칙" | R-01 | FR-MEMO-02, FR-NOTI-04 |
 | GET | /memos/{id} | → 200 `Memo` (요청자의 즐겨찾기 여부 `isFavorite` 포함) | R-01, R-06 | FR-MEMO-03 |
-| PATCH | /memos/{id} | `{title?, body?, memoDate?}` → 200 `Memo`. 부분 수정(아래 "메모 쓰기 규칙"). 날짜 범위 검사는 POST와 같다. 저장값과 같은 값만 보내면 200 + 현재 값, `updated_at` 유지, 변경 이벤트·SYNC 없음 (D-123) | R-01, R-03, R-15 | FR-MEMO-03, FR-CAL-01.AC6 |
+| PATCH | /memos/{id} | `{title?, body?}` → 200 `Memo`. 부분 수정(아래 "메모 쓰기 규칙"). 저장값과 같은 값만 보내면 200 + 현재 값, `updated_at` 유지, 변경 이벤트·SYNC 없음 (D-123) | R-01, R-03 | FR-MEMO-03 |
 | DELETE | /memos/{id} | 본문 없음 → 204. 메모 삭제 | R-01, R-03 | FR-MEMO-03 |
 | PATCH | /memos/{id}/checklist-items/{itemId} | 삭제됨 (PRD v0.4). 체크리스트가 범위 밖이 됨 | — | FR-MEMO-04 |
 | PUT, DELETE | /memos/{id}/pin | 본문 없음 → 204. 고정·해제. 둘 다 멱등이다(D-134). 이미 고정인 메모의 `PUT`은 `pinned_at`·`pinned_by`를 바꾸지 않고 알림도 보내지 않는다. 미고정에서 고정으로 바뀔 때마다 상대에게 `MEMO_PINNED` 알림을 만든다(고정 → 해제 → 고정을 반복하면 매번, 자기가 쓴 메모도 고정하지 않은 쪽에게, 해제는 알림 없음, D-135). SYNC `MEMO`는 6장 | R-01, R-04 | FR-MEMO-05 |
 | PUT, DELETE | /memos/{id}/favorite | 본문 없음 → 204. 즐겨찾기·해제. 둘 다 멱등이다(D-134). 본인 값이라 SYNC 신호가 없다 (6장) | R-01, R-06 | FR-MEMO-06 |
 
-`Memo` (`/memos`, `/memos/pinned`, `/memos/dated`의 `items`와 상세·생성·수정 응답이 같은 모양. 1.1대로 값이 없으면 `null`)
+`Memo` (`/memos`, `/memos/pinned`의 `items`와 상세·생성·수정 응답이 같은 모양. 1.1대로 값이 없으면 `null`)
 
 | 필드 | 타입 | 뜻 |
 | --- | --- | --- |
 | `id` | uuid | |
 | `title` | string \| null | 앞뒤 공백을 지운 값. 없으면 `null` |
 | `body` | string \| null | 본문 전체. 공백·줄바꿈뿐이었으면 `null`. 미리보기는 앱이 자른다 |
-| `memoDate` | 날짜 \| null | 메모 날짜 |
 | `authorId` | uuid | 작성자. 닉네임은 넣지 않는다(`Event.authorId`와 같은 방식) |
 | `isPinned` | boolean | 고정 여부 |
 | `pinnedAt` | 일시 \| null | 고정한 시각. 고정이 아니면 `null` |
@@ -497,8 +496,9 @@
 | 제목 | 앞뒤 공백을 지운 값으로 저장. 코드 포인트 50개 초과면 (`title`, `TOO_LONG`) — 길이는 지운 뒤 센다 |
 | 본문 | 공백·줄바꿈은 보존한다. 공백·줄바꿈뿐이면 빈 값(`null`)으로 본다. 5000개 초과면 (`body`, `TOO_LONG`) |
 | 둘 다 비면 | 제목과 본문이 모두 빈 값이면 `title`·`body` 둘 다 (`REQUIRED`)로 400 `VALIDATION_FAILED`. 저장하지 않는다 |
-| `PATCH` | 부분 수정. 생략한 필드는 그대로, `title`·`body`·`memoDate`의 `null`은 지움. 결과(수정 뒤)가 제목·본문 둘 다 비면 `REQUIRED` |
-| 검사 순서 | R-01(404 `NOT_FOUND`) → R-03(403 `NOT_AUTHOR`, `PATCH`만) → 값 검사(400 `VALIDATION_FAILED`) → 날짜 범위(400 `DATE_OUT_OF_RANGE`) |
+| `PATCH` | 부분 수정. 생략한 필드는 그대로, `title`·`body`의 `null`은 지움. 결과(수정 뒤)가 제목·본문 둘 다 비면 `REQUIRED` |
+| 검사 순서 | R-01(404 `NOT_FOUND`) → R-03(403 `NOT_AUTHOR`, `PATCH`만) → 값 검사(400 `VALIDATION_FAILED`) |
+| 모르는 필드 | 무시한다. 요청에 `memoDate`가 와도 오류 없이 무시한다(PRD v0.21에서 삭제된 필드, 일정·기념일 쓰기의 "모르는 필드"와 같다) |
 
 **앱 동작 (3.4 목록 저장)**: 앱은 응답 순서를 위치와 함께 `view`별로 Room에 저장하고 다시 정렬하지 않는다. 고정·즐겨찾기·삭제·작성 성공 뒤에는 해당 `view`의 첫 페이지와 `/memos/pinned`를 다시 불러온다. 화면의 개수 표시: 핀 N = `/memos/pinned`의 `items` 길이, "전체 메모 N개" = 현재 `view`의 `totalCount`, "★ 즐겨찾기 N" = `favoriteCount`. 고정·즐겨찾기가 204(본문 없음)로 성공하면, 앱은 상세를 저장해 둔 메모에 한해 `GET /memos/{id}`로 다시 받아 저장값(`pinnedAt`, `isFavorite`)을 갱신한다 (D-160).
 
@@ -676,8 +676,8 @@
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 요청 일시가 `YYYY-MM-DDTHH:MM:SSZ` 형식이 아님 (해당 필드, `INVALID`, 1장), 프로필 사진 `file` 없음 (`PUT /me/profile-image`, `file`, `REQUIRED`), `PATCH /me/notification-settings`의 필드가 `null` (`REQUIRED`), 메모 쓰기: 제목 앞뒤 공백을 지운 뒤 50자 초과 (`title`, `TOO_LONG`)·본문 5000자 초과 (`body`, `TOO_LONG`)·결과가 제목·본문 둘 다 빔 (`title`·`body`, `REQUIRED`, 3.4), 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /memos/dated`, `GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
-| 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /memos`(`memoDate`), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정·기념일 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`, `/memos/dated`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
+| 400 | VALIDATION_FAILED | 요청 일시가 `YYYY-MM-DDTHH:MM:SSZ` 형식이 아님 (해당 필드, `INVALID`, 1장), 프로필 사진 `file` 없음 (`PUT /me/profile-image`, `file`, `REQUIRED`), `PATCH /me/notification-settings`의 필드가 `null` (`REQUIRED`), 메모 쓰기: 제목 앞뒤 공백을 지운 뒤 50자 초과 (`title`, `TOO_LONG`)·본문 5000자 초과 (`body`, `TOO_LONG`)·결과가 제목·본문 둘 다 빔 (`title`·`body`, `REQUIRED`, 3.4), 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
+| 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정·기념일 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
 | 401 | SESSION_INVALID | `Authorization` 헤더가 없음, `Bearer` 형식이 아님, access 토큰의 서명이 틀림, 클레임이 없거나 틀림. 또는 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴(Kakao 연결 해제 알림으로 인한 탈퇴 포함, 4.8)로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장, NFR-SEC-01 |
@@ -785,9 +785,9 @@
 | FR-COUPLE-03 | /couple/import, GET /me | 3.1 (`MeSpace.importCounts`, `ImportCounts`, D-93, Q-13), 4.4의 5·6·8·9·10단계 (빈 개인 공간은 바로 삭제, `importPending` 정의, 개수, AC6 확인한 공간 ID 저장 시점 D-98, 9단계 [시작하기] 순서), R-18, 409 `NO_IMPORT_PENDING` (D-76은 앱 동작) |
 | FR-COUPLE-04 | GET·PATCH /space | 3.2 (`Space`, 지우기 없음 D-84, 검사 순서), R-08, R-15, 4.4의 9단계(미래 날짜 거부, 1950년 이전 `DATE_OUT_OF_RANGE`, AC4 시트의 [저장]은 서버를 부르지 않고 [시작하기]에서 저장 D-98) |
 | FR-COUPLE-05 (AC3 D-125, AC6 D-124) | DELETE /couple | R-18 (409 `NOT_COUPLE`), 4.5 (6단계 초기화 뒤 이동처는 `GET /me`로, 1단계 해제 실패 처리), 4.4의 8단계 (알림 삭제 포함, 4단계의 가져오기 대기 중 개인 공간 되살리기 D-78, 1단계 `PATCH /space`·`PATCH /space/colors`의 `NOT_COUPLE`도 초기화 AC5, 6단계 앱 초기화와 "재시작"의 뜻 AC3, D-103) |
-| FR-CAL-01~03 | /events, GET /memos/dated, GET /notifications/unread-count | R-01, R-02, R-10, R-12, R-13, 3.3 (`Event`, 조회 규칙, 쓰기 규칙, 검사 순서 R-01 → R-02 → R-13 → R-10 → 값 → 날짜 범위) |
+| FR-CAL-01~03 | /events, GET /notifications/unread-count | R-01, R-02, R-10, R-12, R-13, 3.3 (`Event`, 조회 규칙, 쓰기 규칙, 검사 순서 R-01 → R-02 → R-13 → R-10 → 값 → 날짜 범위) |
 | FR-CAL-02.AC1 제목 (D-89) | POST·PATCH /events | 3.3 쓰기 규칙 (앞뒤 공백 제거, 지운 뒤 빈 값은 `REQUIRED`, 50자 초과는 `TOO_LONG`) |
-| FR-CAL-01.AC6 날짜 범위 1950~2050 (D-74) | POST/PATCH /events, /memos, /anniversaries, PATCH /space | R-15, 1장, 쓰기는 400 `DATE_OUT_OF_RANGE`, 범위 조회(GET /events, /anniversaries, /memos/dated)는 `from`·`to`를 범위 안으로 잘라서 조회, ERD DB-13 |
+| FR-CAL-01.AC6 날짜 범위 1950~2050 (D-74) | POST/PATCH /events, /anniversaries, PATCH /space | R-15, 1장, 쓰기는 400 `DATE_OUT_OF_RANGE`, 범위 조회(GET /events, /anniversaries)는 `from`·`to`를 범위 안으로 잘라서 조회, ERD DB-13 |
 | FR-CAL-04 사람 색 | PATCH /space/colors | R-08, 3.2 (팔레트 키 12개, 검사 순서, `members[i].color` 필드 이름, 모르는 팔레트 키 앱 동작). AC2 [완료]에서 한 번 저장(D-100)과 AC7 기본 색으로 되돌리기(D-101)는 앱 동작이라 API 변경 없음. `NOT_COUPLE`은 4.5 초기화 |
 | FR-CAL-05 일정 알림 | /events/{id}/reminder, PATCH /events/{id} | R-07, 7장, 3.3 (`EventReminder`, `option` 6개, 알림 시각 계산 AC5 D-90, 다시 계산 AC4·AC6 D-91, `PUT` 200 `Event`, `DELETE` 멱등 204), 6장 (알림 변경은 동기화 신호 없음) |
 | FR-NOTI-04 상대 일정 추가 알림 (D-92) | POST /events (`notifyPartner`) | 3.3 "상대 일정 추가 알림" (본문 [날짜] 서식), 7장 |
