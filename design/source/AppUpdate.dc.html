@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>업데이트 팝업</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22; background: #FFFFFF">
+<sc-if value="{{bgCalendar}}" hint-placeholder-val="{{ true }}">
+<dc-import name="Calendar" tabs="{{ true }}" hint-size="390px,844px"></dc-import>
+</sc-if>
+<sc-if value="{{bgStart}}" hint-placeholder-val="{{ false }}">
+<dc-import name="Main" hint-size="390px,844px"></dc-import>
+</sc-if>
+<div style="position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(28, 26, 34, 0.48)">
+<section role="alertdialog" aria-modal="true" aria-label="{{dialogLabel}}" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; max-height: 100%; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column">
+<div style="{{contentStyle}}">
+<sc-if value="{{hasPreset}}" hint-placeholder-val="{{ true }}">
+<div style="flex-shrink: 0; display: flex; justify-content: center; margin-bottom: 8px">
+<dc-import name="PopupImage" kind="{{image}}" hint-size="112px,112px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{hasBanner}}" hint-placeholder-val="{{ false }}">
+<div style="{{bannerBoxStyle}}">
+<dc-import name="PopupBanner" kind="{{banner}}" hint-size="280px,350px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{hasText}}" hint-placeholder-val="{{ true }}">
+<h2 style="flex-shrink: 0; margin: 0; font-size: 17px; line-height: 24px; font-weight: 700; text-align: center; word-break: keep-all">{{title}}</h2>
+<p style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666; text-align: center; white-space: pre-line; word-break: keep-all">{{body}}</p>
+</sc-if>
+</div>
+<div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; margin-top: 16px">
+<sc-if value="{{isForce}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">앱 종료</button>
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 0; background: #6D4AE0; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">업데이트</button>
+</div>
+</sc-if>
+<sc-if value="{{isRecommend}}" hint-placeholder-val="{{ false }}">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 0; background: #6D4AE0; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">업데이트</button>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">오늘 하루 안 보기</button>
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">닫기</button>
+</div>
+</sc-if>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","default":"force","options":["force","recommend"],"section":"상태"},"defaultCopy":{"editor":"boolean","default":false,"section":"상태"},"image":{"editor":"enum","default":"update","options":["update","banner-update","none"],"section":"상태"},"imageOnly":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const mode = this.props.mode ?? 'force';
+    const recommend = mode === 'recommend';
+    const image = this.props.image ?? 'update';
+    const longBody = false;
+    const banner = image.startsWith('banner-') ? image.slice(7) : null;
+    const hasPreset = !banner && image !== 'none';
+    const imageOnly = !!this.props.imageOnly && !!banner;
+    const base = 'flex: 0 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px';
+    const contentStyle = longBody
+      ? base + '; padding-bottom: 12px; border-bottom: 1px solid #EEEBF1'
+      : base;
+    const bannerAlt = { maintenance: '서비스 점검 안내', notice: '알림 지연 안내', update: '새 버전이 나왔어요' };
+
+    let title = '새 버전으로 업데이트해 주세요';
+    let body = '더 안전하고 편리해진 새 버전이 나왔어요.\n업데이트하면 계속 쓸 수 있어요.';
+    if (recommend) { title = '새 버전이 나왔어요'; body = '새 기능과 안정성 개선이 담겨 있어요.\n지금 업데이트해 보세요.'; }
+    else if (this.props.defaultCopy) { title = '업데이트가 필요해요'; body = '새 버전으로 업데이트해야 계속 쓸 수 있어요.'; }
+    return {
+      isRecommend: recommend,
+      isForce: !recommend,
+      hasPreset,
+      image,
+      hasBanner: !!banner,
+      banner,
+      bannerBoxStyle: imageOnly
+        ? 'flex-shrink: 0; display: flex; justify-content: center'
+        : 'flex-shrink: 0; display: flex; justify-content: center; margin-bottom: 8px',
+      hasText: !imageOnly,
+      dialogLabel: imageOnly ? bannerAlt[banner] : title,
+      title,
+      body,
+      contentStyle,
+      bgCalendar: true,
+      bgStart: false,
+    };
+  }
+}
+</script>
+</body>
+</html>
