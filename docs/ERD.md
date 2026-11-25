@@ -1,6 +1,6 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.21 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.22 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
 > 작성일: 2026-10-17 (갱신: 2026-11-25)
 
@@ -15,7 +15,7 @@
 | 원칙 | 내용 |
 | --- | --- |
 | DB | PostgreSQL 16, 마이그레이션은 Flyway (`db/migration/V{n}__{설명}.sql`) |
-| 기본 키 | 모든 테이블 UUID (애플리케이션에서 UUIDv7 생성, 시간순 정렬 가능) |
+| 기본 키 | 모든 테이블 UUID (애플리케이션에서 UUIDv7 생성, 시간순 정렬 가능). 예외는 `app_notices`, `app_update_rules`뿐이며 운영자가 정한 문자열 PK를 쓴다 (DB-21) |
 | 시간 | 일시는 `timestamptz`(UTC), 종일 일정·기념일·처음 만난 날은 `date` (NFR-TIME-01) |
 | 날짜 범위 | 날짜 컬럼은 1950-01-01 ~ 2050-12-31만 허용한다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (DB-13, PRD D-74) |
 | 사용자 시간대 | `users.time_zone`(IANA, 기본 `Asia/Seoul`)에 저장하고 앱 실행 시 갱신. 오전 9시 알림 계산에 쓴다 |
@@ -29,7 +29,7 @@
 
 ## 2. 테이블 한눈에 보기
 
-15개 테이블이 세 영역으로 나뉜다 (삭제된 `memo_checklist_items` 제외). 관계도는 `ERD.png`를 본다.
+17개 테이블이 네 영역으로 나뉜다 (삭제된 `memo_checklist_items` 제외). 관계도는 `ERD.png`를 본다.
 
 | 영역 | 테이블 | 역할 |
 | --- | --- | --- |
@@ -49,6 +49,8 @@
 | | memos | 메모 (고정 핀 포함) |
 | | memo_checklist_items | 삭제됨 (PRD v0.4) |
 | | memo_favorites | 사용자별 즐겨찾기 |
+| 운영 | app_notices | 장애 팝업 (차단·안내). 쓰기·전체 조회는 관리자 API, 유효한 항목 읽기는 공개 조회 |
+| | app_update_rules | 강제·권장 업데이트 규칙. 쓰기·전체 조회는 관리자 API, 읽기는 공개 조회와 서버 426 차단 |
 
 ---
 
@@ -118,10 +120,14 @@
 | user_id | uuid | not null, FK users ON DELETE CASCADE | |
 | fcm_token | varchar(255) | not null, UNIQUE | 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다 |
 | platform | varchar(10) | not null, default `ANDROID` | 값은 `ANDROID`, `IOS`. iOS 대비 (PRD D-25). 요청의 값은 API에서 검사하고 DB CHECK는 두지 않는다 (1장 열거형 규칙의 예외) |
+| os_version | varchar(20) | null | OS 버전 문자열(Android는 API 레벨). `PUT /me/devices`의 `osVersion` (FR-APP-03, D-182, DB-22) |
+| app_version | varchar(50) | null | 앱 versionName (예 `1.0.0`). `appVersion` |
+| app_build | integer | null | 앱 versionCode, 0 이상. `appBuild` |
 | updated_at | timestamptz | not null | |
 
 - 서비스: 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다
 - 서비스: 등록(`PUT /me/devices`)은 같은 토큰이면 멱등(upsert)이다
+- 서비스(기기 정보, DB-22): 등록할 때 받은 `osVersion`, `appVersion`, `appBuild`로 `os_version`, `app_version`, `app_build`를 덮어쓴다. 보낸 값만 저장하고 안 보낸 값은 null로 둔다(이전 값을 남기지 않는다). 형식 검사(`appBuild` 0 이상 정수, 길이 20·50)는 서비스에서 하고 DB CHECK는 두지 않는다. 이 값은 장애·업데이트 안내와 문의 대응에만 쓰고, 행이 지워질 때(로그아웃, 로그인 3종, 탈퇴, 무효 토큰, 4.4 정리) 함께 지워진다 (NFR-PRIV-03)
 - 서비스: 푸시를 보낼 때 FCM이 무효 토큰 응답(`UNREGISTERED` 등)을 주면 그 `devices` 행을 삭제한다. 일시 오류는 행을 그대로 두고 로그만 남긴다 (PRD D-50, D-73)
 - 서비스: 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)은 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다. 게스트 연동은 같은 기기라 지우지 않는다 (DB-09, DB-12, PRD D-51, D-67)
 - 서비스: 로그아웃은 그 사용자의 `devices` 행을 모두 지운다. 한 기기 규칙이라 사용자 전체 = 그 기기다 (DB-09, PRD D-50). 그래서 로그아웃한 기기에는 푸시가 가지 않는다
@@ -339,6 +345,50 @@
 - PK (memo_id, user_id)
 - 서비스: 추가·해제는 멱등이다. 이미 있는 즐겨찾기를 또 추가하거나 없는 것을 해제해도 결과가 같고 오류가 아니다 (D-134)
 
+### 3.4 운영
+
+앱 실행 때 보여 주는 장애 팝업과 업데이트 팝업의 서버 쪽 설정이다 (FR-APP-01, FR-APP-02). 같은 값을 Remote Config(`app_notices`, `app_update_rules`)에도 둘 수 있고 앱이 두 곳을 `id`로 합친다 (D-176, D-177, D-178). 이 두 테이블은 공간·사용자와 관계가 없다(FK 없음, `space_id` 없음). 쓰기와 전체 조회는 관리자 API(관리자 키 헤더)로만 하고, 지금 유효한 항목의 읽기는 로그인 없는 공개 조회 2개(`GET /app-notices`, `GET /app-update-rules`)가 한다. 서버의 강제 업데이트 차단(R-20)도 `app_update_rules`를 읽는다 (NFR-SEC-04). 문자열 PK는 UUID 원칙의 예외다 (DB-21).
+
+**app_notices** — 장애 팝업 (FR-APP-01, D-176)
+
+| 컬럼 | 타입 | 제약 | 설명 |
+| --- | --- | --- | --- |
+| id | varchar(50) | PK | UUID가 아니라 운영자가 정한 문자열 (1~50자, `[a-z0-9_-]`). Remote Config의 같은 장애와 같은 값이어야 앱이 합친다. 형식은 서비스에서 검사 (DB-21) |
+| type | varchar(10) | not null, CHECK in (`BLOCK`, `INFO`) | 차단 / 안내 |
+| title | varchar(40) | not null | 1~40자 |
+| body | varchar(500) | not null | 1~500자. 줄바꿈 허용 |
+| image | varchar(500) | null | `preset:maintenance`, `preset:error`, `preset:update`, `preset:notice` 또는 `https://` 주소 (D-181). 형식은 서비스에서 검사 |
+| link_text | varchar(20) | null | `link_url`과 둘 다 있어야 버튼이 보인다 |
+| link_url | varchar(500) | null | `https://` 주소 |
+| platform | varchar(10) | null | `ANDROID`, `IOS`, null이면 모든 플랫폼. API에서 검사하고 DB CHECK는 두지 않는다 (`devices.platform`과 같은 예외) |
+| starts_at, ends_at | timestamptz | null | 표시 기간. null이면 각각 바로 / 끝 없음. `ends_at`은 `starts_at`보다 뒤여야 한다(서비스) |
+| created_at, updated_at | timestamptz | not null, default now() | |
+
+- 서비스: "지금 유효함" = `(starts_at IS NULL OR starts_at <= now) AND (ends_at IS NULL OR now < ends_at)`. 공개 조회는 이것만, 관리자 조회는 끝난 것도 돌려준다. 정렬은 `created_at` 오래된 순, 같으면 `id`
+- 서비스: 같은 `id`로 PUT하면 새로 만들거나 바꾼다(upsert). 바꿀 때 `created_at`은 그대로 두고 `updated_at`만 갱신한다
+- 서비스: 행 수가 적어(운영자가 직접 넣음) 별도 인덱스를 두지 않는다
+
+**app_update_rules** — 강제·권장 업데이트 규칙 (FR-APP-02, D-177)
+
+| 컬럼 | 타입 | 제약 | 설명 |
+| --- | --- | --- | --- |
+| id | varchar(50) | PK | `app_notices.id`와 같은 규칙 (DB-21) |
+| mode | varchar(10) | not null, CHECK in (`FORCE`, `RECOMMEND`) | 강제 / 권장 |
+| platform | varchar(10) | not null | `ANDROID`, `IOS`. API에서 검사 |
+| build_op | varchar(5) | not null, CHECK in (`EQ`, `LTE`, `GTE`, `RANGE`, `IN`) | 빌드 조건 종류 |
+| build_value | integer | null | `EQ`, `LTE`, `GTE`일 때 |
+| build_min, build_max | integer | null | `RANGE`일 때(양 끝 포함, `min` ≤ `max`) |
+| build_values | integer[] | null | `IN`일 때 1~50개 |
+| os_min, os_max | integer | null | OS 조건(Android는 API 레벨, 양 끝 포함). 둘 다 null이면 OS 조건 없음 |
+| title | varchar(40) | not null | |
+| body | varchar(500) | not null | |
+| image | varchar(500) | null | `app_notices.image`와 같은 규칙. null이면 앱은 `preset:update` |
+| created_at, updated_at | timestamptz | not null, default now() | |
+
+- 서비스: `build_op`에 따라 쓰는 컬럼이 정해지고 쓰지 않는 컬럼은 null이다(`EQ`·`LTE`·`GTE` → `build_value`, `RANGE` → `build_min`·`build_max`, `IN` → `build_values`). 값은 0 이상 정수이고 `os_min`·`os_max`는 둘 중 하나 이상 있을 때만 OS 조건이다. 이 조합 검사는 서비스에서 하고 DB CHECK는 두지 않는다 (API 본문 검증이 `VALIDATION_FAILED`로 막는다)
+- 서비스: 업데이트 규칙에는 기간이 없다. 지우면 끝난다. 정렬은 `created_at` 오래된 순, 같으면 `id`
+- 서비스: 서버는 `/api/v1` 요청에서 `FORCE` 규칙이 맞으면 426 `APP_VERSION_UNSUPPORTED`로 막는다 (D-180). 규칙은 요청마다 DB에서 읽지 않고 최대 30초 메모리에 캐시해도 된다. 테이블 변화는 없다
+
 ---
 
 ## 4. 데이터 수명주기
@@ -355,6 +405,8 @@
 | 커플 연결 (복구 아님) | spaces(COUPLE, 함께 = 보라, `linked_at` = 지금, DB-17), space_members 2개(만든 사람 주황, 입력한 사람 파랑). 같은 트랜잭션에서 두 사람 각자의 개인 공간을 정한다: 혼자 쓴 기록이 없으면 그 개인 공간을 바로 지운다 (아래 "커플 연결 때 개인 공간 처리"). 또 두 사람의 다른 유효한 invite_codes에 `revoked_at`을 기록해 무효로 만든다 (DB-16) |
 | 연결 해제 | 두 사람 각자 spaces(PERSONAL), space_members(주황). 단, 가져오기 대기 중인 개인 공간(기록이 있어 남아 있는 공간)이 있는 사람은 새로 만들지 않고 그 공간을 되살린다 (4.2) |
 | 알림이 생길 때 (PRD 8장) | 받는 사람마다 notifications. 푸시 설정을 꺼도 만든다 (DB-07) |
+| 기기 등록 (`PUT /me/devices`) | devices(같은 토큰이면 갱신). `os_version`, `app_version`, `app_build`를 받은 값으로 덮어쓴다 (DB-22) |
+| 관리자 API (`PUT /admin/app-notices/{id}`, `PUT /admin/app-update-rules/{id}`) | app_notices, app_update_rules. 이 API로만 만들고 바꾼다. 사용자 요청이나 정리 작업이 만들지 않는다 (DB-21) |
 
 **커플 연결 때 개인 공간 처리** (`/couple/join`, PRD D-78, FR-COUPLE-03): 연결하는 두 사람 A(코드를 만든 쪽)와 B(코드를 입력한 쪽) 각자의 개인 공간을 같은 트랜잭션에서 다음처럼 정한다 (`API.md` 4.4 5단계와 같다).
 
@@ -402,7 +454,8 @@
 - 만료된 `auth_sessions` 삭제. 무효화된 세션도 지우되 `REPLACED`는 `expires_at`이 지날 때까지 남긴다 (DB-11)
 - **세션 없는 사용자의 `devices` 삭제** (DB-14, PRD D-73): 바로 위 세션 정리가 끝난 뒤, 유효한(`revoked_at IS NULL AND expires_at > now`) `auth_sessions`가 하나도 없는 사용자의 `devices` 행을 모두 지운다. 이 순서여야 방금 만료돼 지워진 세션의 기기가 같은 실행에서 정리된다. 로그인이 만료된 기기에 푸시가 가지 않게 하는 안전망이다 (푸시를 보낼 때도 유효 세션을 확인한다, 3.1 `devices`)
 - `created_at`이 30일 지난 `notifications` 삭제 (FR-NOTI-05.AC2). 이 삭제는 물리 삭제일 뿐이다. 조회와 안 읽음 개수는 정리 전에도 `created_at > now − 30일`로 거른다 (D-141, DB-19)
-- **프로필 사진 파일 정리** (NFR-FILE-01, NFR-PRIV-02): 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다. 사진 교체·삭제는 DB 커밋 뒤에 이전 키를 best-effort로 지우고, 실패한 것은 이 작업이 회수한다. 탈퇴는 탈퇴 이벤트가 가진 이전 사진 키로 즉시 삭제한다 (4.3)
+- **프로필 사진 파일 정리** (NFR-FILE-01, NFR-PRIV-02): 스토리지 목록 중 `profile/` 접두어 객체만 훑어(`notice/` 공지 이미지는 보지 않고 지우지 않는다, DB-21) `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다. 사진 교체·삭제는 DB 커밋 뒤에 이전 키를 best-effort로 지우고, 실패한 것은 이 작업이 회수한다. 탈퇴는 탈퇴 이벤트가 가진 이전 사진 키로 즉시 삭제한다 (4.3)
+- **운영 테이블은 정리하지 않는다** (DB-21): `app_notices`, `app_update_rules` 행과 공지 이미지(스토리지 키 `notice/{uuid}.{png|jpg|webp}`)는 `ends_at`이 지나도 자동으로 지우지 않는다. 관리자 API(`DELETE /admin/app-notices/{id}`, `DELETE /admin/app-update-rules/{id}`, `DELETE /admin/app-notice-images/{fileName}`)로만 지운다. 사용자 탈퇴·로그아웃·공간 삭제와 관계 없다. 기기 정보 컬럼은 `devices` 행과 같이 지워진다 (4.6, NFR-PRIV-03)
 
 ### 4.5 공간이 지워질 때 알림 (notifications.space_id CASCADE)
 
@@ -425,6 +478,8 @@
 | 로그아웃 | 현재 세션을 `revoked_reason = LOGOUT`으로 바꾼다 | 그 사용자의 행을 모두 지운다 (PRD D-50) |
 | refresh 토큰 갱신 | 새 행을 만들지 않고 같은 행의 `refresh_token_hash`, `expires_at`, `last_used_at`만 바꾼다. `sid`는 그대로다 (DB-02) | 변화 없음 |
 | 탈퇴 | `WITHDRAWN`으로 무효화한 뒤 삭제 (4.3) | 삭제 (4.3) |
+
+`devices`의 기기 정보(`os_version`, `app_version`, `app_build`)는 행에 붙어 있어 위 표의 모든 삭제에 함께 지워진다 (NFR-PRIV-03).
 
 - 이전 기기는 `devices`가 지워져 푸시를 받지 않고, 다음 요청에서 세션이 `REPLACED`임을 알게 된다.
 - 로그인이 만료된 기기(유효 세션 없음)에는 푸시를 보내지 않는다. 정리 작업이 그런 사용자의 `devices`를 지운다 (4.4, DB-14).
@@ -456,6 +511,8 @@
 | DB-18 | 기념일 알림 중복 방지는 컬럼 없이 "사용자 현지 오늘 구간에 같은 (user, type, 제목) 행이 있으면 건너뜀"으로 한다 (v0.12) | 기념일마다 알림 1건이고 하루 1번이면 충분해서 `dedupe_key`·UNIQUE를 추가하지 않는다 (PRD D-138). 자동 기념일은 `target_type` `ANNIVERSARY` + `target_id` NULL, 직접 기념일은 `ANNIVERSARY` + 기념일 id |
 | DB-19 | 알림 조회와 안 읽음 개수는 `created_at > now − 30일`로 거르고, 03:00 KST 정리는 물리 삭제일 뿐이다 (v0.12) | 정리 작업이 늦거나 실패해도 30일이 지난 알림이 보이지 않게 (PRD D-141, FR-NOTI-05.AC2, DB-07) |
 | DB-20 | 메모 날짜를 없애고 `memos.memo_date` 컬럼과 부분 INDEX (space_id, memo_date)를 지운다 (v0.21) | 메모와 캘린더를 나눴다 (PRD D-174). 새 Flyway 버전으로 컬럼과 인덱스를 삭제하고, 이미 머지된 마이그레이션은 고치지 않는다. 출시 전이라 실사용 데이터가 없어 데이터 이전은 하지 않는다. 컬럼 삭제로 기존 메모의 날짜 값은 사라진다 |
+| DB-21 | 장애 팝업(`app_notices`)과 업데이트 규칙(`app_update_rules`)을 새 테이블 두 개로 둔다. PK는 UUID가 아니라 운영자가 정한 문자열 `varchar(50)`이며 1장 "모든 테이블 UUID" 원칙의 예외다. 사용자·공간과 FK가 없고, 관리자 API로만 만들고 지우며 자동 정리는 없다. 공지 이미지는 스토리지 `notice/` 접두어에 두고 프로필 사진 정리(4.4)는 `profile/`만 본다 (v0.22) | Remote Config에 같은 `id`로 같은 항목을 두고 앱이 `id`로 합치므로(PRD D-176~D-178) 서버가 `id`를 만들지 않고 운영자가 정한 값을 그대로 PK로 쓴다. 운영자가 직접 넣는 적은 수의 행이라 UUIDv7 정렬 이점이 없다. 기간이 지난 공지도 남기고 지우는 것은 사람이 정한다. 접두어를 나눠야 사진 정리 작업이 공지 이미지를 고아 파일로 보고 지우지 않는다. 새 Flyway 버전(`V4`)에 추가만 한다 (PRD D-176, D-177, D-181, NFR-SEC-04) |
+| DB-22 | `devices`에 `os_version`, `app_version`, `app_build`를 null 허용으로 추가하고, `PUT /me/devices`에서 받은 값으로 덮어쓴다. 보내지 않은 값은 null이다 (v0.22) | 앱이 등록 때 보내는 현재 기기 정보를 문의 대응에 쓴다 (PRD D-182, FR-APP-03). 이력이 아니라 현재 값만 두므로 새 테이블이 필요 없고, 기기 행이 지워질 때 함께 지워져 보관 기간이 따로 없다 (NFR-PRIV-03). 규칙 판단에는 쓰지 않고 판단은 요청 헤더로 한다 (D-180). 추가만 하므로 기존 행은 null이다 |
 
 ---
 
@@ -497,6 +554,9 @@
 | FR-NOTI-05 알림 목록 | notifications. AC2 30일 경계는 조회 조건(DB-19), AC6·AC7 읽음·안 읽음 점은 read_at (테이블 변화 없음, D-141) |
 | FR-NOTI-01~03, FR-CAL-05 AC7 (v0.12) | event_reminders.sent_at (10분 넘게 지나면 푸시 생략, D-137), notifications 기념일 중복 방지 (DB-18, D-138), devices 무효 토큰 삭제·멱등 등록. 테이블 변화 없음 |
 | FR-AUTH-07 AC6~AC9 (v0.12) | users.profile_image_key (`profileImageVersion`으로 나감), 사진 파일 정리 (4.4). 테이블 변화 없음 |
+| FR-APP-01 장애 팝업 | app_notices (D-176, D-181, DB-21). 관리자 API로만 생성·삭제, 자동 정리 없음. 공지 이미지는 스토리지 `notice/` (4.4) |
+| FR-APP-02 강제·권장 업데이트 | app_update_rules (D-177, D-180, DB-21). 426 판단은 요청 헤더와 규칙 비교라 저장하지 않음 |
+| FR-APP-03 기기 정보 | devices.os_version, app_version, app_build (D-182, DB-22, NFR-PRIV-03). 마이그레이션은 컬럼 추가만 |
 | FR-ANNIV-03 AC6, FR-MEMO-02·03·05·06 (v0.12) | anniversaries.updated_at, memos.title·body·pinned_at·pinned_by·updated_at, memo_favorites 설명만 (D-123, D-132, D-134). 테이블 변화 없음 |
 
 ---

@@ -1,10 +1,10 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.21 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.22 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-11-25, 기준 PRD v0.21)
+> 작성일: 2026-10-17 (갱신: 2026-11-25, 기준 PRD v0.22)
 
-이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API의 요청·응답 모양은 3.1, 3.2, 3.3에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
+이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API, 운영(장애 팝업·업데이트 규칙) API의 요청·응답 모양은 3.1, 3.2, 3.3, 3.7에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
 ---
 
@@ -13,7 +13,19 @@
 **응답은 성공이면 봉투 없이 리소스를 그대로, 실패면 오류 객체를 돌려준다. 성공·실패는 HTTP 상태 코드로 구분한다.** 앱은 오류의 `code`로 분기하고, `message`는 로그용이다. 사용자에게 보이는 문구는 앱이 `code`에 맞춰 디자인 시스템의 말투(해요체)로 쓴다.
 
 - 모든 경로는 `/api/v1` 아래에 있다
-- access 토큰이 필요 없는 경로는 `/auth/guest`, `/auth/social`, `/auth/refresh`, `/webhooks/kakao/unlink`(Kakao 서버만 부르는 웹훅, 3.6) 넷뿐이고, 나머지는 access 토큰(`Authorization: Bearer …`)이 필요하다. `POST /auth/switch`도 게스트의 access 토큰이 필요하다
+- access 토큰이 필요 없는 경로는 다음뿐이고, 나머지는 access 토큰(`Authorization: Bearer …`)이 필요하다. `POST /auth/switch`도 게스트의 access 토큰이 필요하다
+  - `/auth/guest`, `/auth/social`, `/auth/refresh`
+  - `/webhooks/kakao/unlink` (Kakao 서버만 부르는 웹훅, 3.6)
+  - **공개 조회 3개 (v0.22, D-176, D-177, D-181)**: `GET /app-notices`, `GET /app-update-rules`, `GET /app-notice-images/{fileName}` (3.7). 로그인 전 화면에서도 부른다
+  - **관리자 API (`/admin/**`, v0.22, NFR-SEC-04)**: access 토큰을 보지 않고 관리자 키 헤더 `X-Admin-Key`로만 막는다 (R-19, 3.7)
+- **공통 요청 헤더 (v0.22, D-182, FR-APP-03.AC1).** 앱은 **모든 API 요청**(로그인 전 경로와 공개 조회 포함)에 아래 네 헤더를 붙인다. 서버는 강제 업데이트 차단(R-20)과 `PUT /me/devices` 저장에 쓴다. 헤더가 없거나 형식이 틀려도 요청을 거부하지 않는다(R-20: 통과).
+
+  | 헤더 | 값 | 예 |
+  | --- | --- | --- |
+  | `X-Platform` | `ANDROID` \| `IOS` | `ANDROID` |
+  | `X-App-Version` | versionName | `1.0.0` |
+  | `X-App-Build` | versionCode (0~2147483647 정수) | `10` |
+  | `X-OS-Version` | Android API 레벨 (정수) | `34` |
 - JSON 필드는 camelCase, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 UTC (`2026-10-17T06:30:00Z`). **일시 형식 (v0.12)**: 요청은 `YYYY-MM-DDTHH:MM:SSZ`만 받고 그 밖의 형식은 400 `VALIDATION_FAILED`(해당 필드, `INVALID`)다. 응답은 항상 초 단위 `Z`로 쓴다
 - **날짜 범위는 1950-01-01 ~ 2050-12-31이다 (PRD D-74, R-15).** 일정, 직접 기념일을 만들거나 고칠 때(쓰기) 이 밖의 날짜가 있으면 400 `DATE_OUT_OF_RANGE`다. 날짜 범위 조회(`GET /events`, `/anniversaries`)는 다르다. 월 달력이 앞뒤 달 날짜도 그리므로 1950년 1월이나 2050년 12월에서는 `from`·`to`가 범위 밖으로 나간다. 이때 오류 없이 범위 안으로 잘라서 조회한다(R-15). 처음 만난 날은 1950-01-01보다 앞일 때만 이 코드이고, 오늘보다 뒤(2050년 이후 포함)면 `VALIDATION_FAILED`다. 서비스에서 검사하고 DB CHECK는 두지 않는다 (ERD DB-13)
 - access 토큰 1시간, refresh 토큰은 회원 30일·게스트 365일, 사용할 때마다 교체 (PRD D-73, NFR-SEC-01, ERD DB-02). 로그인이 만료된 기기에는 푸시를 보내지 않는다 (R-16, 7장). 교체는 같은 세션 행의 토큰 해시와 만료를 갱신하는 것이라 `sid`는 로그인부터 로그아웃까지 바뀌지 않는다. 이전 refresh 토큰을 다시 보내면 401 `SESSION_INVALID`다
@@ -21,7 +33,7 @@
   - **access 토큰**은 JWT다. HS256으로 서버 비밀 키로 서명하고, 클레임은 `sub`(사용자 ID, uuid 문자열), `sid`(세션 ID = `auth_sessions.id`), `iat`, `exp`(발급 + 1시간)다. **계정 종류(GUEST·MEMBER)는 토큰에 넣지 않는다.** 연동(`POST /auth/link`) 직후 같은 토큰으로 판단이 바뀌어야 하므로 서버가 요청마다 DB에서 읽는다 (R-14, R-17).
   - **refresh 토큰**은 JWT가 아니라 보안 난수 32바이트를 base64url(패딩 없음)로 인코딩한 43자 무작위 문자열이다. 서버는 원문을 저장하지 않고 SHA-256 16진수 64자 해시만 `auth_sessions.refresh_token_hash`에 저장한다 (ERD DB-02). refresh 토큰은 세션 행으로 확인한다.
   - 요청 헤더는 `Authorization: Bearer <access>`다. `POST /auth/refresh`는 access 토큰 없이 본문 `{refreshToken}`만 보낸다
-- **인증 실패 규칙과 검사 순서 (NFR-SEC-01).** access 토큰이 필요한 경로는 아래 순서로 검사하고 처음 걸린 것으로 응답한다.
+- **인증 실패 규칙과 검사 순서 (NFR-SEC-01).** access 토큰이 필요한 경로는 아래 순서로 검사하고 처음 걸린 것으로 응답한다. **강제 업데이트 차단(R-20, 426 `APP_VERSION_UNSUPPORTED`)은 이 인증 검사보다 먼저 한다**(로그인 전 요청도 막는다). 예외 경로는 R-20이다.
   1. **형식·서명**: `Authorization` 헤더가 없음, `Bearer <토큰>` 형식이 아님, JWT 형식이 아님, 서명이 틀림, 필요한 클레임(`sub`, `sid`, `iat`, `exp`)이 없거나 값이 틀림 → 401 `SESSION_INVALID`
   2. **만료**: 서명은 맞고 `exp`가 지났음 → 401 `TOKEN_EXPIRED` (앱이 `POST /auth/refresh` 후 재시도)
   3. **세션**: `sid`의 세션이 무효이면 `REPLACED`는 401 `SESSION_REPLACED`, 그 밖의 무효(로그아웃, 탈퇴, 만료)는 401 `SESSION_INVALID` (아래 "한 계정은 한 기기에서만" 항목)
@@ -40,7 +52,7 @@
 | --- | --- | --- |
 | 단건 조회·생성·수정 | 200 (생성은 201) | 리소스 객체 그대로 `{"id": "…", …}` |
 | 페이지가 있는 목록 (`cursor`, `size`를 받는 경로) | 200 | `{"items": [ … ], "nextCursor": "…"}`. 마지막 페이지면 `nextCursor`는 `null`. `cursor`·`size` 규칙은 아래 "커서·`size` 공통 규칙". 개수가 필요한 경로만 `totalCount`를 더한다 (`GET /anniversaries/past`, `GET /memos`) |
-| 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/pinned`) | 200 | `{"items": [ … ]}` |
+| 페이지가 없는 목록 (`GET /events`, `GET /anniversaries`, `GET /memos/pinned`, `GET /app-notices`, `GET /app-update-rules`, `GET /admin/app-notices`, `GET /admin/app-update-rules`) | 200 | `{"items": [ … ]}` |
 | 돌려줄 내용이 없는 성공 (삭제, 고정·즐겨찾기 켜고 끄기, 읽음 처리, 로그아웃 등) | 204 | 없음 |
 | Kakao 연결 해제 알림 웹훅 (`/webhooks/kakao/unlink`) | 200 | 없음. 위 "204" 규칙의 예외다. Kakao가 3초 안에 `200 OK`를 요구하고 처리 결과·서버 오류와 관계없이 200을 기대한다. 인증 실패만 401 (3.6) |
 | 모든 오류 (4xx, 5xx) | 5장의 상태 | 오류 객체 (아래) |
@@ -79,6 +91,7 @@
 | --- | --- |
 | `VALIDATION_FAILED`, `DATE_OUT_OF_RANGE` | `{"fields": [{"field": "<요청 필드 이름>", "reason": "<이유>"}]}`. `reason`은 `REQUIRED`(필수값 없음), `TOO_LONG`(길이 초과), `INVALID`(형식·값이 틀림: 종료가 시작보다 이름, 미래의 처음 만난 날, 조회 범위 3개월 초과 등), `OUT_OF_RANGE`(1950-01-01 ~ 2050-12-31 밖) |
 | `INVITE_REISSUE_TOO_SOON`, `INVITE_RATE_LIMITED` | `{"retryAfterSeconds": 18}` |
+| `APP_VERSION_UNSUPPORTED` (426, v0.22) | `{"ruleId": "<규칙 id>", "title": "<제목>", "body": "<본문>", "image": "<image 값 또는 null>"}`. 맞은 `FORCE` 규칙(`AppUpdateRule`, 3.7)의 값이고 `image`는 규칙에 없으면 `null`이다. 앱은 `title`·`body`·`image`로 강제 업데이트 팝업을 띄운다 (4.9) |
 | 그 밖의 코드 | `null` |
 
 ---
@@ -107,6 +120,10 @@
 | R-16 | 푸시 전송: 받는 사람에게 유효한 세션(`auth_sessions.revoked_at IS NULL AND expires_at > now`)이 있을 때만 보낸다. 알림 목록 행(`notifications`)은 세션과 관계없이 그대로 만든다. 동기화 신호(6장)는 그대로 보낸다 | (푸시 안 보냄, 오류 아님) | D-73, ERD DB-14, NFR-SEC-01 |
 | R-17 | 회원 전용 `POST /auth/logout`: 요청자 = `account_type = MEMBER`. 게스트가 부르면 거부하고 아무것도 바꾸지 않는다. (커플 연결의 회원 전용 검사는 R-09) | 403 `GUEST_NOT_ALLOWED` | FR-AUTH-05, D-07 |
 | R-18 | 커플 연결 해제(`DELETE /couple`): 요청자의 활성 공간이 `COUPLE`일 것. 기록 가져오기(`POST /couple/import`): 요청자에게 가져오기 대기 중인 개인 공간이 있을 것(그런 공간은 커플 공간에 있는 동안만 있다, D-78). 게스트·회원 구분 없이 이 조건만 본다. 둘이 동시에 해제하면 두 번째 요청은 잠금 뒤 개인 공간을 보고 `NOT_COUPLE`이다 | 409 `NOT_COUPLE` (`DELETE /couple`) / 409 `NO_IMPORT_PENDING` (`POST /couple/import`) | FR-COUPLE-05, FR-COUPLE-03, D-78 |
+| R-19 | 관리자 API(`/admin/**`, 3.7): 요청 헤더 `X-Admin-Key`가 서버 환경변수 `DURISEO_ADMIN_API_KEY`(운영은 Parameter Store `/duriseo/secret/ADMIN_API_KEY`)와 같을 때만 허용한다. 비교는 상수 시간이다. 환경변수가 비어 있으면 `/admin/**`는 모두 404 `NOT_FOUND`다(관리자 API가 꺼짐, 키가 맞아도 같다). 키가 없거나 틀리면 아무것도 바꾸지 않고 401 `ADMIN_KEY_INVALID`다. 관리자 API는 access 토큰을 보지 않고 R-01(활성 공간)도 적용하지 않는다. 키는 로그·문서·응답에 쓰지 않는다 | 404 `NOT_FOUND` (꺼짐) / 401 `ADMIN_KEY_INVALID` | NFR-SEC-04, D-176 |
+| R-20 | 강제 업데이트 차단: `/api/v1` 아래 모든 요청에서, 요청 헤더(1장)의 `X-Platform`과 `X-App-Build`가 맞는 `FORCE` 업데이트 규칙(3.7 "업데이트 규칙 맞춤 판단")이 있으면 요청을 처리하지 않고 거부한다. **인증 검사(1장 검사 순서)보다 먼저** 하므로 로그인 전 요청과 만료된 토큰의 요청도 막는다. **예외(검사하지 않음)**: `GET /app-notices`, `GET /app-update-rules`, `GET /app-notice-images/{fileName}`, `/admin/**`. 헬스체크는 `/api/v1` 밖이라 해당 없다. **헤더가 없으면 통과한다**: `X-Platform`과 `X-App-Build`가 하나라도 없거나 읽을 수 없으면(형식이 틀림, 정수 범위 0~2147483647 밖 포함) 통과시킨다. `X-OS-Version`이 없거나 틀리면 `osVersion` 조건이 있는 규칙만 건너뛴다(OS 조건이 없는 규칙은 판단한다). 맞는 규칙이 여럿이면 정렬 첫 번째(`created_at` 오래된 순, 같으면 `id`)를 쓴다. 장애 차단(`BLOCK`)은 서버가 막지 않는다(앱 표시만). 서버는 규칙을 요청마다 DB에서 읽지 않고 최대 30초 메모리에 캐시해도 된다(규칙을 바꾼 뒤 최대 30초는 이전 값으로 판단할 수 있다) | 426 `APP_VERSION_UNSUPPORTED` (`details` = `{ruleId, title, body, image}`, 1.1) | D-180, FR-APP-02.AC6, FR-APP-03.AC1 |
+
+R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19(관리자 키)와 R-20(앱 버전 차단)은 그 앞이나 옆에서 요청 전체를 막는 규칙이다. 공개 조회 3개(3.7)는 로그인 없이 부르므로 R-01을 적용하지 않는다(공간의 데이터가 아니다).
 
 앱 화면에서 버튼을 숨기는 것은 사용성을 위한 것이고, 보안은 위 규칙으로만 보장한다.
 
@@ -134,7 +151,7 @@
 | DELETE | /me/profile-image | 본문 없음 → 204 (멱등: 사진이 없어도 204) | 프로필 사진 삭제. 성공하면 커플 공간일 때 상대에게 SYNC `SPACE`/`UPDATED`를 보낸다 (6장) | 로그인 | FR-AUTH-07.AC5 |
 | GET | /users/{id}/profile-image | → 200 `image/jpeg` (직접 스트리밍) | 프로필 사진 조회. R-11을 요청마다 검사한다. 사진이 없는 경우와 권한이 없는 경우는 둘 다 404 `NOT_FOUND`다. 응답 헤더 `Cache-Control: private, max-age=31536000, immutable`. 앱은 `profileImageVersion`을 `?v=<version>` 캐시 키로 쓴다 | R-11 | FR-AUTH-07, NFR-FILE-01 |
 | DELETE | /me | 본문 없음 → 204 | 탈퇴. Kakao 회원이면 서버가 Kakao 앱 연결도 끊는다 (4.6, FR-AUTH-06.AC3). **앱 동작 (D-86)**: `POST /auth/logout`과 같다. 오프라인이면 부르지 않고 "인터넷 연결이 필요해요", `SESSION_REPLACED`·`SESSION_INVALID`면 로컬을 지우고 SCR-START-01, 그 밖의 오류는 공통 오류 안내(D-88)를 보여주고 로그인 상태 그대로 둔다. 204를 받으면 로컬 데이터와 소셜 SDK 상태를 지우고 SCR-START-01로 이동한다 | 로그인 | FR-AUTH-06, FR-AUTH-06.AC5, D-86 |
-| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS"}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. 같은 토큰이면 멱등 upsert다. **앱 동작 (v0.12)**: 로그인 직후, 앱 실행 때, `onNewToken` 때 부르고 알림 권한과 관계없이 등록한다(데이터 메시지는 권한이 필요 없다). 실패하면 다음 실행에서 다시 보내고, 로그아웃되었거나 세션이 끊긴 상태에서는 보내지 않는다. 푸시 전송 때 무효 토큰 응답을 받으면 서버가 이 행을 지운다 (7장). 알림 권한 요청(Android 13 이상)은 앱 동작이라 API가 없고, 시점은 D-144다 (7장) | 로그인 | NFR-SYNC-01, FR-NOTI-01 |
+| PUT | /me/devices | `{fcmToken: string(최대 255), platform?: "ANDROID" \| "IOS", osVersion?: string(최대 20), appVersion?: string(최대 50), appBuild?: integer(0 이상)}` (`platform` 기본 `ANDROID`) → 204 | FCM 토큰 등록·갱신. `fcmToken`이 비었으면 400 `VALIDATION_FAILED`(`fcmToken`, `REQUIRED`), 255자를 넘으면 `TOO_LONG`, `platform`이 두 값이 아니면 `INVALID`. **기기 정보 (v0.22, D-182, FR-APP-03.AC2)**: `osVersion`(`devices.os_version`, Android는 API 레벨 문자열 예 `"34"`)이 20자 초과, `appVersion`(`devices.app_version`, versionName)이 50자 초과면 `TOO_LONG`, `appBuild`(`devices.app_build`)가 정수가 아니거나 0~2147483647 밖이면 `INVALID`(필드 이름은 요청 필드 그대로, 400 `VALIDATION_FAILED`). 이 세 필드는 모두 선택이고 **보낸 값만 저장하며 안 보낸 값은 null로 둔다**(이전 값을 유지하지 않고 등록 때마다 덮어쓴다, ERD DB-22). 앱은 공통 요청 헤더(1장)와 같은 값을 보낸다. 같은 토큰이면 멱등 upsert다. **앱 동작 (v0.12)**: 로그인 직후, 앱 실행 때, `onNewToken` 때 부르고 알림 권한과 관계없이 등록한다(데이터 메시지는 권한이 필요 없다). 실패하면 다음 실행에서 다시 보내고, 로그아웃되었거나 세션이 끊긴 상태에서는 보내지 않는다. 푸시 전송 때 무효 토큰 응답을 받으면 서버가 이 행을 지운다 (7장). 알림 권한 요청(Android 13 이상)은 앱 동작이라 API가 없고, 시점은 D-144다 (7장) | 로그인 | NFR-SYNC-01, FR-NOTI-01, FR-APP-03, D-182 |
 | GET | /me/notification-settings | → 200 `NotificationSettings` | 알림 설정 조회. 게스트를 포함한 로그인 사용자 모두 가능 (D-62) | 로그인 (게스트 포함) | FR-NOTI-02 |
 | PATCH | /me/notification-settings | `{eventReminder?, partnerCreated?, memoPinned?, anniversary?}` (boolean) → 200 `NotificationSettings` (전체 설정) | 알림 설정 변경. 부분 수정이고 없는 필드는 바꾸지 않는다. `null`을 보내면 400 `VALIDATION_FAILED`(해당 필드, `REQUIRED`, `PATCH /me`와 같음). 연결·해제 알림은 설정이 없다 (7장) | 로그인 (게스트 포함) | FR-NOTI-02, D-145 |
 
@@ -534,6 +551,87 @@
 - **응답**: 성공은 200, 본문 없음, 3초 안에. 1.1의 "204" 규칙의 예외다. Kakao가 사용자가 없거나 오류가 나도 200으로 답하라고 요구하므로, 4.8의 모든 결과(아무것도 안 함, 서버 오류 포함)가 200이다. **200이 아닌 것은 인증 실패(401 `WEBHOOK_UNAUTHORIZED`)뿐이다.** 이 경로는 1.1의 오류 형식 중 이 401만 쓴다.
 - 앱은 이 경로를 부르지 않고 `WEBHOOK_UNAUTHORIZED`를 받을 일도 없다.
 
+### 3.7 운영: 장애 팝업·업데이트 규칙 (FR-APP-01, FR-APP-02, D-176~D-181)
+
+장애 팝업(`AppNotice`)과 업데이트 규칙(`AppUpdateRule`)은 따로 설정한다. 둘 다 Firebase Remote Config와 이 서버 두 곳에서 설정할 수 있고, 값의 모양이 같다. 어느 팝업을 띄울지는 앱이 판단한다(4.9). 관리 웹 페이지는 없고 운영자가 관리자 API를 curl로 부른다 (D-176).
+
+**공개 조회 (access 토큰 불필요, R-20 검사 예외)**
+
+| 메서드 | 경로 | 요청 → 성공 | 설명 | 권한 | FR |
+| --- | --- | --- | --- | --- | --- |
+| GET | /app-notices | → 200 `{"items": [AppNotice]}` | **지금 유효한 것만**, 모든 플랫폼(앱 플랫폼으로 거르지 않는다. 거르는 것은 앱). 정렬은 `created_at` 오래된 순, 같으면 `id` | 없음 | FR-APP-01, D-176 |
+| GET | /app-update-rules | → 200 `{"items": [AppUpdateRule]}` | **모든 규칙**(기간이 없다), 모든 플랫폼. 같은 정렬 | 없음 | FR-APP-02, D-177 |
+| GET | /app-notice-images/{fileName} | → 200 이미지 바이트 | 공지 이미지. 응답 헤더 `Cache-Control: public, max-age=86400`. `fileName`은 `{uuid}.{png\|jpg\|webp}`다. 없거나 형식이 틀리면 404 `NOT_FOUND`. 8장 | 없음 | D-181 |
+
+**관리자 API (헤더 `X-Admin-Key`, R-19)**
+
+| 메서드 | 경로 | 요청 → 성공 | 설명 | 권한 | FR |
+| --- | --- | --- | --- | --- | --- |
+| GET | /admin/app-notices | → 200 `{"items": [AppNotice]}` | 끝난 것·아직 시작 안 한 것 포함 전부. 같은 정렬 | R-19 | D-176 |
+| PUT | /admin/app-notices/{id} | `AppNotice`에서 `id`를 뺀 본문 → 200 `AppNotice` | 없으면 만들고 있으면 바꾼다(upsert, 멱등). `id`는 경로로만 받고 본문의 `id`는 무시한다. 경로 `id`가 `AppNotice.id` 규칙에 맞지 않으면 400 `VALIDATION_FAILED`(`id`, `INVALID`) | R-19 | D-176 |
+| DELETE | /admin/app-notices/{id} | 본문 없음 → 204 | 없으면 404 `NOT_FOUND` | R-19 | D-176 |
+| GET | /admin/app-update-rules | → 200 `{"items": [AppUpdateRule]}` | 전부 | R-19 | D-177 |
+| PUT | /admin/app-update-rules/{id} | `AppUpdateRule`에서 `id`를 뺀 본문 → 200 `AppUpdateRule` | upsert. 위와 같은 규칙 | R-19 | D-177 |
+| DELETE | /admin/app-update-rules/{id} | 본문 없음 → 204 | 없으면 404 `NOT_FOUND` | R-19 | D-177 |
+| POST | /admin/app-notice-images | multipart, 필드 `file` 하나 (PNG·JPEG·WebP, 1MB 이하) → 201 `{"url": "https://<API 도메인>/api/v1/app-notice-images/<fileName>"}` | 공지 이미지 업로드. 돌려받은 `url`을 `AppNotice.image`·`AppUpdateRule.image`에 넣는다. `file`이 없으면 400 `VALIDATION_FAILED`(`file`, `REQUIRED`), 1MB 초과는 413 `IMAGE_TOO_LARGE`, PNG·JPEG·WebP가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`. 저장은 8장 | R-19 | D-181 |
+| DELETE | /admin/app-notice-images/{fileName} | 본문 없음 → 204 | 없으면 404 `NOT_FOUND`. 이 이미지를 쓰는 팝업이 있어도 막지 않는다(그 팝업은 이미지 없이 보인다, D-181). 자동으로 지우는 작업은 없다 (8장) | R-19 | D-181 |
+
+- 관리자 API는 키가 없거나 틀리면 401 `ADMIN_KEY_INVALID`, 환경변수가 비어 있으면 모두 404 `NOT_FOUND`다 (R-19). 키 검사가 경로 존재·본문 검사보다 먼저다(키가 틀린 요청에는 `NOT_FOUND`나 `VALIDATION_FAILED`로 경로·필드 정보를 알려 주지 않는다).
+- 관리자 API는 R-20(강제 업데이트 차단) 대상이 아니다. 규칙을 잘못 넣어 모든 사용자를 막았을 때도 운영자가 규칙을 지울 수 있어야 하기 때문이다.
+- `DELETE /admin/app-notices/{id}`, `DELETE /admin/app-update-rules/{id}`, `DELETE /admin/app-notice-images/{fileName}`은 `id`·`fileName` 형식이 틀린 값이어도 404 `NOT_FOUND`다(`PUT`은 위대로 400).
+- **정수 범위**: `appBuild`(3.1), `build.value`·`build.min`·`build.max`·`build.values[]`, `osVersion.min`·`osVersion.max`는 0~2147483647이어야 한다. 넘으면 400 `VALIDATION_FAILED`(해당 필드, `INVALID`). 요청 헤더 `X-App-Build`·`X-OS-Version`이 이 범위를 넘으면 "읽을 수 없음"으로 보고 R-20대로 처리한다(빌드는 통과, OS는 `osVersion` 조건이 있는 규칙만 건너뜀).
+- 관리자 API의 쓰기(`PUT`·`DELETE`)는 동기화 신호(6장)와 알림(7장)을 보내지 않는다. 앱은 실행·복귀 때 새로 읽는다 (4.9).
+
+**응답·값 모양** (JSON 필드는 camelCase, 일시는 ISO 8601 UTC. 값이 없는 필드는 빼지 않고 `null`로 보낸다, 1.1. 필드는 ERD `app_notices`·`app_update_rules` 컬럼과 대응한다: `link_text` ↔ `linkText`, `starts_at` ↔ `startsAt`, `build_op`·`build_value`·`build_min`·`build_max`·`build_values` ↔ `build`, `os_min`·`os_max` ↔ `osVersion`)
+
+`AppNotice`
+
+| 필드 | 타입 | 규칙 |
+| --- | --- | --- |
+| `id` | string | 1~50자, `[a-z0-9_-]`만. 두 곳(Remote Config, 서버)에서 같은 장애는 같은 값 (`app_notices.id`, 운영자가 정하는 문자열 PK) |
+| `type` | `"BLOCK"` \| `"INFO"` | 필수. 차단 / 안내 |
+| `title` | string | 필수, 1~40자 |
+| `body` | string | 필수, 1~500자. 줄바꿈 `\n` 허용 |
+| `image` | string \| null | `preset:maintenance`·`preset:error`·`preset:update`·`preset:notice` 또는 `https://` 주소(500자 이하) |
+| `linkText` | string \| null | 1~20자. `linkUrl`과 둘 다 있어야 버튼이 보인다 |
+| `linkUrl` | string \| null | `https://` 주소, 500자 이하 |
+| `platform` | `"ANDROID"` \| `"IOS"` \| null | null이면 모든 플랫폼 |
+| `startsAt` | 일시 \| null | null이면 지금 바로 |
+| `endsAt` | 일시 \| null | null이면 끝 없음. `startsAt`보다 뒤여야 한다 |
+
+`AppUpdateRule`
+
+| 필드 | 타입 | 규칙 |
+| --- | --- | --- |
+| `id` | string | `AppNotice.id`와 같은 규칙 |
+| `mode` | `"FORCE"` \| `"RECOMMEND"` | 필수 |
+| `platform` | `"ANDROID"` \| `"IOS"` | 필수 |
+| `build` | object | 필수. `op`: `EQ`·`LTE`·`GTE`(→ `value` 필수), `RANGE`(→ `min`·`max` 필수, `min` ≤ `max`, 양 끝 포함), `IN`(→ `values` 필수, 1~50개). 쓰지 않는 필드는 `null`. 값은 0 이상 정수(versionCode). 모양: `{"op": "RANGE", "value": null, "min": 5, "max": 9, "values": null}` |
+| `osVersion` | object \| null | `{"min": integer \| null, "max": integer \| null}`, 둘 중 하나 이상 정수, 양 끝 포함. Android는 API 레벨. `null`이면 OS 조건 없음 |
+| `title` | string | 필수, 1~40자 |
+| `body` | string | 필수, 1~500자 |
+| `image` | string \| null | `AppNotice.image`와 같은 규칙. `null`이면 앱은 `preset:update`를 쓴다 (FR-APP-02.AC7) |
+
+**관리자 API 본문 검사**: 틀린 필드를 모두 `details.fields`에 담아 400 `VALIDATION_FAILED`로 돌려준다 (1.1). 필드 이름은 요청 필드 그대로이고 중첩 필드는 `build.op`, `build.value`, `build.values`, `osVersion.min`처럼 점으로 잇는다(배열 원소는 `build.values[0]`처럼 0부터 센 인덱스). `reason`은 필수값 없음·조건에 필요한 값 없음 `REQUIRED`, 길이·개수 초과 `TOO_LONG`, 그 밖(`type`·`mode`·`platform`·`build.op`가 모르는 값, `id` 문자 규칙, `image` 형식, `linkUrl`이 `https://`가 아님, `endsAt`이 `startsAt`보다 이르거나 같음, `build.min` > `build.max`, `osVersion`의 `min`·`max`가 둘 다 `null`, 음수, 일시 형식) `INVALID`다. `build.op`에 맞지 않는 필드(예: `EQ`인데 `min`이 있음)가 `null`이 아니면 `INVALID`다. `linkText`와 `linkUrl`은 하나만 있어도 저장은 하되(버튼만 안 보임) 각각의 규칙은 검사한다. 일시는 1장 형식(`YYYY-MM-DDTHH:MM:SSZ`)만 받는다. 모르는 필드는 무시한다.
+
+**"지금 유효함" 판단 (장애 팝업, D-176)**: `GET /app-notices`는 아래 기간 조건을 만족하는 행만 돌려준다. 플랫폼은 서버가 거르지 않고 앱이 `platform IS NULL OR platform = 앱 플랫폼`으로 거른다.
+
+```
+(startsAt IS NULL OR startsAt <= now) AND (endsAt IS NULL OR now < endsAt)
+```
+
+업데이트 규칙에는 기간이 없다. 규칙을 지우면 끝난다.
+
+**업데이트 규칙 맞춤 판단 (D-177, D-180)**: 규칙이 요청(앱)에 **맞는 규칙**이려면 아래를 모두 만족해야 한다. 앱(4.9)과 서버(R-20)가 같은 식을 쓴다.
+
+| 조건 | 판단 |
+| --- | --- |
+| 플랫폼 | `rule.platform` = 요청의 `X-Platform`(앱의 플랫폼) |
+| 빌드 | 요청의 빌드 번호 `b`(`X-App-Build`)에 대해 `EQ`: `b = value`, `LTE`: `b <= value`, `GTE`: `b >= value`, `RANGE`: `min <= b <= max`, `IN`: `b`가 `values`에 있음 |
+| OS 버전 | `osVersion`이 `null`이면 통과. 있으면 요청의 OS 버전 `v`(`X-OS-Version`)에 대해 (`min`이 `null`이거나 `v >= min`) AND (`max`가 `null`이거나 `v <= max`). 서버에서 `X-OS-Version`이 없거나 틀리면 `osVersion`이 있는 규칙은 맞지 않는 것으로 보고 건너뛴다 |
+
+**Remote Config 값과 모양이 같다 (D-176, D-177)**: Remote Config 키 `app_notices`와 `app_update_rules`의 값은 JSON 문자열이고, 서버 조회 응답과 같은 모양 `{"items": [AppNotice, ...]}`, `{"items": [AppUpdateRule, ...]}`다. 그래서 앱은 두 곳의 값을 같은 코드로 읽고 판단한다. 다른 점은 서버의 `GET /app-notices`가 서버에서 "지금 유효함"으로 이미 거른 것만 주지만, Remote Config 값은 거르지 않은 목록이라 앱이 같은 식으로 기간을 판단한다는 것뿐이다. Remote Config 사용자 지정 신호(custom signal)와 콘솔 조건은 쓰지 않는다(규칙 판단은 앱과 서버가 한다).
+
 ---
 
 ## 4. 핵심 흐름
@@ -670,24 +768,38 @@
 
 같은 알림이 여러 번 와도 결과가 같다(멱등, 3단계). Kakao Developers의 앱 › 웹훅 › 연결 해제 웹훅에 서버 주소를 등록하는 것은 사람이 할 일이다(서버 배포 뒤).
 
+### 4.9 앱 실행 때 팝업 확인 (FR-APP-01, FR-APP-02)
+
+장애 팝업과 업데이트 팝업을 띄울지는 앱이 판단한다. 서버가 하는 일은 공개 조회 3개(3.7)와 강제 업데이트 차단(R-20, 426)이다. 로그인 전 화면에서도 같다. 아래는 서버 API와 닿는 순서이고 화면은 SCR-APP-01, SCR-APP-02다.
+
+1. **확인 시점 (D-178)**: 앱 실행, 앱으로 돌아올 때, 앱을 쓰는 중 Remote Config 값이 바뀔 때(앱의 실시간 리스너), 서버가 426을 줄 때다. 서버는 푸시나 SYNC 신호로 팝업을 알리지 않는다(6장의 "장애 팝업·업데이트 규칙" 줄).
+2. **두 곳 동시 요청**: 앱 실행 때 Firebase Remote Config(`app_notices`, `app_update_rules`, 실행 때 가져오기 간격 5분)와 서버 `GET /app-notices`, `GET /app-update-rules`를 **동시에** 부른다. 서버 요청은 access 토큰 없이 공통 요청 헤더(1장)만 붙인다. 앱은 서버 응답을 **3초까지만** 기다리고, 3초 안에 답이 없거나 오류가 나면(5xx, 오프라인 포함) 기다리지 않고 Remote Config 값만으로 정한다. Remote Config를 받지 못하면 마지막으로 받아 둔 값을 쓰고, 두 곳 모두 없으면 팝업을 띄우지 않는다 (FR-APP-01.AC6). 공개 조회가 `APP_VERSION_UNSUPPORTED`를 받는 일은 없다(R-20 예외).
+3. **같은 `id`는 하나로 본다**: 두 곳에 같은 `id`가 있으면 **Remote Config 값**을 쓴다 (D-178). 장애 팝업과 업데이트 규칙은 `id` 이름 공간이 따로다.
+4. **앱이 거르고 판단한다**: 장애 팝업은 `platform`과 기간(3.7 "지금 유효함")으로, 업데이트 규칙은 3.7 "업데이트 규칙 맞춤 판단"으로 고른다. 앱의 플랫폼·빌드 번호(versionCode)·OS 버전(Android API 레벨)을 쓴다.
+5. **표시 순서 (D-178)**: 한 번에 하나만 보인다. 순서는 **강제 업데이트 → 장애 차단 → 권장 업데이트 → 장애 안내**이고, 같은 종류끼리는 Remote Config 목록 순서, 그다음 서버 목록 순서다. 닫을 수 있는 팝업을 닫으면 다음 것을 보이고, 이미 떠 있는 팝업보다 앞 순서의 팝업이 생기면 그것으로 바꾼다. 닫기 규칙과 "오늘 하루 안 보기"(`id`별, 기기 단위)는 앱이 기기에 저장하고 서버에는 없다 (D-179). 강제 업데이트는 "오늘 하루 안 보기"로 숨기지 못한다 (FR-APP-02.AC4).
+6. **장애 차단의 [다시 확인]**: 두 곳을 2단계처럼 다시 불러와 차단이 더 없으면 닫는다 (D-179). 서버는 별도 처리가 없다.
+7. **서버가 426을 줄 때 (R-20, D-180, FR-APP-02.AC6)**: 어느 API 요청이든(로그인 전 `POST /auth/*` 포함) 응답이 426 `APP_VERSION_UNSUPPORTED`이면 앱은 지금 화면 위에 강제 업데이트 팝업(SCR-APP-02)을 바로 띄운다. `details`(`ruleId`, `title`, `body`, `image`, 1.1)의 값을 쓰고, 문구가 비어 있으면 기본 문구(제목 "업데이트가 필요해요", 본문 "새 버전으로 업데이트해야 계속 쓸 수 있어요.")를, `image`가 `null`이면 `preset:update`를 쓴다. 이 응답은 로그인이 끊긴 것(401)이 아니므로 로컬 데이터와 토큰을 지우지 않고, 공통 오류 안내(D-88)도 따로 보이지 않는다. 앱은 업데이트 전까지 요청을 더 보내지 않아도 된다. 426을 막은 요청은 서버가 아무것도 바꾸지 않았다(인증보다 먼저 거절하므로 쓰기가 일어나지 않는다).
+8. **헤더 없는 요청은 막지 않는다**: 이 기능이 생기기 전 앱(출시 전이라 없음)이나 헤더를 읽을 수 없는 요청은 통과한다 (R-20). 서버는 Remote Config 규칙을 모르므로 서버 규칙(`app_update_rules`)만으로 막는다. 장애 차단(`BLOCK`)은 서버가 API를 막지 않는다.
+
 ---
 
 ## 5. 오류 코드
 
 | HTTP | code | 언제 | 관련 |
 | --- | --- | --- | --- |
-| 400 | VALIDATION_FAILED | 요청 일시가 `YYYY-MM-DDTHH:MM:SSZ` 형식이 아님 (해당 필드, `INVALID`, 1장), 프로필 사진 `file` 없음 (`PUT /me/profile-image`, `file`, `REQUIRED`), `PATCH /me/notification-settings`의 필드가 `null` (`REQUIRED`), 메모 쓰기: 제목 앞뒤 공백을 지운 뒤 50자 초과 (`title`, `TOO_LONG`)·본문 5000자 초과 (`body`, `TOO_LONG`)·결과가 제목·본문 둘 다 빔 (`title`·`body`, `REQUIRED`, 3.4), 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2) | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104 |
+| 400 | VALIDATION_FAILED | 요청 일시가 `YYYY-MM-DDTHH:MM:SSZ` 형식이 아님 (해당 필드, `INVALID`, 1장), 프로필 사진 `file` 없음 (`PUT /me/profile-image`, `file`, `REQUIRED`), `PATCH /me/notification-settings`의 필드가 `null` (`REQUIRED`), 메모 쓰기: 제목 앞뒤 공백을 지운 뒤 50자 초과 (`title`, `TOO_LONG`)·본문 5000자 초과 (`body`, `TOO_LONG`)·결과가 제목·본문 둘 다 빔 (`title`·`body`, `REQUIRED`, 3.4), 필수값 누락, 길이 초과(닉네임은 앞뒤 공백을 지운 뒤 코드 포인트 10개, D-82), 닉네임이 지운 뒤 빈 값 (`PATCH /me`, `nickname`, `REQUIRED`), `PATCH /me`에 `null`을 보냄 (`REQUIRED`), 시간대가 IANA 이름이 아님 (`PATCH /me`, `timeZone`, `INVALID`), `fcmToken`이 비었음 (`PUT /me/devices`, `fcmToken`, `REQUIRED`), 255자 초과 (`TOO_LONG`), `platform`이 `ANDROID`·`IOS`가 아님 (`INVALID`), 종료가 시작보다 이름 (`POST/PATCH /events`, `end`, `INVALID`), 날짜 범위 조회에서 `from` > `to`이거나 범위가 3개월 초과 (`GET /events`), `GET /events`의 `from`·`to`가 없음 (`REQUIRED`)이거나 날짜 형식이 아님 (`INVALID`), `GET /anniversaries`의 `from`·`to`가 없음 (`REQUIRED`)·날짜 형식이 아님 (`INVALID`)·`from` > `to`이거나 범위가 3개월 초과 (`to`, `INVALID`), 기념일 쓰기의 이름이 앞뒤 공백을 지운 뒤 빈 값 (`POST/PATCH /anniversaries`, `name`, `REQUIRED`)·30자 초과 (`TOO_LONG`), `date` 형식 (`INVALID`), 필수 필드 없음·`null` (`REQUIRED`), `repeatsYearly`가 boolean이 아님 (`INVALID`, 3.3), `cursor`를 읽지 못함·`size`가 1 ~ 100의 정수가 아님 (`cursor`/`size`, `INVALID`, 1.1), 일정 쓰기의 제목이 지운 뒤 빈 값 (`title`, `REQUIRED`)·50자 초과 (`TOO_LONG`)·메모 1000자 초과 (`note`, `TOO_LONG`), `isAllDay`와 `start`·`end` 형식이 맞지 않음 (`INVALID`), 일정 필수 필드 없음·`null` (`REQUIRED`), 일정 알림 `option`이 없음·`null` (`REQUIRED`)이거나 일정 종류와 맞지 않음·모르는 값 (`PUT /events/{id}/reminder`, `option`, `INVALID`, 3.3), 처음 만난 날이 오늘보다 뒤 (`PATCH /space`, 2050년 이후 날짜도 이 코드), `startDate`가 없거나 `null`(`PATCH /space`, `startDate`, `REQUIRED`, 지우기 없음 D-84)이거나 날짜 형식이 아님 (`INVALID`), `code`가 없음·null·공백만 있음 (`POST /couple/join`, `code`, `REQUIRED`), `import`가 없거나 `null` (`POST /couple/import`, `import`, `REQUIRED`), `PATCH /space/colors`의 `members`·`together`가 둘 다 없음·`members`가 빈 배열(`members`, `REQUIRED`)이거나 `null` 필드(`REQUIRED`), 팔레트 키 12개 밖의 색, 활성 공간 구성원이 아닌 `userId`, 같은 `userId`가 두 번 (`INVALID`, 필드 이름은 `members[0].color`처럼 0부터 센 인덱스, 3.2), `PUT /me/devices`의 새 필드 형식 (`osVersion` 20자 초과·`appVersion` 50자 초과 `TOO_LONG`, `appBuild`가 정수가 아니거나 0~2147483647 밖 `INVALID`, 3.1), **관리자 API 본문 규칙 위반 (v0.22, `PUT /admin/app-notices/{id}`·`PUT /admin/app-update-rules/{id}`: `id`·`type`·`mode`·`platform`·`title`·`body`·`image`·`linkText`·`linkUrl`·`startsAt`·`endsAt`·`build.*`·`osVersion.*`의 `REQUIRED`·`TOO_LONG`·`INVALID`, `POST /admin/app-notice-images`의 `file` 없음 `REQUIRED`, 3.7)** | FR-CAL-02.AC3, NFR-LIMIT-01, D-82, NFR-TIME-01, NFR-SYNC-01, FR-CAL-01.AC2, FR-COUPLE-04.AC1·AC3, D-84, FR-COUPLE-02, FR-COUPLE-03, FR-CAL-04, FR-ANNIV-03, D-104, FR-APP-03, D-176, D-177, D-182 |
 | 400 | DATE_OUT_OF_RANGE | 날짜가 1950-01-01 ~ 2050-12-31 밖: `POST/PATCH /events`(`start`/`end` 각각, 둘 다 밖이면 둘 다 담는다), `POST/PATCH /anniversaries`(`date`), `PATCH /space`(`startDate`가 1950-01-01보다 앞일 때). 일정·기념일 쓰기는 `VALIDATION_FAILED`가 하나라도 있으면 그것만 응답하고 이 코드는 그 뒤에 본다(3.3 검사 순서). 미래의 처음 만난 날은 `VALIDATION_FAILED`. 쓰기(생성·수정) 요청에만 쓴다. 범위 조회(`GET /events`, `/anniversaries`)의 `from`·`to`가 밖이면 이 오류 없이 범위 안으로 잘라서 조회한다 | R-15, D-74, FR-CAL-01.AC6 |
 | 400 | INVALID_TARGET | 개인 공간에서 '함께' 일정을 만들려 함 | R-10 |
 | 401 | TOKEN_EXPIRED | access 토큰의 서명은 맞고 `exp`가 지남 (앱이 refresh 후 재시도). 검사 순서는 형식·서명 → 만료 → 세션이라, 서명이나 형식이 틀린 토큰은 만료 여부와 관계없이 `SESSION_INVALID`다 | 1장, NFR-SEC-01 |
 | 401 | SESSION_INVALID | `Authorization` 헤더가 없음, `Bearer` 형식이 아님, access 토큰의 서명이 틀림, 클레임이 없거나 틀림. 또는 세션이 무효: refresh 토큰 만료·무효(이미 교체된 이전 refresh 토큰 재사용 포함), 로그아웃·탈퇴(Kakao 연결 해제 알림으로 인한 탈퇴 포함, 4.8)로 끊긴 세션의 토큰 (시작 화면으로). 다른 기기 로그인으로 끊긴 경우는 `SESSION_REPLACED` | 1장, NFR-SEC-01 |
 | 401 | SESSION_REPLACED | 다른 기기 로그인으로 이 기기의 세션이 끊김. 앱은 "다른 기기에서 로그인해서 로그아웃됐어요"를 보여주고 로컬 데이터를 지운 뒤 SCR-START-01로 이동 | D-51, FR-AUTH-02.AC3 |
+| 401 | ADMIN_KEY_INVALID | 관리자 API(`/admin/**`)의 `X-Admin-Key` 헤더가 없거나 틀림. 아무것도 바꾸지 않는다. 키가 비어 있어 관리자 API가 꺼져 있으면 이 코드가 아니라 404 `NOT_FOUND`다. 앱은 이 코드를 받을 일이 없다 | R-19, NFR-SEC-04, D-176 |
 | 401 | WEBHOOK_UNAUTHORIZED | 웹훅 요청의 인증 실패: `Authorization`이 `KakaoAK <어드민 키>`가 아니거나 `app_id`가 둘이서 앱 ID가 아님 (`POST /webhooks/kakao/unlink`). 아무것도 바꾸지 않는다. 앱은 이 코드를 받을 일이 없다 | D-87, NFR-SEC-01 |
 | 401 | SOCIAL_TOKEN_INVALID | 소셜 토큰 검증 실패: Google은 서명·`iss`(허용값 `accounts.google.com`, `https://accounts.google.com` 두 가지가 아님)·`aud`·`exp`, Kakao는 `app_id`가 맞지 않거나 `access_token_info`가 토큰을 거부(4xx)함 (`/auth/social`, `/auth/link`, `/auth/switch`). 이 코드는 `access_token_info` 단계의 거부에만 쓴다: 확인 뒤 `v2/user/me`가 4xx를 주면 거부하지 않고 닉네임을 "사용자"로 쓴다 (D-69). 제공자 장애는 이 코드가 아니라 500 `INTERNAL_ERROR` | NFR-SEC-01 |
 | 403 | NOT_AUTHOR | 작성자가 아닌 수정·삭제, 작성자가 아닌 사용자의 일정 대상(`isTogether`) 변경 (저장된 값과 다른 값을 보낼 때만. 같은 값은 R-02만 적용, R-13) | R-02, R-03, R-05, R-13 |
 | 403 | GUEST_NOT_ALLOWED | 게스트가 회원 전용 기능(커플 연결, `/auth/logout`)을 부름. 커플 연결 경로(`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`)에서는 앱이 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, R-17, D-07, FR-AUTH-05, D-95 |
 | 403 | GUEST_ONLY | 게스트만 부를 수 있는 경로(`/auth/link`, `/auth/switch`)를 회원이 부름. `GUEST_NOT_ALLOWED`와 반대 경우다 | R-14, D-67, FR-AUTH-03 |
-| 404 | NOT_FOUND | 없거나 다른 공간의 리소스. 요청자의 유효한 초대코드가 없을 때의 `GET /invite-codes/current`도 이 코드다(앱은 `POST /invite-codes`를 부른다) | R-01, FR-COUPLE-01.AC5 |
+| 404 | NOT_FOUND | 없거나 다른 공간의 리소스. 요청자의 유효한 초대코드가 없을 때의 `GET /invite-codes/current`도 이 코드다(앱은 `POST /invite-codes`를 부른다). **운영 (v0.22)**: 관리자 환경변수가 비어 있어 `/admin/**`가 꺼진 경우(R-19), `DELETE /admin/app-notices/{id}`·`/admin/app-update-rules/{id}`·`/admin/app-notice-images/{fileName}`에 없는 대상, `GET /app-notice-images/{fileName}`에 없는 파일 | R-01, FR-COUPLE-01.AC5, R-19, D-176, D-177, D-181 |
 | 404 | INVITE_NOT_FOUND | 존재하지 않는 초대코드. 공백 제거·대문자 변환 뒤 6자리가 아니거나 코드에 쓰는 31자 집합 밖의 글자가 있는 입력도 이 코드이고 오입력으로 센다 (`POST /couple/join`). 코드를 만든 사람이 탈퇴하면 그 사람의 초대코드는 탈퇴 때 지워져 조회되지 않으므로 이 코드다 (ERD 4.3) | FR-COUPLE-02.AC2, D-83 |
 | 404 | SOCIAL_NOT_REGISTERED | `/auth/switch`에서 그 소셜 계정으로 가입한 회원이 없음. 아무것도 바꾸지 않으며 앱은 `/auth/link`로 연동하면 된다 | D-67, FR-AUTH-03.AC3 |
 | 409 | NO_IMPORT_PENDING | `POST /couple/import`를 불렀는데 가져오기 대기 중인 개인 공간이 없음(이미 정했거나, 연결 해제와 겹침). 아무것도 바꾸지 않는다. 앱은 이미 정한 것으로 보고 `GET /me`를 다시 읽는다. 해제와 겹쳤으면 거기서 공간이 바뀐 것을 알고 4.5의 6단계 초기화로 이어진다 (4.4의 9단계). `POST /couple/import`는 `NOT_COUPLE`을 주지 않는다 | R-18, FR-COUPLE-03, D-78, D-103 |
@@ -698,8 +810,9 @@
 | 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`). 앱은 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, D-95 |
 | 409 | NOT_COUPLE | 커플 공간이 필요한 요청을 개인 공간에서 보냄: `PATCH /space`, 개인 공간에서 `together`나 자기 밖 `userId`가 있는 `PATCH /space/colors`, `DELETE /couple`. 이 세 경로 모두 앱은 이미 해제된 것으로 보고 앱 초기화를 한다 (4.5의 1·6단계, D-103). `POST /couple/import`는 이 코드를 주지 않고 `NO_IMPORT_PENDING`이다 | R-08, R-18, FR-COUPLE-05.AC3·AC5 |
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
-| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다 | NFR-FILE-01, D-147, D-153 |
-| 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님, 또는 디코드 실패. 형식은 Content-Type이 아니라 실제 디코드로 판정한다. 앱은 D-147 문구 "JPEG나 PNG 사진만 쓸 수 있어요"로 보인다 | NFR-FILE-01, D-147 |
+| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다. **공지 이미지 (v0.22)**: 관리자 API `POST /admin/app-notice-images`의 파일이 1MB 초과여도 같은 코드다(앱이 받을 일이 없고 운영자가 본다) | NFR-FILE-01, D-147, D-153, D-181 |
+| 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님, 또는 디코드 실패. 형식은 Content-Type이 아니라 실제 디코드로 판정한다. 앱은 D-147 문구 "JPEG나 PNG 사진만 쓸 수 있어요"로 보인다. **공지 이미지 (v0.22)**: 관리자 API `POST /admin/app-notice-images`의 파일이 PNG·JPEG·WebP가 아니거나 디코드 실패여도 같은 코드다(허용 형식이 다르고 앱이 받을 일이 없다) | NFR-FILE-01, D-147, D-181 |
+| 426 | APP_VERSION_UNSUPPORTED | 요청 헤더(1장)의 플랫폼·빌드 번호·OS 버전이 서버의 `FORCE` 업데이트 규칙에 맞음 (`/api/v1` 아래 모든 요청. 예외: `GET /app-notices`, `GET /app-update-rules`, `GET /app-notice-images/{fileName}`, `/admin/**`). 인증 검사보다 먼저 한다. `details` = `{ruleId, title, body, image}` (1.1). 앱은 강제 업데이트 팝업을 띄운다 (4.9). 헤더가 없으면 이 코드를 주지 않고 통과시킨다 | R-20, D-180, FR-APP-02.AC6 |
 | 429 | INVITE_RATE_LIMITED | 최근 1시간(지금부터 거꾸로) 초대코드 오입력 실패 10번 (`POST /couple/join`). `details.retryAfterSeconds` = 10번째로 최근 실패의 시각 + 1시간까지 남은 초(올림, 최소 1). 이 429 자체는 실패로 세지 않는다 (4.4의 2단계) | NFR-SEC-03, FR-COUPLE-02.AC4, D-83 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청 (`POST /invite-codes`). `details.retryAfterSeconds` = 최근 `created_at` + 60초까지 남은 초(올림, 최소 1) | FR-COUPLE-01.AC3 |
 | 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao(`access_token_info`, `v2/user/me`)가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다(D-88). 단 `POST /webhooks/kakao/unlink`는 처리 중 서버 오류여도 이 코드 대신 200을 돌려준다 (3.6, 4.8) | 1.1, NFR-SEC-01, D-88 |
@@ -721,6 +834,7 @@
 - `SPACE` `UNLINKED`는 `{"type": "SYNC", "resource": "SPACE", "action": "UNLINKED", "id": "<해제된 공간 id>"}`처럼 `id`에 해제된 커플 공간의 id를 싣는다. `id`가 없는 신호는 `LINKED`뿐이다 (D-160).
 - `LINKED`는 위 원칙(다른 구성원에게)의 예외다. 커플 연결 커밋 뒤 **두 사람의 기기 모두**에 `{"type": "SYNC", "resource": "SPACE", "action": "LINKED"}`를 보낸다 (`id` 없음). 앱은 받으면 `GET /me`로 확인하고 SCR-CAL-01과 연결 완료 시트로 이동한다 (4.4, D-48)
 - `NOTIFICATION`은 위 원칙(공간의 다른 구성원에게)의 예외다. 알림 목록에 행이 생기면 **받는 사람 본인 기기**로 `{"type": "SYNC", "resource": "NOTIFICATION", "id": "<알림 ID>", "action": "CREATED"}`를 보낸다. 푸시를 끈 종류도 보낸다. 앱은 `GET /notifications/unread-count`를 다시 부르고, 알림 목록이 열려 있으면 첫 페이지도 다시 부른다 (D-141)
+- 장애 팝업·업데이트 규칙(3.7)을 바꿔도(관리자 API 쓰기 포함) 동기화 신호를 보내지 않는다. 앱은 Remote Config 실시간 업데이트와 실행·돌아올 때 확인으로 안다 (PRD D-178, 4.9)
 - 자동 기념일 신호: 처음 만난 날이 바뀌면(`PATCH /space`) 신호는 `SPACE`/`UPDATED` 하나이고 `ANNIVERSARY` 신호는 보내지 않는다. 앱은 `SPACE`/`UPDATED`를 받으면 공간 정보와 함께 기념일도 다시 불러온다. `ANNIVERSARY` 신호는 직접 기념일의 생성·수정·삭제에만 쓴다 (FR-COUPLE-04.AC1, FR-ANNIV-02.AC3)
 - 일정 알림(`PUT`·`DELETE /events/{id}/reminder`)은 요청자 본인의 값이라 동기화 신호를 보내지 않는다. `PATCH /events/{id}`가 다른 사용자의 알림을 지우거나 다시 계산해도 신호는 `EVENT`/`UPDATED` 하나다 (3.3)
 - 커밋이 끝난 뒤에 보낸다 (트랜잭션이 실패하면 보내지 않음). 전송 실패는 재시도하지 않는다: 앱이 화면 진입 시 다시 불러오므로 (NFR-SYNC-02). FCM 우선순위는 SYNC가 normal, 보이는 푸시(7장)가 high다
@@ -756,14 +870,26 @@
 
 ---
 
-## 8. 프로필 사진 저장
+## 8. 프로필 사진·공지 이미지 저장
+
+### 8.1 프로필 사진
 
 - 업로드된 이미지는 서버에서 긴 변 512px JPEG로 다시 인코딩하고, 원본과 EXIF(촬영 위치 포함)는 버린다 (NFR-FILE-01)
 - 저장소는 인터페이스로 감싸 개발 환경은 로컬 디스크, 운영 환경은 Amazon S3(서울 리전 ap-northeast-2)를 쓴다
 - 객체 키는 `profile/{userId}/{uuid}.jpg`로 매번 새로 만들어 캐시 문제를 피하고, 교체 시 이전 파일을 지운다. 이 uuid가 API의 `profileImageVersion`이다 (`users.profile_image_key`)
 - **재인코딩 순서 (v0.12)**: 실제 디코드로 형식을 판정한다(JPEG·PNG가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`). 원본이 10MB를 넘거나 픽셀 수가 25MP를 넘으면 413 `IMAGE_TOO_LARGE`다. 회전(Orientation)을 픽셀에 적용한 뒤 메타를 제거하고, 투명한 부분은 흰 배경(`surface-0`)에 합성한 다음 긴 변 512px JPEG로 저장한다
 - **교체·삭제**: DB 커밋 뒤 이전 키를 best-effort로 지우고, 실패는 아래 정리 작업이 회수한다. 탈퇴는 탈퇴 이벤트의 이전 사진 키로 즉시 지운다
-- **미참조 파일 정리 (ERD 4.4)**: 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다
+- **미참조 파일 정리 (ERD 4.4)**: 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다. **`profile/` 접두어의 객체만 본다 (v0.22).** 공지 이미지(`notice/` 접두어, 8.2)는 이 작업이 지우지 않는다
+
+### 8.2 공지 이미지 (v0.22, D-181)
+
+장애 팝업·업데이트 규칙의 `image`에 쓰는 이미지다 (3.7). 프로필 사진과 같은 스토리지(개발은 로컬 디스크, 운영은 S3 서울 리전)를 같은 인터페이스로 쓰고, 접두어로 나눈다.
+
+- 업로드는 `POST /admin/app-notice-images`(관리자 키, R-19). 형식은 PNG·JPEG·WebP, 1MB 이하다. **프로필 사진과 달리 다시 인코딩하지 않고 원본 그대로 저장한다**(투명 PNG·WebP를 지키기 위해). 형식은 Content-Type이 아니라 실제 디코드로 판정하고, 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`, 1MB 초과는 413 `IMAGE_TOO_LARGE`다.
+- 객체 키는 `notice/{uuid}.{png|jpg|webp}`다. `fileName` = `{uuid}.{ext}`이고 매번 새 uuid를 만든다(교체는 새로 올리고 `image`를 바꾼 뒤 옛 것을 지운다). 판정한 형식에 따라 확장자는 `png`(PNG), `jpg`(JPEG), `webp`(WebP)다.
+- 조회는 `GET /app-notice-images/{fileName}`이고 **로그인이 필요 없다**(로그인 전 화면에서도 보인다). 응답은 이미지 바이트와 `Content-Type`(확장자에 맞춤), `Cache-Control: public, max-age=86400`, `X-Content-Type-Options: nosniff`다. `fileName`이 `{uuid}.{png|jpg|webp}` 형식이 아니면 스토리지를 찾지 않고 404 `NOT_FOUND`다(경로 이동 방지).
+- 업로드 응답의 `url`은 `https://<API 도메인>/api/v1/app-notice-images/<fileName>`이다. 운영자는 이 값을 `image`에 넣고, 사진은 EXIF를 지우지 않으므로 운영자가 올리는 이미지에는 개인정보(촬영 위치 등)가 없는 것을 쓴다.
+- **자동으로 지우지 않는다 (ERD DB-21)**: 이 이미지는 DB에 행이 없고 `app_notices`·`app_update_rules`의 `image` 문자열이 가리키기만 한다. 팝업을 지워도 이미지는 남고, 정리 작업은 없다. 지우려면 `DELETE /admin/app-notice-images/{fileName}`를 부른다. 프로필 사진의 미참조 파일 정리(8.1)는 `profile/` 접두어만 보므로 이 이미지를 지우지 않는다.
 
 ---
 
@@ -811,7 +937,7 @@
 | FR-CAL-01 AC2·AC8, FR-CAL-02 AC6, FR-CAL-03 AC7 | API 변경 없음 | 3.3 정렬 주석 (서버 정렬과 앱 표시 순서 구분, D-119), 앱 동작 (D-118, D-120, D-121) |
 | NFR-SYNC-01 (D-134, D-160, Q-19) | SYNC 신호 | 6장 (`SPACE` `UNLINKED`의 `id`, 즐겨찾기 신호 없음, `SPACE` 닉네임·사진, 수신 시 앱 동작), 3.3 Q-19 기본값 |
 | NFR-TIME-01 (일시 형식) | 전 경로 | 1장 (요청 `...Z`만, 응답 초 단위 `Z`) |
-| NFR-FILE-01 (D-147) | /me/profile-image | 8장 (재인코딩, 정리 작업), 413·415 (5장) |
+| NFR-FILE-01 (D-147) | /me/profile-image | 8.1 (재인코딩, 정리 작업은 `profile/` 접두어만), 413·415 (5장) |
 | FR-NOTI-03 AC2·AC3, FR-NOTI-05 AC2·AC5~AC7 (D-141~D-143) | /notifications | 3.5 (30일 경계, 멱등 읽음), 6장 (`NOTIFICATION` 열린 목록 갱신), 7장 |
 | NFR-SEC-01 토큰·세션 (D-73, D-81) | /auth/*, 푸시 전송 | 1장 토큰 수명·토큰 형식(access JWT, refresh 무작위 문자열)·인증 실패 규칙과 검사 순서, 3.1 `AuthTokens`·`Me`, 4.2 (Google `iss` 두 값, Kakao `v2/user/me`, 제공자 장애는 500 `INTERNAL_ERROR`), R-16, 7장, ERD DB-02, DB-14 |
 | NFR-LIMIT-01 글자 수 기준 (D-82) | PATCH /me, 소셜 프로필 이름 | 1장(코드 포인트로 센다), 3.1 `PATCH /me`(앞뒤 공백 제거, 빈 값은 `REQUIRED`, 초과는 `TOO_LONG`), 4.2의 3단계, 4.3의 4단계 |
@@ -820,4 +946,9 @@
 | FR-NOTI-05 알림 목록 | /notifications, /notifications/unread-count, /notifications/{id}/read | R-12, 3.5, 6장, 7장 |
 | FR-SET-01 | GET /me, GET /space | 3.1 `Me.createdAt` (가입일), 3.1 `MeSpace.linkedAt` (연결한 날, D-94), 3.2 `Space`, `Space.linkedAt` |
 | D-57 메모 작성자 닉네임 | API 변경 없음 | 앱이 `GET /space`의 구성원 닉네임을 메모의 `author_id`와 맞춰 채운다 |
-| FR-SET-02 정보 | API 없음(앱·웹) | |
+| FR-SET-02 정보 | API 없음(앱·웹) | AC4 [업데이트]는 Play 인앱 업데이트(유연)라 서버 API 없음 (D-151). 강제 업데이트는 FR-APP-02 |
+| FR-APP-01 장애 팝업 (D-176, D-178, D-179, D-181) | GET /app-notices, GET /app-notice-images/{fileName}, GET·PUT·DELETE /admin/app-notices, POST·DELETE /admin/app-notice-images | 1장 (로그인 불필요 경로), R-19, 3.7 (`AppNotice`, "지금 유효함", Remote Config 값과 같은 모양), 4.9 (두 곳 동시 요청, 서버 3초, 같은 `id`는 Remote Config 값, 표시 순서), 8.2 (공지 이미지 저장), 5장 `ADMIN_KEY_INVALID`·`VALIDATION_FAILED`·`IMAGE_TOO_LARGE`·`IMAGE_TYPE_NOT_ALLOWED` |
+| FR-APP-02 강제·권장 업데이트 (D-177, D-178, D-180) | GET /app-update-rules, GET·PUT·DELETE /admin/app-update-rules, 모든 `/api/v1` 요청 (426) | R-20 (인증보다 먼저, 예외 경로, 헤더 없으면 통과), 3.7 (`AppUpdateRule`, 맞춤 판단), 4.9의 7단계 (426을 받았을 때), 1.1 `details`, 5장 `APP_VERSION_UNSUPPORTED` |
+| FR-APP-03 기기 정보 (D-182, NFR-PRIV-03) | 공통 요청 헤더 4개, PUT /me/devices | 1장 (공통 요청 헤더), 3.1 `PUT /me/devices` (`osVersion`·`appVersion`·`appBuild`, 보낸 값만 저장), ERD DB-22. `devices` 행이 지워질 때(로그아웃·탈퇴·새 로그인) 함께 지워진다 (4.2, 3.1 `POST /auth/logout`) |
+| NFR-SEC-04 관리자 API | /admin/** | R-19 (`X-Admin-Key`, 상수 시간 비교, 환경변수가 비면 404), 5장 `ADMIN_KEY_INVALID`, 3.7 |
+| NFR-PRIV-03 기기 정보 처리 | PUT /me/devices | 3.1 (OS 버전·앱 버전·빌드 번호만 저장), 1장 공통 요청 헤더. 개인정보처리방침과 Remote Config 위탁은 `legal/privacy.md`이고 API 변경은 없다 |

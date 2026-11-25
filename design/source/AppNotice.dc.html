@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>장애 팝업</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B5666}a:hover{color:#1C1A22}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; font-family: 'IBM Plex Sans KR', sans-serif; color: #1C1A22; background: #FFFFFF">
+<sc-if value="{{bgCalendar}}" hint-placeholder-val="{{ true }}">
+<dc-import name="Calendar" tabs="{{ true }}" hint-size="390px,844px"></dc-import>
+</sc-if>
+<sc-if value="{{bgStart}}" hint-placeholder-val="{{ false }}">
+<dc-import name="Main" hint-size="390px,844px"></dc-import>
+</sc-if>
+<div style="position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(28, 26, 34, 0.48)">
+<section role="alertdialog" aria-modal="true" aria-labelledby="pTitle" aria-describedby="pBody" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; max-height: 100%; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<sc-if value="{{hasImage}}" hint-placeholder-val="{{ true }}">
+<div style="flex-shrink: 0; display: flex; justify-content: center; margin-bottom: 8px">
+<dc-import name="PopupImage" kind="{{image}}" hint-size="112px,112px"></dc-import>
+</div>
+</sc-if>
+<h2 id="pTitle" style="flex-shrink: 0; margin: 0; font-size: 17px; line-height: 24px; font-weight: 700; text-align: center; word-break: keep-all">{{title}}</h2>
+<div style="{{bodyBoxStyle}}">
+<p id="pBody" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666; text-align: center; white-space: pre-line; word-break: keep-all">{{body}}</p>
+</div>
+<div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; margin-top: 16px">
+<sc-if value="{{hasLink}}" hint-placeholder-val="{{ false }}">
+<a href="#" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center">자세히 보기</a>
+</sc-if>
+<sc-if value="{{isBlock}}" hint-placeholder-val="{{ true }}">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 0; background: #6D4AE0; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">다시 확인</button>
+</sc-if>
+<sc-if value="{{isInfo}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">오늘 하루 안 보기</button>
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 14px; border: 0; background: #6D4AE0; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">확인</button>
+</div>
+</sc-if>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"kind":{"editor":"enum","default":"block","options":["block","info"],"section":"상태"},"image":{"editor":"enum","default":"maintenance","options":["maintenance","error","notice","update","none"],"section":"상태"},"link":{"editor":"boolean","default":false,"section":"상태"},"longBody":{"editor":"boolean","default":false,"section":"상태"},"bg":{"editor":"enum","default":"calendar","options":["calendar","start"],"section":"상태"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const kind = this.props.kind ?? 'block';
+    const image = this.props.image ?? 'maintenance';
+    const longBody = !!this.props.longBody;
+    const copy = {
+      maintenance: ['서비스 점검 중이에요', '더 안정적으로 쓸 수 있게 점검하고 있어요.\n점검이 끝나면 다시 쓸 수 있어요.'],
+      error: ['일시적인 오류가 생겼어요', '서버에 문제가 생겨 지금은 앱을 쓸 수 없어요.\n빠르게 고치고 있어요.'],
+      notice: ['알림이 늦게 올 수 있어요', '일부 알림이 늦게 도착하고 있어요.\n일정과 메모는 평소처럼 쓸 수 있어요.'],
+    };
+    const key = image === 'none' ? (kind === 'info' ? 'notice' : 'maintenance') : (copy[image] ? image : 'maintenance');
+    let body = copy[key][1];
+    if (longBody) body = Array(6).fill('더 안정적으로 쓸 수 있게 점검하고 있어요. 점검하는 동안에는 일정과 메모를 보거나 쓸 수 없어요.\n점검이 끝나면 다시 쓸 수 있어요.').join('\n\n');
+    return {
+      isBlock: kind !== 'info',
+      isInfo: kind === 'info',
+      hasImage: image !== 'none',
+      image,
+      hasLink: !!this.props.link,
+      title: copy[key][0],
+      body,
+      bodyBoxStyle: longBody
+        ? 'flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 12px 0; border-top: 1px solid #EEEBF1; border-bottom: 1px solid #EEEBF1'
+        : 'flex: 0 1 auto; min-height: 0; overflow-y: auto',
+      bgCalendar: (this.props.bg ?? 'calendar') !== 'start',
+      bgStart: this.props.bg === 'start',
+    };
+  }
+}
+</script>
+</body>
+</html>
