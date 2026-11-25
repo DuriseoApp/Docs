@@ -968,90 +968,129 @@
     },
     "AppNotice.dc.html": {
       "x": 0,
-      "y": 19700,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 차단"
+      "title": "SCR-APP-01 공지 · 닫을 수 없음 — 점검 중 (기본 이미지)"
     },
     "AppNoticeNoImage.dc.html": {
       "x": 470,
-      "y": 19700,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 차단 · 이미지 없음"
+      "title": "SCR-APP-01 공지 · 닫을 수 없음 — 이미지 없음"
     },
     "AppNoticeBlockLink.dc.html": {
       "x": 940,
-      "y": 19700,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 차단 · 링크 버튼 (로그인 전)"
+      "title": "SCR-APP-01 공지 · 닫을 수 없음 — 서버 오류, 링크 버튼, 로그인 전 화면"
     },
     "AppNoticeInfo.dc.html": {
-      "x": 1410,
-      "y": 19700,
+      "x": 2350,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 안내"
+      "title": "SCR-APP-01 공지 · 닫을 수 있음 — 안내 (기본 이미지)"
     },
     "AppNoticeInfoNoImage.dc.html": {
-      "x": 1880,
-      "y": 19700,
+      "x": 2820,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 안내 · 이미지 없음"
+      "title": "SCR-APP-01 공지 · 닫을 수 있음 — 이미지 없음"
     },
     "AppNoticeInfoLink.dc.html": {
-      "x": 2350,
-      "y": 19700,
+      "x": 3290,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 안내 · 링크 버튼"
+      "title": "SCR-APP-01 공지 · 닫을 수 있음 — 링크 버튼"
     },
     "AppNoticeLongBody.dc.html": {
-      "x": 2820,
-      "y": 19700,
+      "x": 1410,
+      "y": 20000,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-01 장애 팝업 · 긴 본문 (스크롤)"
+      "title": "SCR-APP-01 공지 · 닫을 수 없음 — 본문이 길 때 (스크롤)"
     },
     "AppUpdate.dc.html": {
-      "x": 3290,
-      "y": 19700,
+      "x": 0,
+      "y": 21500,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-02 업데이트 팝업 · 강제"
+      "title": "SCR-APP-02 강제 업데이트 — 기본 이미지"
     },
     "AppUpdateRecommend.dc.html": {
-      "x": 3760,
-      "y": 19700,
+      "x": 1410,
+      "y": 21500,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-02 업데이트 팝업 · 권장"
+      "title": "SCR-APP-02 권장 업데이트 — 기본 이미지"
     },
     "AppUpdateDefault.dc.html": {
-      "x": 4230,
-      "y": 19700,
+      "x": 470,
+      "y": 21500,
       "w": 390,
       "h": 844,
       "radius": 28,
-      "title": "SCR-APP-02 업데이트 팝업 · 강제 · 기본 문구"
+      "title": "SCR-APP-02 강제 업데이트 — 서버가 426만 주고 문구가 없을 때 (기본 문구)"
     },
     "PopupImage.dc.html": {
       "x": 0,
-      "y": 20664,
+      "y": 23000,
       "w": 568,
       "h": 188,
-      "title": "팝업 기본 이미지 4종 (preset)"
+      "title": "공지·업데이트 팝업 기본 이미지 4종 (앱에 넣는 이미지, preset)"
+    },
+    "AppNoticeImageOnly.dc.html": {
+      "x": 1880,
+      "y": 20000,
+      "w": 390,
+      "h": 844,
+      "radius": 28,
+      "title": "SCR-APP-01 공지 · 닫을 수 없음 — 이미지만 (배너)"
+    },
+    "AppNoticeInfoImageOnly.dc.html": {
+      "x": 3760,
+      "y": 20000,
+      "w": 390,
+      "h": 844,
+      "radius": 28,
+      "title": "SCR-APP-01 공지 · 닫을 수 있음 — 이미지만 (배너)"
+    },
+    "AppUpdateImageOnly.dc.html": {
+      "x": 940,
+      "y": 21500,
+      "w": 390,
+      "h": 844,
+      "radius": 28,
+      "title": "SCR-APP-02 강제 업데이트 — 이미지만 (배너)"
+    },
+    "AppUpdateRecommendImageOnly.dc.html": {
+      "x": 1880,
+      "y": 21500,
+      "w": 390,
+      "h": 844,
+      "radius": 28,
+      "title": "SCR-APP-02 권장 업데이트 — 이미지만 (배너)"
+    },
+    "PopupBanner.dc.html": {
+      "x": 648,
+      "y": 23000,
+      "w": 936,
+      "h": 422,
+      "title": "이미지만 넣은 팝업의 배너 예시 (운영자가 올리는 https 이미지 자리, 앱에 넣지 않음)"
     }
   },
   "createdOnFiles": {
@@ -1167,13 +1206,157 @@
       "x": 1410,
       "y": 2184
     },
-    "v022Title": {
+    "v022Row1Title": {
       "kind": "title1",
-      "maxW": 4620,
-      "text": "PRD v0.22 장애·업데이트 팝업",
+      "maxW": 4150,
+      "text": "PRD v0.22 · 공지 팝업 (점검·오류·안내 — 앱을 막는 공지와 알리기만 하는 공지)",
       "w": 240,
       "x": 0,
-      "y": 19400
+      "y": 19500
+    },
+    "v022Sit_AppNotice": {
+      "x": 0,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 서버 점검 중이라 앱을 못 쓰게 막을 때.\n닫을 수 없어요. [앱 종료]를 누르면 앱이 꺼져요. 점검이 끝나면 다음에 앱을 열 때 팝업 없이 열려요.",
+      "size": "s",
+      "fill": "orange"
+    },
+    "v022Sit_AppNoticeNoImage": {
+      "x": 470,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 위와 같은 점검 공지를 이미지 없이 글로만 보낼 때. [앱 종료]만 있어요.",
+      "size": "s",
+      "fill": "orange"
+    },
+    "v022Sit_AppNoticeBlockLink": {
+      "x": 940,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 서버 오류로 앱을 못 쓰게 막고, 자세한 안내 웹 페이지 링크를 붙였을 때.\n로그인 전 시작 화면에서도 똑같이 떠요.",
+      "size": "s",
+      "fill": "orange"
+    },
+    "v022Sit_AppNoticeLongBody": {
+      "x": 1410,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 막는 공지의 글이 길 때.\n글 부분만 스크롤되고 버튼은 늘 보여요.",
+      "size": "s",
+      "fill": "orange"
+    },
+    "v022Sit_AppNoticeImageOnly": {
+      "x": 1880,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 운영자가 글 없이 점검 안내 배너 이미지 한 장만 넣었을 때 (앱을 막음, [앱 종료]만 있음).",
+      "size": "s",
+      "fill": "orange"
+    },
+    "v022Sit_AppNoticeInfo": {
+      "x": 2350,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 앱은 그대로 쓸 수 있고 알리기만 할 때 (예: 알림 지연).\n[확인]으로 닫고, [오늘 하루 안 보기]면 오늘은 다시 안 떠요.",
+      "size": "s",
+      "fill": "green"
+    },
+    "v022Sit_AppNoticeInfoNoImage": {
+      "x": 2820,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 위와 같은 알림을 이미지 없이 글로만 보낼 때.",
+      "size": "s",
+      "fill": "green"
+    },
+    "v022Sit_AppNoticeInfoLink": {
+      "x": 3290,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 알림에 자세한 내용 웹 페이지 링크를 붙였을 때.\n링크를 눌러도 팝업은 그대로예요.",
+      "size": "s",
+      "fill": "green"
+    },
+    "v022Sit_AppNoticeInfoImageOnly": {
+      "x": 3760,
+      "y": 19740,
+      "w": 390,
+      "text": "상황: 글 없이 알림 배너 이미지 한 장만 넣었을 때 (앱은 그대로 씀).",
+      "size": "s",
+      "fill": "green"
+    },
+    "v022Row2Title": {
+      "kind": "title1",
+      "maxW": 4150,
+      "text": "PRD v0.22 · 업데이트 팝업 (강제·권장)",
+      "w": 240,
+      "x": 0,
+      "y": 21000
+    },
+    "v022Sit_AppUpdate": {
+      "x": 0,
+      "y": 21240,
+      "w": 390,
+      "text": "상황: 이 버전은 더 쓸 수 없어 꼭 업데이트해야 할 때 (강제).\n닫을 수 없고 [앱 종료]나 [업데이트]만 있어요.",
+      "size": "s",
+      "fill": "red"
+    },
+    "v022Sit_AppUpdateDefault": {
+      "x": 470,
+      "y": 21240,
+      "w": 390,
+      "text": "상황: 서버가 오래된 버전의 요청을 막았는데(426) 운영자 문구가 없을 때.\n앱의 기본 문구로 강제 업데이트를 보여줘요.",
+      "size": "s",
+      "fill": "red"
+    },
+    "v022Sit_AppUpdateImageOnly": {
+      "x": 940,
+      "y": 21240,
+      "w": 390,
+      "text": "상황: 강제 업데이트를 글 없이 배너 이미지 한 장으로 알릴 때.",
+      "size": "s",
+      "fill": "red"
+    },
+    "v022Sit_AppUpdateRecommend": {
+      "x": 1410,
+      "y": 21240,
+      "w": 390,
+      "text": "상황: 새 버전을 권할 때 (권장).\n[닫기]로 이번만 닫거나, [오늘 하루 안 보기]로 오늘은 안 보이게 해요.",
+      "size": "s",
+      "fill": "blue"
+    },
+    "v022Sit_AppUpdateRecommendImageOnly": {
+      "x": 1880,
+      "y": 21240,
+      "w": 390,
+      "text": "상황: 권장 업데이트를 글 없이 배너 이미지 한 장으로 알릴 때.",
+      "size": "s",
+      "fill": "blue"
+    },
+    "v022Row3Title": {
+      "kind": "title1",
+      "maxW": 4150,
+      "text": "PRD v0.22 · 팝업 이미지",
+      "w": 240,
+      "x": 0,
+      "y": 22500
+    },
+    "v022Sit_PopupImage": {
+      "x": 0,
+      "y": 22740,
+      "w": 400,
+      "text": "앱에 넣어 두는 기본 그림 4종이에요.\n운영자가 이미지 칸에 preset:maintenance처럼 이름만 적으면 이 그림이 나와요.",
+      "size": "s",
+      "fill": "gray"
+    },
+    "v022Sit_PopupBanner": {
+      "x": 648,
+      "y": 22740,
+      "w": 400,
+      "text": "운영자가 직접 만든 이미지(웹 주소)를 넣었을 때의 예시예요.\n실제 앱에는 운영자가 올린 이미지가 그대로 들어가요. 앱에 넣는 그림이 아니에요.",
+      "size": "s",
+      "fill": "gray"
     }
   },
   "order": [
@@ -1295,7 +1478,12 @@
     "AppUpdate.dc.html",
     "AppUpdateRecommend.dc.html",
     "AppUpdateDefault.dc.html",
-    "PopupImage.dc.html"
+    "PopupImage.dc.html",
+    "AppNoticeImageOnly.dc.html",
+    "AppNoticeInfoImageOnly.dc.html",
+    "AppUpdateImageOnly.dc.html",
+    "AppUpdateRecommendImageOnly.dc.html",
+    "PopupBanner.dc.html"
   ],
   "pages": [],
   "title": "커플 공유 앱 데모"

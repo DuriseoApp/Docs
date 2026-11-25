@@ -49,7 +49,7 @@
 | | memos | 메모 (고정 핀 포함) |
 | | memo_checklist_items | 삭제됨 (PRD v0.4) |
 | | memo_favorites | 사용자별 즐겨찾기 |
-| 운영 | app_notices | 장애 팝업 (차단·안내). 쓰기·전체 조회는 관리자 API, 유효한 항목 읽기는 공개 조회 |
+| 운영 | app_notices | 공지 팝업 (막는 공지·알리는 공지). 쓰기·전체 조회는 관리자 API, 유효한 항목 읽기는 공개 조회 |
 | | app_update_rules | 강제·권장 업데이트 규칙. 쓰기·전체 조회는 관리자 API, 읽기는 공개 조회와 서버 426 차단 |
 
 ---
@@ -127,7 +127,7 @@
 
 - 서비스: 같은 토큰이 다른 사용자로 들어오면 그 사용자로 옮긴다
 - 서비스: 등록(`PUT /me/devices`)은 같은 토큰이면 멱등(upsert)이다
-- 서비스(기기 정보, DB-22): 등록할 때 받은 `osVersion`, `appVersion`, `appBuild`로 `os_version`, `app_version`, `app_build`를 덮어쓴다. 보낸 값만 저장하고 안 보낸 값은 null로 둔다(이전 값을 남기지 않는다). 형식 검사(`appBuild` 0 이상 정수, 길이 20·50)는 서비스에서 하고 DB CHECK는 두지 않는다. 이 값은 장애·업데이트 안내와 문의 대응에만 쓰고, 행이 지워질 때(로그아웃, 로그인 3종, 탈퇴, 무효 토큰, 4.4 정리) 함께 지워진다 (NFR-PRIV-03)
+- 서비스(기기 정보, DB-22): 등록할 때 받은 `osVersion`, `appVersion`, `appBuild`로 `os_version`, `app_version`, `app_build`를 덮어쓴다. 보낸 값만 저장하고 안 보낸 값은 null로 둔다(이전 값을 남기지 않는다). 형식 검사(`appBuild` 0 이상 정수, 길이 20·50)는 서비스에서 하고 DB CHECK는 두지 않는다. 이 값은 공지·업데이트 안내와 문의 대응에만 쓰고, 행이 지워질 때(로그아웃, 로그인 3종, 탈퇴, 무효 토큰, 4.4 정리) 함께 지워진다 (NFR-PRIV-03)
 - 서비스: 푸시를 보낼 때 FCM이 무효 토큰 응답(`UNREGISTERED` 등)을 주면 그 `devices` 행을 삭제한다. 일시 오류는 행을 그대로 두고 로그만 남긴다 (PRD D-50, D-73)
 - 서비스: 로그인 3종(게스트 시작, 소셜 로그인, 게스트 → 기존 계정 로그인)은 그 사용자의 `devices` 행을 모두 지운다. 새 기기는 로그인 뒤 `PUT /me/devices`로 다시 등록한다. 게스트 연동은 같은 기기라 지우지 않는다 (DB-09, DB-12, PRD D-51, D-67)
 - 서비스: 로그아웃은 그 사용자의 `devices` 행을 모두 지운다. 한 기기 규칙이라 사용자 전체 = 그 기기다 (DB-09, PRD D-50). 그래서 로그아웃한 기기에는 푸시가 가지 않는다
@@ -347,17 +347,18 @@
 
 ### 3.4 운영
 
-앱 실행 때 보여 주는 장애 팝업과 업데이트 팝업의 서버 쪽 설정이다 (FR-APP-01, FR-APP-02). 같은 값을 Remote Config(`app_notices`, `app_update_rules`)에도 둘 수 있고 앱이 두 곳을 `id`로 합친다 (D-176, D-177, D-178). 이 두 테이블은 공간·사용자와 관계가 없다(FK 없음, `space_id` 없음). 쓰기와 전체 조회는 관리자 API(관리자 키 헤더)로만 하고, 지금 유효한 항목의 읽기는 로그인 없는 공개 조회 2개(`GET /app-notices`, `GET /app-update-rules`)가 한다. 서버의 강제 업데이트 차단(R-20)도 `app_update_rules`를 읽는다 (NFR-SEC-04). 문자열 PK는 UUID 원칙의 예외다 (DB-21).
+앱 실행 때 보여 주는 공지 팝업과 업데이트 팝업의 서버 쪽 설정이다 (FR-APP-01, FR-APP-02). 같은 값을 Remote Config(`app_notices`, `app_update_rules`)에도 둘 수 있고 앱이 두 곳을 `id`로 합친다 (D-176, D-177, D-178). 이 두 테이블은 공간·사용자와 관계가 없다(FK 없음, `space_id` 없음). 쓰기와 전체 조회는 관리자 API(관리자 키 헤더)로만 하고, 지금 유효한 항목의 읽기는 로그인 없는 공개 조회 2개(`GET /app-notices`, `GET /app-update-rules`)가 한다. 서버의 강제 업데이트 차단(R-20)도 `app_update_rules`를 읽는다 (NFR-SEC-04). 문자열 PK는 UUID 원칙의 예외다 (DB-21).
 
-**app_notices** — 장애 팝업 (FR-APP-01, D-176)
+**app_notices** — 공지 팝업 (FR-APP-01, D-176, D-183)
 
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
-| id | varchar(50) | PK | UUID가 아니라 운영자가 정한 문자열 (1~50자, `[a-z0-9_-]`). Remote Config의 같은 장애와 같은 값이어야 앱이 합친다. 형식은 서비스에서 검사 (DB-21) |
-| type | varchar(10) | not null, CHECK in (`BLOCK`, `INFO`) | 차단 / 안내 |
-| title | varchar(40) | not null | 1~40자 |
-| body | varchar(500) | not null | 1~500자. 줄바꿈 허용 |
+| id | varchar(50) | PK | UUID가 아니라 운영자가 정한 문자열 (1~50자, `[a-z0-9_-]`). Remote Config의 같은 공지와 같은 값이어야 앱이 합친다. 형식은 서비스에서 검사 (DB-21) |
+| closable | boolean | not null | `false` = 앱을 막는 공지(닫을 수 없음), `true` = 알리는 공지. 점검·오류·안내는 종류가 아니라 문구와 이미지로 나타낸다 (D-176) |
+| title | varchar(40) | null | 1~40자. 선택 (D-183) |
+| body | varchar(500) | null | 1~500자. 줄바꿈 허용. 선택 (D-183) |
 | image | varchar(500) | null | `preset:maintenance`, `preset:error`, `preset:update`, `preset:notice` 또는 `https://` 주소 (D-181). 형식은 서비스에서 검사 |
+| image_alt | varchar(100) | null | 이미지 대체 글, 1~100자. 이미지만 넣은 팝업에서 제목 자리에 보여준다 (D-183) |
 | link_text | varchar(20) | null | `link_url`과 둘 다 있어야 버튼이 보인다 |
 | link_url | varchar(500) | null | `https://` 주소 |
 | platform | varchar(10) | null | `ANDROID`, `IOS`, null이면 모든 플랫폼. API에서 검사하고 DB CHECK는 두지 않는다 (`devices.platform`과 같은 예외) |
@@ -365,6 +366,7 @@
 | created_at, updated_at | timestamptz | not null, default now() | |
 
 - 서비스: "지금 유효함" = `(starts_at IS NULL OR starts_at <= now) AND (ends_at IS NULL OR now < ends_at)`. 공개 조회는 이것만, 관리자 조회는 끝난 것도 돌려준다. 정렬은 `created_at` 오래된 순, 같으면 `id`
+- 서비스(제목·이미지 규칙, D-183): `title`이 null이면 `image`가 `https://`이고 `image_alt`가 있어야 한다(이미지만 넣은 팝업, `preset:`만으로는 안 됨). `title`이 null인데 `body`가 있으면 안 된다. 빈 문자열은 null로 보지 않고 거부한다. 이 조합 검사는 서비스(API 본문 검증)에서 하고 DB CHECK는 두지 않는다. `app_update_rules`도 같다
 - 서비스: 같은 `id`로 PUT하면 새로 만들거나 바꾼다(upsert). 바꿀 때 `created_at`은 그대로 두고 `updated_at`만 갱신한다
 - 서비스: 행 수가 적어(운영자가 직접 넣음) 별도 인덱스를 두지 않는다
 
@@ -380,9 +382,10 @@
 | build_min, build_max | integer | null | `RANGE`일 때(양 끝 포함, `min` ≤ `max`) |
 | build_values | integer[] | null | `IN`일 때 1~50개 |
 | os_min, os_max | integer | null | OS 조건(Android는 API 레벨, 양 끝 포함). 둘 다 null이면 OS 조건 없음 |
-| title | varchar(40) | not null | |
-| body | varchar(500) | not null | |
+| title | varchar(40) | null | 선택 (D-183) |
+| body | varchar(500) | null | 선택 (D-183) |
 | image | varchar(500) | null | `app_notices.image`와 같은 규칙. null이면 앱은 `preset:update` |
+| image_alt | varchar(100) | null | `app_notices.image_alt`와 같음 (D-183) |
 | created_at, updated_at | timestamptz | not null, default now() | |
 
 - 서비스: `build_op`에 따라 쓰는 컬럼이 정해지고 쓰지 않는 컬럼은 null이다(`EQ`·`LTE`·`GTE` → `build_value`, `RANGE` → `build_min`·`build_max`, `IN` → `build_values`). 값은 0 이상 정수이고 `os_min`·`os_max`는 둘 중 하나 이상 있을 때만 OS 조건이다. 이 조합 검사는 서비스에서 하고 DB CHECK는 두지 않는다 (API 본문 검증이 `VALIDATION_FAILED`로 막는다)
@@ -511,7 +514,7 @@
 | DB-18 | 기념일 알림 중복 방지는 컬럼 없이 "사용자 현지 오늘 구간에 같은 (user, type, 제목) 행이 있으면 건너뜀"으로 한다 (v0.12) | 기념일마다 알림 1건이고 하루 1번이면 충분해서 `dedupe_key`·UNIQUE를 추가하지 않는다 (PRD D-138). 자동 기념일은 `target_type` `ANNIVERSARY` + `target_id` NULL, 직접 기념일은 `ANNIVERSARY` + 기념일 id |
 | DB-19 | 알림 조회와 안 읽음 개수는 `created_at > now − 30일`로 거르고, 03:00 KST 정리는 물리 삭제일 뿐이다 (v0.12) | 정리 작업이 늦거나 실패해도 30일이 지난 알림이 보이지 않게 (PRD D-141, FR-NOTI-05.AC2, DB-07) |
 | DB-20 | 메모 날짜를 없애고 `memos.memo_date` 컬럼과 부분 INDEX (space_id, memo_date)를 지운다 (v0.21) | 메모와 캘린더를 나눴다 (PRD D-174). 새 Flyway 버전으로 컬럼과 인덱스를 삭제하고, 이미 머지된 마이그레이션은 고치지 않는다. 출시 전이라 실사용 데이터가 없어 데이터 이전은 하지 않는다. 컬럼 삭제로 기존 메모의 날짜 값은 사라진다 |
-| DB-21 | 장애 팝업(`app_notices`)과 업데이트 규칙(`app_update_rules`)을 새 테이블 두 개로 둔다. PK는 UUID가 아니라 운영자가 정한 문자열 `varchar(50)`이며 1장 "모든 테이블 UUID" 원칙의 예외다. 사용자·공간과 FK가 없고, 관리자 API로만 만들고 지우며 자동 정리는 없다. 공지 이미지는 스토리지 `notice/` 접두어에 두고 프로필 사진 정리(4.4)는 `profile/`만 본다 (v0.22) | Remote Config에 같은 `id`로 같은 항목을 두고 앱이 `id`로 합치므로(PRD D-176~D-178) 서버가 `id`를 만들지 않고 운영자가 정한 값을 그대로 PK로 쓴다. 운영자가 직접 넣는 적은 수의 행이라 UUIDv7 정렬 이점이 없다. 기간이 지난 공지도 남기고 지우는 것은 사람이 정한다. 접두어를 나눠야 사진 정리 작업이 공지 이미지를 고아 파일로 보고 지우지 않는다. 새 Flyway 버전(`V4`)에 추가만 한다 (PRD D-176, D-177, D-181, NFR-SEC-04) |
+| DB-21 | 공지 팝업(`app_notices`)과 업데이트 규칙(`app_update_rules`)을 새 테이블 두 개로 둔다. PK는 UUID가 아니라 운영자가 정한 문자열 `varchar(50)`이며 1장 "모든 테이블 UUID" 원칙의 예외다. 사용자·공간과 FK가 없고, 관리자 API로만 만들고 지우며 자동 정리는 없다. 공지 이미지는 스토리지 `notice/` 접두어에 두고 프로필 사진 정리(4.4)는 `profile/`만 본다 (v0.22) | Remote Config에 같은 `id`로 같은 항목을 두고 앱이 `id`로 합치므로(PRD D-176~D-178) 서버가 `id`를 만들지 않고 운영자가 정한 값을 그대로 PK로 쓴다. 운영자가 직접 넣는 적은 수의 행이라 UUIDv7 정렬 이점이 없다. 기간이 지난 공지도 남기고 지우는 것은 사람이 정한다. 접두어를 나눠야 사진 정리 작업이 공지 이미지를 고아 파일로 보고 지우지 않는다. 새 Flyway 버전(`V4`)에 추가만 한다. 공지 종류는 `type`이 아니라 `closable` boolean 하나로 두고(앱을 막는 공지 `false`, 알리는 공지 `true`), 제목·본문은 null 허용, 이미지 대체 글 `image_alt`를 둔다. 제목·이미지 조합은 DB CHECK 없이 서비스에서 검사한다 (PRD D-176, D-177, D-181, D-183, NFR-SEC-04) |
 | DB-22 | `devices`에 `os_version`, `app_version`, `app_build`를 null 허용으로 추가하고, `PUT /me/devices`에서 받은 값으로 덮어쓴다. 보내지 않은 값은 null이다 (v0.22) | 앱이 등록 때 보내는 현재 기기 정보를 문의 대응에 쓴다 (PRD D-182, FR-APP-03). 이력이 아니라 현재 값만 두므로 새 테이블이 필요 없고, 기기 행이 지워질 때 함께 지워져 보관 기간이 따로 없다 (NFR-PRIV-03). 규칙 판단에는 쓰지 않고 판단은 요청 헤더로 한다 (D-180). 추가만 하므로 기존 행은 null이다 |
 
 ---
@@ -554,8 +557,8 @@
 | FR-NOTI-05 알림 목록 | notifications. AC2 30일 경계는 조회 조건(DB-19), AC6·AC7 읽음·안 읽음 점은 read_at (테이블 변화 없음, D-141) |
 | FR-NOTI-01~03, FR-CAL-05 AC7 (v0.12) | event_reminders.sent_at (10분 넘게 지나면 푸시 생략, D-137), notifications 기념일 중복 방지 (DB-18, D-138), devices 무효 토큰 삭제·멱등 등록. 테이블 변화 없음 |
 | FR-AUTH-07 AC6~AC9 (v0.12) | users.profile_image_key (`profileImageVersion`으로 나감), 사진 파일 정리 (4.4). 테이블 변화 없음 |
-| FR-APP-01 장애 팝업 | app_notices (D-176, D-181, DB-21). 관리자 API로만 생성·삭제, 자동 정리 없음. 공지 이미지는 스토리지 `notice/` (4.4) |
-| FR-APP-02 강제·권장 업데이트 | app_update_rules (D-177, D-180, DB-21). 426 판단은 요청 헤더와 규칙 비교라 저장하지 않음 |
+| FR-APP-01 공지 팝업 | app_notices (D-176, D-181, D-183, DB-21). `closable`, `image_alt`, 제목·본문 null 허용. 관리자 API로만 생성·삭제, 자동 정리 없음. 공지 이미지는 스토리지 `notice/` (4.4) |
+| FR-APP-02 강제·권장 업데이트 | app_update_rules (D-177, D-180, D-183, DB-21). `image_alt`, 제목·본문 null 허용. 426 판단은 요청 헤더와 규칙 비교라 저장하지 않음 |
 | FR-APP-03 기기 정보 | devices.os_version, app_version, app_build (D-182, DB-22, NFR-PRIV-03). 마이그레이션은 컬럼 추가만 |
 | FR-ANNIV-03 AC6, FR-MEMO-02·03·05·06 (v0.12) | anniversaries.updated_at, memos.title·body·pinned_at·pinned_by·updated_at, memo_favorites 설명만 (D-123, D-132, D-134). 테이블 변화 없음 |
 

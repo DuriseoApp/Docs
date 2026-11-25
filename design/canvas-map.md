@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-11-25 · 캔버스 버전 46 · PRD v0.22 |
+| 마지막 반영 | 2026-11-25 · 캔버스 버전 51 · PRD v0.22 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -112,18 +112,22 @@
 | CalendarTutorial3.dc.html | SCR-CAL-01 (튜토리얼 3단계 · D-day) | SCR-CAL-01--tutorial-3.png |
 | CalendarTutorial4.dc.html | SCR-CAL-01 (튜토리얼 4단계 · 메모 탭) | SCR-CAL-01--tutorial-4.png |
 | CalendarTutorial5.dc.html | SCR-CAL-01 (튜토리얼 5단계 · 전체 메뉴) | SCR-CAL-01--tutorial-5.png |
-| AppNotice.dc.html | SCR-APP-01 (차단 · 이미지 maintenance) | SCR-APP-01--block.png |
-| AppNoticeNoImage.dc.html | SCR-APP-01 (차단 · 이미지 없음) | SCR-APP-01--block--no-image.png |
-| AppNoticeBlockLink.dc.html | SCR-APP-01 (차단 · 이미지 error · 링크 버튼 · 로그인 전) | SCR-APP-01--block--link.png |
-| AppNoticeInfo.dc.html | SCR-APP-01 (안내 · 이미지 notice) | SCR-APP-01--info.png |
-| AppNoticeInfoNoImage.dc.html | SCR-APP-01 (안내 · 이미지 없음) | SCR-APP-01--info--no-image.png |
-| AppNoticeInfoLink.dc.html | SCR-APP-01 (안내 · 링크 버튼) | SCR-APP-01--info--link.png |
-| AppNoticeLongBody.dc.html | SCR-APP-01 (차단 · 긴 본문 스크롤) | SCR-APP-01--long-body.png |
+| AppNotice.dc.html | SCR-APP-01 (앱을 막는 공지 · 점검, 기본 이미지 maintenance) | SCR-APP-01--block.png |
+| AppNoticeNoImage.dc.html | SCR-APP-01 (앱을 막는 공지 · 이미지 없음) | SCR-APP-01--block--no-image.png |
+| AppNoticeBlockLink.dc.html | SCR-APP-01 (앱을 막는 공지 · 서버 오류, 링크 버튼, 로그인 전) | SCR-APP-01--block--link.png |
+| AppNoticeLongBody.dc.html | SCR-APP-01 (앱을 막는 공지 · 긴 본문 스크롤) | SCR-APP-01--long-body.png |
+| AppNoticeImageOnly.dc.html | SCR-APP-01 (앱을 막는 공지 · 이미지만) | SCR-APP-01--block--image-only.png |
+| AppNoticeInfo.dc.html | SCR-APP-01 (알리는 공지 · 기본 이미지 notice) | SCR-APP-01--info.png |
+| AppNoticeInfoNoImage.dc.html | SCR-APP-01 (알리는 공지 · 이미지 없음) | SCR-APP-01--info--no-image.png |
+| AppNoticeInfoLink.dc.html | SCR-APP-01 (알리는 공지 · 링크 버튼) | SCR-APP-01--info--link.png |
+| AppNoticeInfoImageOnly.dc.html | SCR-APP-01 (알리는 공지 · 이미지만) | SCR-APP-01--info--image-only.png |
 | AppUpdate.dc.html | SCR-APP-02 (강제) | SCR-APP-02--force.png |
-| AppUpdateRecommend.dc.html | SCR-APP-02 (권장) | SCR-APP-02--recommend.png |
 | AppUpdateDefault.dc.html | SCR-APP-02 (강제 · 426 기본 문구) | SCR-APP-02--force-default.png |
+| AppUpdateImageOnly.dc.html | SCR-APP-02 (강제 · 이미지만) | SCR-APP-02--force--image-only.png |
+| AppUpdateRecommend.dc.html | SCR-APP-02 (권장) | SCR-APP-02--recommend.png |
+| AppUpdateRecommendImageOnly.dc.html | SCR-APP-02 (권장 · 이미지만) | SCR-APP-02--recommend--image-only.png |
 
-이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `AddEventMemoDate.dc.html`·`MemoDetailOtherYear.dc.html`(이전 버전, PRD v0.21), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림), `PopupImage.dc.html`(팝업 기본 이미지 4종 — `design/illustrations/*.svg`가 원본)
+이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `AddEventMemoDate.dc.html`·`MemoDetailOtherYear.dc.html`(이전 버전, PRD v0.21), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림), `PopupImage.dc.html`(팝업 기본 이미지 4종 — `design/illustrations/*.svg`가 원본), `PopupBanner.dc.html`(이미지만 넣은 팝업의 배너 예시, 앱에 넣지 않음)
 
 보드 원본(`.dc.html`, `canvas.json`)은 `design/source/`에 있어요. `/design-sync`가 이미지와 함께 갱신해요.
 

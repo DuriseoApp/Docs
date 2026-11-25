@@ -25,7 +25,7 @@
 - 커플 공간에서 일정·기념일·메모를 상대와 함께 보여 주는 서비스 제공
 - 일정·기념일·상대 활동 알림 보내기
 - 부정 이용 방지(초대코드 오입력 제한), 장애 대응과 복구
-- 장애·점검 안내와 앱 업데이트 안내(앱 버전·OS 버전에 맞는 안내 보내기)
+- 점검·오류 공지와 앱 업데이트 안내(앱 버전·OS 버전에 맞는 안내 보내기)
 - 문의 응대
 
 ## 3. 보유 기간과 파기
@@ -52,7 +52,7 @@
 | --- | --- | --- | --- | --- |
 | Amazon Web Services, Inc. (aws-privacy@amazon.com) | 서버·데이터베이스·사진 저장 | 1장의 모든 항목 | 대한민국(서울 리전) | 국외 이전 없음 |
 | Google LLC (Firebase Cloud Messaging, 개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | 푸시 알림 전송 | 푸시 알림 토큰, 알림 내용 | 미국 등 Google 데이터센터 | 알림을 보낼 때마다 네트워크로 전송 |
-| Google LLC (Firebase Remote Config, 개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | 장애·업데이트 안내 설정 전달 | 앱 설치 식별자(Firebase), 앱 버전, OS 버전, 기기 언어·국가 | 미국 등 Google 데이터센터 | 앱을 실행할 때 네트워크로 전송 |
+| Google LLC (Firebase Remote Config, 개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | 공지·업데이트 안내 설정 전달 | 앱 설치 식별자(Firebase), 앱 버전, OS 버전, 기기 언어·국가 | 미국 등 Google 데이터센터 | 앱을 실행할 때 네트워크로 전송 |
 | Google LLC (개인정보 문의: https://support.google.com/policies/contact/data_privacy_office) | Google 로그인 | Google 계정 고유 식별자 | 미국 등 | 로그인할 때 네트워크로 전송 |
 | 주식회사 카카오 (고객센터 1577-3754) | 카카오 로그인, 탈퇴 때 연결 끊기 | 카카오 계정 고유 식별자 | 대한민국 | 국외 이전 없음 |
 

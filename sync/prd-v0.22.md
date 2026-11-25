@@ -1,6 +1,6 @@
 # PRD v0.22 영향 분석
 
-> 상태: PR 완료 (디자인 반영 포함, 캔버스 버전 46)
+> 상태: PR 완료 (디자인 반영 포함, 추가 변경 반영, 캔버스 버전 51)
 > 이전 버전: v0.21 → 새 버전: v0.22
 > 브랜치: sync/prd-v0.22
 > PR: DuriseoApp/Docs#29 · Android 이슈 DuriseoApp/Android#37
@@ -202,3 +202,35 @@ Remote Config 사용자 지정 신호(custom signal)는 쓰지 않는다. 규칙
 | 회차 | 판정 | Critical | 비고 |
 | --- | --- | --- | --- |
 | 1 | 통과 | 0 | Major 3(D-180 예외 경로·응답 필드 → 리드, ERD 3.4 읽기 경로 표현 → data), Minor 7(개인정보 Remote Config 항목, 권한 매트릭스 각주, API 정수 범위·DELETE 404·동기화 신호 줄, SCREENS 값 거르기·스낵바 위치·이미지 대기 합치기). 모두 고침. check-ids 통과 |
+| 2 (추가 변경 뒤) | 수정 뒤 통과 | 1 | Critical 1(API R-20의 426 details에 imageAlt 빠짐), Major 2(PRD D-180 imageAlt, SCREENS 패널 폭 280 표현), Minor 4(참조 절 이름, 값 거르기 경우, "안내" 옛 이름, 요청서 보관 안내). 모두 리드가 고침. check-ids 통과 |
+
+## 7. 추가 변경 (2026-11-25 16시, 같은 PR #29)
+
+사용자 결정으로 v0.22 안에서 아래를 바꿨다. 아래가 3장 이름 확정보다 우선한다.
+
+| 바뀐 것 | 이전 | 지금 | 관련 ID |
+| --- | --- | --- | --- |
+| 공지 종류 | `type`: `BLOCK` \| `INFO` | `closable`: boolean (필수). `false` = 앱을 막는 공지, `true` = 알리는 공지 | D-176, FR-APP-01 AC2 |
+| 화면 이름 | SCR-APP-01 장애 팝업 | SCR-APP-01 **공지 팝업** (ID 그대로) | 5장, 용어 |
+| 앱을 막는 공지 버튼 | [다시 확인] (다시 불러와 닫기) | **[앱 종료]** (앱 종료, 다음 실행 때 다시 확인) | D-179 |
+| 강제 업데이트 버튼 | [업데이트] | **[앱 종료]** · [업데이트] 두 칸 | D-179, FR-APP-02 AC2 |
+| 제목·본문 | 필수 | 모두 선택. 제목이 없으면 `https://` 이미지 + `imageAlt` 필수 (이미지만 넣은 팝업). 본문만 있고 제목 없음은 안 됨. `preset:`만으로는 안 됨 | D-183 (새 결정) |
+| 새 필드 `imageAlt` | 없음 | string \| null, 1~100자. `AppNotice`, `AppUpdateRule` 둘 다 | D-183 |
+| `https://` 이미지 배치 | 112 원형 | 팝업 폭(280)에 꽉 차게 원래 비율, 넘치면 이미지·제목·본문이 함께 스크롤 | D-181 |
+| 이미지만 넣은 팝업이 이미지를 못 받음 | — | `imageAlt`를 제목 자리에 보여줌 | D-183, Q-23 |
+| Q-22 | [다시 확인] 중·오프라인 | 삭제됨 | Q-22 |
+| 표시 순서 이름 | 강제 → 장애 차단 → 권장 → 장애 안내 | 강제 → 앱을 막는 공지 → 권장 → 알리는 공지 (순서 같음) | D-178 |
+
+**테이블·컬럼 (이름 확정)**
+
+| 테이블.컬럼 | 타입 | 제약 |
+| --- | --- | --- |
+| `app_notices.closable` | boolean | not null (`type` 컬럼 대신. V4가 아직 없으므로 처음부터 이렇게 만든다) |
+| `app_notices.title`, `app_notices.body` | varchar(40), varchar(500) | **null 허용** |
+| `app_notices.image_alt` | varchar(100) | null |
+| `app_update_rules.title`, `body` | 위와 같음 | **null 허용** |
+| `app_update_rules.image_alt` | varchar(100) | null |
+
+검사(서비스·API): `title`이 null이면 `image`가 `https://`이고 `imageAlt`가 있어야 함(없으면 400 `VALIDATION_FAILED`, `image`/`imageAlt`, `REQUIRED`). `title`이 null인데 `body`가 있으면 400 (`title`, `REQUIRED`). 빈 문자열은 null로 보지 않고 400 `INVALID`.
+
+**화면 이미지 (PNG)**: 기존 10장 + 새 4장 `SCR-APP-01--block--image-only.png`, `SCR-APP-01--info--image-only.png`, `SCR-APP-02--force--image-only.png`, `SCR-APP-02--recommend--image-only.png`. 파일 이름의 `block`·`info`는 그대로 둔다(앱을 막는 공지·알리는 공지). 캔버스 버전 51.

@@ -282,12 +282,12 @@
       <div class="zone-body">
         <div class="col">
           <div class="card" id="appnotices">
-            <div class="head"><div class="tname">app_notices</div><div class="tdesc">장애 팝업 (차단·안내)</div></div>
+            <div class="head"><div class="tname">app_notices</div><div class="tdesc">공지 팝업 (막는 공지·알리는 공지)</div></div>
             <div class="rows">
               <div class="row"><span class="k pk">PK</span><span class="n">id</span><span class="t">varchar(50)</span></div>
-              <div class="row"><span></span><span class="n">type</span><span class="t">BLOCK · INFO</span></div>
-              <div class="row"><span></span><span class="n">title · body</span><span class="t">40자 · 500자</span></div>
-              <div class="row"><span></span><span class="n">image</span><span class="t">varchar(500) · null</span></div>
+              <div class="row"><span></span><span class="n">closable</span><span class="t">bool · false=앱 막음</span></div>
+              <div class="row"><span></span><span class="n">title · body</span><span class="t">40자 · 500자 · null</span></div>
+              <div class="row"><span></span><span class="n">image · image_alt</span><span class="t">500자 · 100자 · null</span></div>
               <div class="row"><span></span><span class="n">link_text · link_url</span><span class="t">20자 · 500자 · null</span></div>
               <div class="row"><span></span><span class="n">platform</span><span class="t">ANDROID · IOS · null</span></div>
               <div class="row"><span></span><span class="n">starts_at · ends_at</span><span class="t">timestamptz · null</span></div>
@@ -306,6 +306,7 @@
               <div class="row"><span></span><span class="n">build_values</span><span class="t">integer[] · null</span></div>
               <div class="row"><span></span><span class="n">os_min · os_max</span><span class="t">integer · null</span></div>
               <div class="row"><span></span><span class="n">title · body · image</span><span class="t">40자 · 500자 · null</span></div>
+              <div class="row"><span></span><span class="n">image_alt</span><span class="t">varchar(100) · null</span></div>
               <div class="row"><span></span><span class="n">created_at · updated_at</span><span class="t">timestamptz</span></div>
             </div>
             <div class="note">PK는 UUID 예외 · 자동 삭제 없음</div>
