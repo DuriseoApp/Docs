@@ -35,8 +35,8 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 </div>
 <div style="display: flex; flex-direction: column; gap: 12px">
 <p style="margin: 0 0 4px; font-size: 13px; color: #77727F; text-align: center">간편하게 시작하기</p>
-<a href="Connect.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600">Google로 계속하기</a>
-<a href="Connect.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; border: 1px solid #E6E2EA; color: #1C1A22; text-decoration: none; font-size: 16px; font-weight: 600">카카오로 계속하기</a>
+<a href="Connect.dc.html" aria-label="{{googleLabel}}" style="position: relative; display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600">Google로 계속하기<sc-if value="{{googleLast}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: -9px; right: 14px; padding: 2px 8px; border-radius: 999px; background: #6D4AE0; color: #FFFFFF; font-size: 11px; line-height: 16px; font-weight: 600">최근 사용</span></sc-if></a>
+<a href="Connect.dc.html" aria-label="{{kakaoLabel}}" style="position: relative; display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; border: 1px solid #E6E2EA; color: #1C1A22; text-decoration: none; font-size: 16px; font-weight: 600">카카오로 계속하기<sc-if value="{{kakaoLast}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: -9px; right: 14px; padding: 2px 8px; border-radius: 999px; background: #6D4AE0; color: #FFFFFF; font-size: 11px; line-height: 16px; font-weight: 600">최근 사용</span></sc-if></a>
 <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px; color: #77727F; font-size: 12px" aria-hidden="true">
 <span style="flex-grow: 1; height: 1px; background: #EEEBF1"></span>또는<span style="flex-grow: 1; height: 1px; background: #EEEBF1"></span>
 </div>
@@ -50,13 +50,44 @@ a{color:#5B5666}a:hover{color:#1C1A22}
 <sc-if value="{{replaced}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: absolute; left: 16px; right: 16px; top: 40px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: #1C1A22; color: #FFFFFF; font-size: 14px; line-height: 1.5; box-shadow: 0 6px 16px rgba(28, 26, 34, 0.18)">다른 기기에서 로그인해서 로그아웃됐어요</div>
 </sc-if>
+<sc-if value="{{otherOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box">
+<button type="button" aria-label="닫기" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(28, 26, 34, 0.48); cursor: default"></button>
+<section role="alertdialog" aria-modal="true" aria-labelledby="omT" aria-describedby="omB" style="position: relative; box-sizing: border-box; width: 100%; max-width: 320px; padding: 24px 20px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(28, 26, 34, 0.24); display: flex; flex-direction: column; gap: 8px">
+<h2 id="omT" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 700">{{otherTitle}}</h2>
+<p id="omB" style="margin: 0; font-size: 15px; line-height: 24px; color: #5B5666">{{otherBody}}</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+<button type="button" style="height: 48px; border-radius: 14px; border: 1px solid #E6E2EA; background: #FFFFFF; color: #1C1A22; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">취소</button>
+<a href="Connect.dc.html" style="height: 48px; border-radius: 14px; background: {{accent}}; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{otherAction}}</a>
+</div>
+</section>
+</div>
+</sc-if>
 </main>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"replaced":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6D4AE0","options":["#6D4AE0","#1C1A22","#0F8A6B"]},"replaced":{"editor":"boolean","default":false,"section":"상태"},"lastUsed":{"editor":"enum","options":["none","google","kakao"],"default":"none","section":"상태"},"otherDialog":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
 renderVals() {
 // 다른 기기 로그인으로 끊긴 경우 (PRD D-51)
-return { accent: this.props.accent ?? '#6D4AE0', replaced: !!this.props.replaced };
+// 최근 로그인 수단 (PRD FR-AUTH-10, D-188): 기억한 버튼에 "최근 사용" 배지,
+// 다른 수단을 누르면 확인 다이얼로그 (otherDialog는 기억한 수단이 아닌 쪽을 눌렀을 때)
+const last = this.props.lastUsed ?? 'none';
+const name = { google: 'Google', kakao: '카카오' };
+const other = last === 'kakao' ? 'google' : 'kakao';
+const lastName = name[last] ?? '';
+const otherName = name[other];
+return {
+  accent: this.props.accent ?? '#6D4AE0',
+  replaced: !!this.props.replaced,
+  googleLast: last === 'google',
+  kakaoLast: last === 'kakao',
+  googleLabel: last === 'google' ? 'Google로 계속하기, 최근 사용' : 'Google로 계속하기',
+  kakaoLabel: last === 'kakao' ? '카카오로 계속하기, 최근 사용' : '카카오로 계속하기',
+  otherOpen: !!this.props.otherDialog && last !== 'none',
+  otherTitle: '이 기기에서는 ' + lastName + '로 로그인했어요',
+  otherBody: '다른 계정으로 로그인하면 새 계정이 만들어질 수 있어요. ' + otherName + '로 계속할까요?',
+  otherAction: otherName + '로 계속'
+};
 }
 }
 </script>

@@ -1,8 +1,8 @@
 # 둘이서 API 초안 (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.22 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.23 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.md` (테이블 정의), `ERD.png` (한눈에 보기)
-> 작성일: 2026-10-17 (갱신: 2026-11-25, 기준 PRD v0.22)
+> 작성일: 2026-10-17 (갱신: 2026-11-28, 기준 PRD v0.23)
 
 이 문서는 둘이서 서버 API의 범위, 권한, 처리 흐름을 정한다. 인증·내 정보 API와 공간·커플 API, 일정 API, 운영(공지 팝업·업데이트 규칙) API의 요청·응답 모양은 3.1, 3.2, 3.3, 3.7에 정했고, 그 밖의 요청·응답 상세 스키마는 서버 코드의 OpenAPI(springdoc) 문서를 단일 기준으로 삼는다. PRD의 ID(FR, D, NFR, Q)와 ERD의 `DB-` 결정을 그대로 참조하며, PRD와 충돌하면 PRD가 우선이다.
 
@@ -573,7 +573,7 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 | GET | /admin/app-update-rules | → 200 `{"items": [AppUpdateRule]}` | 전부 | R-19 | D-177 |
 | PUT | /admin/app-update-rules/{id} | `AppUpdateRule`에서 `id`를 뺀 본문 → 200 `AppUpdateRule` | upsert. 위와 같은 규칙 | R-19 | D-177 |
 | DELETE | /admin/app-update-rules/{id} | 본문 없음 → 204 | 없으면 404 `NOT_FOUND` | R-19 | D-177 |
-| POST | /admin/app-notice-images | multipart, 필드 `file` 하나 (PNG·JPEG·WebP, 1MB 이하) → 201 `{"url": "https://<API 도메인>/api/v1/app-notice-images/<fileName>"}` | 공지 이미지 업로드. 돌려받은 `url`을 `AppNotice.image`·`AppUpdateRule.image`에 넣는다. `file`이 없으면 400 `VALIDATION_FAILED`(`file`, `REQUIRED`), 1MB 초과는 413 `IMAGE_TOO_LARGE`, PNG·JPEG·WebP가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`. 저장은 8장 | R-19 | D-181 |
+| POST | /admin/app-notice-images | multipart, 필드 `file` 하나 (PNG·JPEG·WebP, 1MB 이하) → 201 `{"url": "https://<API 도메인>/api/v1/app-notice-images/<fileName>"}` | 공지 이미지 업로드. 돌려받은 `url`을 `AppNotice.image`·`AppUpdateRule.image`에 넣는다. `file`이 없으면 400 `VALIDATION_FAILED`(`file`, `REQUIRED`), 1MB 초과이거나 픽셀 수가 25MP를 넘으면 413 `IMAGE_TOO_LARGE`(D-189), PNG·JPEG·WebP가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`. 서버 설정 `PUBLIC_BASE_URL`이 비어 있으면 응답 `url`을 만들 수 없으므로 500 `INTERNAL_ERROR`(설정 오류, 파일은 저장하지 않음). 저장은 8장 | R-19 | D-181 |
 | DELETE | /admin/app-notice-images/{fileName} | 본문 없음 → 204 | 없으면 404 `NOT_FOUND`. 이 이미지를 쓰는 팝업이 있어도 막지 않는다(그 팝업은 이미지 없이 보이고, 제목이 없는 팝업이면 `imageAlt`가 제목 자리에 보인다, D-181, D-183). 자동으로 지우는 작업은 없다 (8장) | R-19 | D-181 |
 
 - 관리자 API는 키가 없거나 틀리면 401 `ADMIN_KEY_INVALID`, 환경변수가 비어 있으면 모두 404 `NOT_FOUND`다 (R-19). 키 검사가 경로 존재·본문 검사보다 먼저다(키가 틀린 요청에는 `NOT_FOUND`나 `VALIDATION_FAILED`로 경로·필드 정보를 알려 주지 않는다).
@@ -625,7 +625,7 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 
 제목이 있고 본문이 `null`인 것은 허용한다.
 
-**관리자 API 본문 검사**: 틀린 필드를 모두 `details.fields`에 담아 400 `VALIDATION_FAILED`로 돌려준다 (1.1). 필드 이름은 요청 필드 그대로이고 중첩 필드는 `build.op`, `build.value`, `build.values`, `osVersion.min`처럼 점으로 잇는다(배열 원소는 `build.values[0]`처럼 0부터 센 인덱스). 제목·본문·이미지 조합은 위 표를 따른다. `reason`은 필수값 없음·조건에 필요한 값 없음 `REQUIRED`(`closable`이 없거나 `null`도 `REQUIRED`, boolean이 아니면 `INVALID`), 길이·개수 초과 `TOO_LONG`(`imageAlt` 100자 포함), 그 밖(`mode`·`platform`·`build.op`가 모르는 값, `id` 문자 규칙, `image` 형식, `linkUrl`이 `https://`가 아님, `endsAt`이 `startsAt`보다 이르거나 같음, `build.min` > `build.max`, `osVersion`의 `min`·`max`가 둘 다 `null`, 음수, 일시 형식) `INVALID`다. `build.op`에 맞지 않는 필드(예: `EQ`인데 `min`이 있음)가 `null`이 아니면 `INVALID`다. `linkText`와 `linkUrl`은 하나만 있어도 저장은 하되(버튼만 안 보임) 각각의 규칙은 검사한다. 일시는 1장 형식(`YYYY-MM-DDTHH:MM:SSZ`)만 받는다. 모르는 필드는 무시한다.
+**관리자 API 본문 검사**: 틀린 필드를 모두 `details.fields`에 담아 400 `VALIDATION_FAILED`로 돌려준다 (1.1). 필드 이름은 요청 필드 그대로이고 중첩 필드는 `build.op`, `build.value`, `build.values`, `osVersion.min`처럼 점으로 잇는다(배열 원소는 `build.values[0]`처럼 0부터 센 인덱스). 제목·본문·이미지 조합은 위 표를 따른다. `reason`은 필수값 없음·조건에 필요한 값 없음 `REQUIRED`(`closable`이 없거나 `null`도 `REQUIRED`, boolean이 아니면 `INVALID`), 길이·개수 초과 `TOO_LONG`(`imageAlt` 100자 포함), 그 밖(`mode`·`platform`·`build.op`가 모르는 값, `id` 문자 규칙, `image` 형식, `linkUrl`이 `https://`가 아님, `endsAt`이 `startsAt`보다 이르거나 같음, `build.min` > `build.max`, `osVersion`의 `min`·`max`가 둘 다 `null`, 음수, 일시 형식) `INVALID`다. `build.op`에 맞지 않는 필드(예: `EQ`인데 `min`이 있음)가 `null`이 아니면 `INVALID`다. **세부 (v0.23, D-177)**: `build.op`가 `RANGE`이고 `min` > `max`면 (`build.min`, `INVALID`), `IN`의 `values`가 빈 배열이면 (`build.values`, `REQUIRED`), `osVersion`이 객체인데 `min`·`max`가 둘 다 `null`이면 (`osVersion`, `INVALID`)다. `osVersion.min` > `osVersion.max`는 거부하지 않는다. 저장은 되지만 맞는 기기가 없고, 앱도 그 규칙을 맞지 않는 규칙으로 본다. `linkText`와 `linkUrl`은 하나만 있어도 저장은 하되(버튼만 안 보임) 각각의 규칙은 검사한다. 일시는 1장 형식(`YYYY-MM-DDTHH:MM:SSZ`)만 받는다. 모르는 필드는 무시한다.
 
 **"지금 유효함" 판단 (공지 팝업, D-176)**: `GET /app-notices`는 아래 기간 조건을 만족하는 행만 돌려준다. 플랫폼은 서버가 거르지 않고 앱이 `platform IS NULL OR platform = 앱 플랫폼`으로 거른다.
 
@@ -786,13 +786,15 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 공지 팝업과 업데이트 팝업을 띄울지는 앱이 판단한다. 서버가 하는 일은 공개 조회 3개(3.7)와 강제 업데이트 차단(R-20, 426)이다. 로그인 전 화면에서도 같다. 아래는 서버 API와 닿는 순서이고 화면은 SCR-APP-01, SCR-APP-02다.
 
 1. **확인 시점 (D-178)**: 앱 실행, 앱으로 돌아올 때, 앱을 쓰는 중 Remote Config 값이 바뀔 때(앱의 실시간 리스너), 서버가 426을 줄 때다. 서버는 푸시나 SYNC 신호로 팝업을 알리지 않는다(6장의 "공지 팝업·업데이트 규칙" 줄). **앱을 쓰는 중이나 앱으로 돌아올 때 공지가 내려간 것을 알면(Remote Config 값 변경, 다시 불러온 결과에서 사라짐) 떠 있던 팝업을 바로 닫는다.**
-2. **두 곳 동시 요청**: 앱 실행 때 Firebase Remote Config(`app_notices`, `app_update_rules`, 실행 때 가져오기 간격 5분)와 서버 `GET /app-notices`, `GET /app-update-rules`를 **동시에** 부른다. 서버 요청은 access 토큰 없이 공통 요청 헤더(1장)만 붙인다. 앱은 서버 응답을 **3초까지만** 기다리고, 3초 안에 답이 없거나 오류가 나면(5xx, 오프라인 포함) 기다리지 않고 Remote Config 값만으로 정한다. Remote Config를 받지 못하면 마지막으로 받아 둔 값을 쓰고, 두 곳 모두 없으면 팝업을 띄우지 않는다 (FR-APP-01.AC6). 공개 조회가 `APP_VERSION_UNSUPPORTED`를 받는 일은 없다(R-20 예외).
+2. **두 곳 동시 요청**: 앱 실행 때 Firebase Remote Config(`app_notices`, `app_update_rules`, 실행 때 가져오기 간격 5분)와 서버 `GET /app-notices`, `GET /app-update-rules`를 **동시에** 부른다. 서버 요청은 access 토큰 없이 공통 요청 헤더(1장)만 붙인다. 앱은 서버 응답을 **3초까지만** 기다리고, 3초 안에 답이 없거나 오류가 나면(5xx, 오프라인 포함) 기다리지 않고 Remote Config 값만으로 정한다. Remote Config를 받지 못하면 마지막으로 받아 둔 값을 쓰고, 두 곳 모두 없으면 팝업을 띄우지 않는다 (FR-APP-01.AC6). **Remote Config 대기 (D-190 ①)**: 실행 때 Remote Config도 **3초까지만** 기다린다. 늦으면 마지막으로 받아 둔 값으로 먼저 정하고, 나중에 도착한 값이 다르면 그 값으로 다시 정한다. 공개 조회가 `APP_VERSION_UNSUPPORTED`를 받는 일은 없다(R-20 예외).
 3. **같은 `id`는 하나로 본다**: 두 곳에 같은 `id`가 있으면 **Remote Config 값**을 쓴다 (D-178). 공지 팝업과 업데이트 규칙은 `id` 이름 공간이 따로다.
 4. **앱이 거르고 판단한다**: 공지 팝업은 `platform`과 기간(3.7 "지금 유효함")으로, 업데이트 규칙은 3.7 "업데이트 규칙 맞춤 판단"으로 고른다. 앱의 플랫폼·빌드 번호(versionCode)·OS 버전(Android API 레벨)을 쓴다.
 5. **표시 순서 (D-178)**: 한 번에 하나만 보인다. 순서는 **강제 업데이트 → 앱을 막는 공지(`closable: false`) → 권장 업데이트 → 알리는 공지(`closable: true`)**이고, 같은 종류끼리는 Remote Config 목록 순서, 그다음 서버 목록 순서다. 닫을 수 있는 팝업을 닫으면 다음 것을 보이고, 이미 떠 있는 팝업보다 앞 순서의 팝업이 생기면 그것으로 바꾼다. 닫기 규칙과 "오늘 하루 안 보기"(`id`별, 기기 단위)는 앱이 기기에 저장하고 서버에는 없다 (D-179). 강제 업데이트는 "오늘 하루 안 보기"로 숨기지 못한다 (FR-APP-02.AC4).
 6. **앱을 막는 공지와 강제 업데이트의 [앱 종료] (D-179)**: 닫을 수 없고 뒤로 가기도 닫지 않는다. 버튼은 [앱 종료](강제 업데이트는 [앱 종료]·[업데이트])이고 누르면 앱을 끈다. 다음 실행 때 2단계부터 다시 확인한다. 다시 불러오는 버튼은 없고 서버는 별도 처리가 없다.
    - **이미지만 넣은 팝업 (`title`이 `null`, D-183)**: `https://` 이미지를 받지 못하면 `imageAlt`를 제목 자리에 보여준다.
 7. **서버가 426을 줄 때 (R-20, D-180, FR-APP-02.AC6)**: 어느 API 요청이든(로그인 전 `POST /auth/*` 포함) 응답이 426 `APP_VERSION_UNSUPPORTED`이면 앱은 지금 화면 위에 강제 업데이트 팝업(SCR-APP-02)을 바로 띄운다. `details`(`ruleId`, `title`, `body`, `image`, `imageAlt`, 1.1)의 값을 쓰고, 문구가 없으면(`title`·`body`가 `null`) 앱 기본 문구(제목 "업데이트가 필요해요", 본문 "새 버전으로 업데이트해야 계속 쓸 수 있어요.", D-180)를, `image`가 `null`이면 `preset:update`를 쓴다. 규칙이 이미지만 넣은 것이면(`title` `null`) 이미지와 `imageAlt`로 그린다. 이 응답은 로그인이 끊긴 것(401)이 아니므로 로컬 데이터와 토큰을 지우지 않고, 공통 오류 안내(D-88)도 따로 보이지 않는다. 앱은 업데이트 전까지 요청을 더 보내지 않아도 된다. 426을 막은 요청은 서버가 아무것도 바꾸지 않았다(인증보다 먼저 거절하므로 쓰기가 일어나지 않는다).
+   - **426 팝업 유지 (D-190 ②)**: 이 팝업은 앱이 살아 있는 동안 유지한다. 서버 목록(`GET /app-update-rules`)을 받았는데 그 목록에 그 규칙(`ruleId`)이 없고 이 앱에 맞는 다른 강제 규칙(`FORCE`)도 없을 때만 닫는다. 목록을 받지 못했으면 닫지 않는다.
+   - **링크 버튼 복귀 (D-190 ③④, FR-APP-01.AC7)**: 팝업의 링크 버튼으로 앱 밖에 나갔다 돌아온 한 번은 "돌아옴 확인"(1단계)을 하지 않는다. 돌아올 때 서버 요청이 실패하면(5xx, 오프라인 포함) 떠 있는 서버 공지를 닫지 않는다. 서버 공지를 닫는 때는 Remote Config에서 사라졌을 때와 받은 서버 목록에 없을 때뿐이다.
 8. **헤더 없는 요청은 막지 않는다**: 이 기능이 생기기 전 앱(출시 전이라 없음)이나 헤더를 읽을 수 없는 요청은 통과한다 (R-20). 서버는 Remote Config 규칙을 모르므로 서버 규칙(`app_update_rules`)만으로 막는다. 앱을 막는 공지(`closable: false`)는 앱 표시만이고 서버가 API를 막지 않는다.
 
 ---
@@ -824,12 +826,12 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 | 409 | ALREADY_COUPLED | 요청자가 이미 커플 공간에 있음 (`POST /invite-codes`, `GET /invite-codes/current`, `POST /couple/join`). 앱은 로컬이 낡은 것으로 보고 공통 오류를 보여준 뒤 `GET /me`를 다시 읽는다 (4.4의 12단계) | R-09, D-95 |
 | 409 | NOT_COUPLE | 커플 공간이 필요한 요청을 개인 공간에서 보냄: `PATCH /space`, 개인 공간에서 `together`나 자기 밖 `userId`가 있는 `PATCH /space/colors`, `DELETE /couple`. 이 세 경로 모두 앱은 이미 해제된 것으로 보고 앱 초기화를 한다 (4.5의 1·6단계, D-103). `POST /couple/import`는 이 코드를 주지 않고 `NO_IMPORT_PENDING`이다 | R-08, R-18, FR-COUPLE-05.AC3·AC5 |
 | 409 | SOCIAL_ALREADY_USED | 연동하려는 소셜 계정이 이미 다른 회원 (`/auth/link`). 앱은 "이미 가입된 계정이에요"와 [그 계정으로 로그인]을 보여주고 확인 뒤 `/auth/switch`를 호출한다 (4.7) | FR-AUTH-03.AC2, AC3, D-67 |
-| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다. **공지 이미지 (v0.22)**: 관리자 API `POST /admin/app-notice-images`의 파일이 1MB 초과여도 같은 코드다(앱이 받을 일이 없고 운영자가 본다) | NFR-FILE-01, D-147, D-153, D-181 |
+| 413 | IMAGE_TOO_LARGE | 프로필 사진 원본 10MB 초과, 또는 픽셀 수 상한(25MP) 초과 (`PUT /me/profile-image`). 새 코드는 없고 재사용한다. 10MB 초과는 앱이 D-147 문구 "10MB 이하의 사진을 골라 주세요"로 보인다. 앱은 25MP를 넘는 사진을 줄여서 올리므로(D-153) 픽셀 수 초과는 보통 생기지 않고, 생기면 공통 오류로 보인다. **공지 이미지 (v0.22, v0.23)**: 관리자 API `POST /admin/app-notice-images`의 파일이 1MB 초과이거나 픽셀 수가 25MP를 넘어도 같은 코드다(D-189. 앱이 받을 일이 없고 운영자가 본다) | NFR-FILE-01, D-147, D-153, D-181, D-189 |
 | 415 | IMAGE_TYPE_NOT_ALLOWED | JPEG·PNG가 아님, 또는 디코드 실패. 형식은 Content-Type이 아니라 실제 디코드로 판정한다. 앱은 D-147 문구 "JPEG나 PNG 사진만 쓸 수 있어요"로 보인다. **공지 이미지 (v0.22)**: 관리자 API `POST /admin/app-notice-images`의 파일이 PNG·JPEG·WebP가 아니거나 디코드 실패여도 같은 코드다(허용 형식이 다르고 앱이 받을 일이 없다) | NFR-FILE-01, D-147, D-181 |
 | 426 | APP_VERSION_UNSUPPORTED | 요청 헤더(1장)의 플랫폼·빌드 번호·OS 버전이 서버의 `FORCE` 업데이트 규칙에 맞음 (`/api/v1` 아래 모든 요청. 예외: `GET /app-notices`, `GET /app-update-rules`, `GET /app-notice-images/{fileName}`, `/admin/**`). 인증 검사보다 먼저 한다. `details` = `{ruleId, title, body, image, imageAlt}` (1.1). 앱은 강제 업데이트 팝업을 띄운다 (4.9). 헤더가 없으면 이 코드를 주지 않고 통과시킨다 | R-20, D-180, FR-APP-02.AC6 |
 | 429 | INVITE_RATE_LIMITED | 최근 1시간(지금부터 거꾸로) 초대코드 오입력 실패 10번 (`POST /couple/join`). `details.retryAfterSeconds` = 10번째로 최근 실패의 시각 + 1시간까지 남은 초(올림, 최소 1). 이 429 자체는 실패로 세지 않는다 (4.4의 2단계) | NFR-SEC-03, FR-COUPLE-02.AC4, D-83 |
 | 429 | INVITE_REISSUE_TOO_SOON | 초대코드를 마지막 발급 후 60초 안에 재요청 (`POST /invite-codes`). `details.retryAfterSeconds` = 최근 `created_at` + 60초까지 남은 초(올림, 최소 1) | FR-COUPLE-01.AC3 |
-| 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao(`access_token_info`, `v2/user/me`)가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다(D-88). 단 `POST /webhooks/kakao/unlink`는 처리 중 서버 오류여도 이 코드 대신 200을 돌려준다 (3.6, 4.8) | 1.1, NFR-SEC-01, D-88 |
+| 500 | INTERNAL_ERROR | 서버 내부 오류. 소셜 제공자 장애도 포함한다: Google 공개키를 받지 못함, Kakao(`access_token_info`, `v2/user/me`)가 5xx를 돌려주거나 시간이 초과됨 (`/auth/social`, `/auth/link`, `/auth/switch`, 아무것도 바꾸지 않음). `details`는 `null`이고 `traceId`로 서버 로그를 찾는다. 앱은 공통 오류 안내를 보여준다(D-88). 단 `POST /webhooks/kakao/unlink`는 처리 중 서버 오류여도 이 코드 대신 200을 돌려준다 (3.6, 4.8). **공지 이미지 업로드 (v0.23)**: `POST /admin/app-notice-images`에서 서버 설정 `PUBLIC_BASE_URL`이 비어 있으면 이 코드다(설정 오류, 파일은 저장하지 않음. 운영자가 본다) | 1.1, NFR-SEC-01, D-88, D-181 |
 
 ---
 
@@ -890,7 +892,7 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 
 - 업로드된 이미지는 서버에서 긴 변 512px JPEG로 다시 인코딩하고, 원본과 EXIF(촬영 위치 포함)는 버린다 (NFR-FILE-01)
 - 저장소는 인터페이스로 감싸 개발 환경은 로컬 디스크, 운영 환경은 Amazon S3(서울 리전 ap-northeast-2)를 쓴다
-- 객체 키는 `profile/{userId}/{uuid}.jpg`로 매번 새로 만들어 캐시 문제를 피하고, 교체 시 이전 파일을 지운다. 이 uuid가 API의 `profileImageVersion`이다 (`users.profile_image_key`)
+- 객체 키는 `profile/{userId}/{uuid}.jpg`로 매번 새로 만들어 캐시 문제를 피하고, 교체 시 이전 파일을 지운다. `{uuid}`는 올릴 때마다 새로 만드는 무작위 UUID다. 이 uuid가 API의 `profileImageVersion`이다 (`users.profile_image_key`)
 - **재인코딩 순서 (v0.12)**: 실제 디코드로 형식을 판정한다(JPEG·PNG가 아니거나 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`). 원본이 10MB를 넘거나 픽셀 수가 25MP를 넘으면 413 `IMAGE_TOO_LARGE`다. 회전(Orientation)을 픽셀에 적용한 뒤 메타를 제거하고, 투명한 부분은 흰 배경(`surface-0`)에 합성한 다음 긴 변 512px JPEG로 저장한다
 - **교체·삭제**: DB 커밋 뒤 이전 키를 best-effort로 지우고, 실패는 아래 정리 작업이 회수한다. 탈퇴는 탈퇴 이벤트의 이전 사진 키로 즉시 지운다
 - **미참조 파일 정리 (ERD 4.4)**: 스토리지 목록을 훑어 `users.profile_image_key`에 없고 마지막 수정이 24시간 지난 객체만 삭제한다. **`profile/` 접두어의 객체만 본다 (v0.22).** 공지 이미지(`notice/` 접두어, 8.2)는 이 작업이 지우지 않는다
@@ -899,7 +901,7 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 
 공지 팝업·업데이트 규칙의 `image`에 쓰는 이미지다 (3.7). 프로필 사진과 같은 스토리지(개발은 로컬 디스크, 운영은 S3 서울 리전)를 같은 인터페이스로 쓰고, 접두어로 나눈다.
 
-- 업로드는 `POST /admin/app-notice-images`(관리자 키, R-19). 형식은 PNG·JPEG·WebP, 1MB 이하다. **프로필 사진과 달리 다시 인코딩하지 않고 원본 그대로 저장한다**(투명 PNG·WebP를 지키기 위해). 형식은 Content-Type이 아니라 실제 디코드로 판정하고, 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`, 1MB 초과는 413 `IMAGE_TOO_LARGE`다.
+- 업로드는 `POST /admin/app-notice-images`(관리자 키, R-19). 형식은 PNG·JPEG·WebP, 1MB 이하, 픽셀 수 25MP 이하다 (v0.23, D-189). **프로필 사진과 달리 다시 인코딩하지 않고 원본 그대로 저장한다**(투명 PNG·WebP를 지키기 위해). 형식은 Content-Type이 아니라 실제 디코드로 판정하고, 디코드 실패는 415 `IMAGE_TYPE_NOT_ALLOWED`, 1MB 초과나 픽셀 수 25MP 초과는 413 `IMAGE_TOO_LARGE`다(D-189, 프로필 사진 8.1과 같은 상한). 서버 설정 `PUBLIC_BASE_URL`이 비어 있으면 아래 `url`을 만들 수 없으므로 500 `INTERNAL_ERROR`(설정 오류)이고 파일은 저장하지 않는다.
 - 객체 키는 `notice/{uuid}.{png|jpg|webp}`다. `fileName` = `{uuid}.{ext}`이고 매번 새 uuid를 만든다(교체는 새로 올리고 `image`를 바꾼 뒤 옛 것을 지운다). 판정한 형식에 따라 확장자는 `png`(PNG), `jpg`(JPEG), `webp`(WebP)다.
 - 조회는 `GET /app-notice-images/{fileName}`이고 **로그인이 필요 없다**(로그인 전 화면에서도 보인다). 응답은 이미지 바이트와 `Content-Type`(확장자에 맞춤), `Cache-Control: public, max-age=86400`, `X-Content-Type-Options: nosniff`다. `fileName`이 `{uuid}.{png|jpg|webp}` 형식이 아니면 스토리지를 찾지 않고 404 `NOT_FOUND`다(경로 이동 방지).
 - 업로드 응답의 `url`은 `https://<API 도메인>/api/v1/app-notice-images/<fileName>`이다. 운영자는 이 값을 `image`에 넣고, 사진은 EXIF를 지우지 않으므로 운영자가 올리는 이미지에는 개인정보(촬영 위치 등)가 없는 것을 쓴다.
@@ -961,8 +963,10 @@ R-01~R-18은 활성 공간·작성자 같은 사용자 권한 규칙이고, R-19
 | FR-SET-01 | GET /me, GET /space | 3.1 `Me.createdAt` (가입일), 3.1 `MeSpace.linkedAt` (연결한 날, D-94), 3.2 `Space`, `Space.linkedAt` |
 | D-57 메모 작성자 닉네임 | API 변경 없음 | 앱이 `GET /space`의 구성원 닉네임을 메모의 `author_id`와 맞춰 채운다 |
 | FR-SET-02 정보 | API 없음(앱·웹) | AC4 [업데이트]는 Play 인앱 업데이트(유연)라 서버 API 없음 (D-151). 강제 업데이트는 FR-APP-02 |
-| FR-APP-01 공지 팝업 (D-176, D-178, D-179, D-181, D-183) | GET /app-notices, GET /app-notice-images/{fileName}, GET·PUT·DELETE /admin/app-notices, POST·DELETE /admin/app-notice-images | 1장 (로그인 불필요 경로), R-19, 3.7 (`AppNotice`의 `closable`·`imageAlt`, 제목·본문·이미지 조합 검사 D-183, "지금 유효함", Remote Config 값과 같은 모양), 4.9 (두 곳 동시 요청, 서버 3초, 같은 `id`는 Remote Config 값, 표시 순서, [앱 종료], 이미지만 넣은 팝업), 8.2 (공지 이미지 저장), 5장 `ADMIN_KEY_INVALID`·`VALIDATION_FAILED`·`IMAGE_TOO_LARGE`·`IMAGE_TYPE_NOT_ALLOWED` |
-| FR-APP-02 강제·권장 업데이트 (D-177, D-178, D-180) | GET /app-update-rules, GET·PUT·DELETE /admin/app-update-rules, 모든 `/api/v1` 요청 (426) | R-20 (인증보다 먼저, 예외 경로, 헤더 없으면 통과), 3.7 (`AppUpdateRule`, 맞춤 판단), 4.9의 7단계 (426을 받았을 때), 1.1 `details`, 5장 `APP_VERSION_UNSUPPORTED` |
+| FR-AD-01~04 광고 (D-184~D-187) | API 변경 없음(앱만) | 광고는 앱이 Google AdMob에서 직접 받고 서버에 저장하지 않는다. 새 경로·필드·오류 코드 없음 |
+| FR-AUTH-10 최근 로그인 수단 안내 (D-188) | API 변경 없음(앱만) | 기기에 기억하고 앱이 안내한다. 서버 변경 없음, 새 경로·필드·오류 코드 없음 |
+| FR-APP-01 공지 팝업 (D-176, D-178, D-179, D-181, D-183, D-189, D-190) | GET /app-notices, GET /app-notice-images/{fileName}, GET·PUT·DELETE /admin/app-notices, POST·DELETE /admin/app-notice-images | 1장 (로그인 불필요 경로), R-19, 3.7 (`AppNotice`의 `closable`·`imageAlt`, 제목·본문·이미지 조합 검사 D-183, "지금 유효함", Remote Config 값과 같은 모양), 4.9 (두 곳 동시 요청, 서버 3초, 같은 `id`는 Remote Config 값, 표시 순서, [앱 종료], 이미지만 넣은 팝업), 8.2 (공지 이미지 저장, 25MP 상한 D-189, `PUBLIC_BASE_URL` 비면 500), 4.9 (AC6 Remote Config 3초 D-190 ①, AC7 서버 실패 때 서버 공지 유지·링크 복귀 한 번 건너뛰기 D-190 ③④), 3.7 관리자 본문 검사 세부, 5장 `ADMIN_KEY_INVALID`·`VALIDATION_FAILED`·`IMAGE_TOO_LARGE`·`IMAGE_TYPE_NOT_ALLOWED`·`INTERNAL_ERROR` |
+| FR-APP-02 강제·권장 업데이트 (D-177, D-178, D-180, D-190) | GET /app-update-rules, GET·PUT·DELETE /admin/app-update-rules, 모든 `/api/v1` 요청 (426) | R-20 (인증보다 먼저, 예외 경로, 헤더 없으면 통과), 3.7 (`AppUpdateRule`, 맞춤 판단), 4.9의 7단계 (426을 받았을 때, AC6 팝업 유지, 서버 목록을 받았는데 그 `ruleId`도 이 앱에 맞는 다른 강제 규칙도 없을 때만 닫음 D-190 ②), 3.7 관리자 본문 검사 세부(`build.min`·`build.values`·`osVersion`), 1.1 `details`, 5장 `APP_VERSION_UNSUPPORTED` |
 | FR-APP-03 기기 정보 (D-182, NFR-PRIV-03) | 공통 요청 헤더 4개, PUT /me/devices | 1장 (공통 요청 헤더), 3.1 `PUT /me/devices` (`osVersion`·`appVersion`·`appBuild`, 보낸 값만 저장), ERD DB-22. `devices` 행이 지워질 때(로그아웃·탈퇴·새 로그인) 함께 지워진다 (4.2, 3.1 `POST /auth/logout`) |
 | NFR-SEC-04 관리자 API | /admin/** | R-19 (`X-Admin-Key`, 상수 시간 비교, 환경변수가 비면 404), 5장 `ADMIN_KEY_INVALID`, 3.7 |
 | NFR-PRIV-03 기기 정보 처리 | PUT /me/devices | 3.1 (OS 버전·앱 버전·빌드 번호만 저장), 1장 공통 요청 헤더. 개인정보처리방침과 Remote Config 위탁은 `legal/privacy.md`이고 API 변경은 없다 |
