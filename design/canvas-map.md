@@ -6,7 +6,7 @@
 | --- | --- |
 | 디자인 캔버스 | 커플 공유 앱 데모 — https://claude.ai/artifact/LKUStrD3gPGhMkprsPKgaS |
 | 디자인 시스템 | 디자인시스템 — https://claude.ai/artifact/X1WrZonYhaZ3qXSc3o2Mrj (캔버스 안 사본: `project/ds/duriseo/tokens.json`) |
-| 마지막 반영 | 2026-11-25 · 캔버스 버전 51 · PRD v0.22 |
+| 마지막 반영 | 2026-11-28 · 캔버스 버전 53 · PRD v0.23 |
 
 캔버스 링크는 주코님 계정에서만 열려요(비공개).
 
@@ -126,6 +126,11 @@
 | AppUpdateImageOnly.dc.html | SCR-APP-02 (강제 · 이미지만) | SCR-APP-02--force--image-only.png |
 | AppUpdateRecommend.dc.html | SCR-APP-02 (권장) | SCR-APP-02--recommend.png |
 | AppUpdateRecommendImageOnly.dc.html | SCR-APP-02 (권장 · 이미지만) | SCR-APP-02--recommend--image-only.png |
+| MainLastUsed.dc.html | SCR-START-01 (최근 사용 배지) | SCR-START-01--last-used.png |
+| MainOtherMethodDialog.dc.html | SCR-START-01 (다른 로그인 수단 확인) | SCR-START-01--other-method-dialog.png |
+| AdDemoMemo.dc.html | SCR-MEMO-01 (광고, 메모 5개마다) | SCR-MEMO-01--ad.png |
+| AdDemoAnniversaries.dc.html | SCR-ANNIV-01 (광고) | SCR-ANNIV-01--ad.png |
+| AdDemoMenu.dc.html | SCR-SET-01 (하단 배너 광고) | SCR-SET-01--ad.png |
 
 이미지로 만들지 않는 보드: `AppIcons.dc.html`(앱 아이콘 시안), `AddEventMemoDate.dc.html`·`MemoDetailOtherYear.dc.html`(이전 버전, PRD v0.21), `*_v1.dc.html`·`*_v2.dc.html`(이전 버전), `Connected.dc.html`·`ConnectedDialog.dc.html`(SCR-COUPLE-04 v0.4 전체 화면), `StartDateSheet.dc.html`(처음 만난 날 시트 컴포넌트 — `MenuStartDateSheet`로 그림), `PopupImage.dc.html`(팝업 기본 이미지 4종 — `design/illustrations/*.svg`가 원본), `PopupBanner.dc.html`(이미지만 넣은 팝업의 배너 예시, 앱에 넣지 않음)
 

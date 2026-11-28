@@ -1,8 +1,8 @@
 # 둘이서 ERD (MVP v0.1)
 
-> 기준 문서: 둘이서 PRD v0.22 (`docs/PRD.md`)
+> 기준 문서: 둘이서 PRD v0.23 (`docs/PRD.md`)
 > 함께 보는 문서: `ERD.png` (한눈에 보기, 원본 `erd/erd.html`), `API.md` (권한 규칙, API, 흐름)
-> 작성일: 2026-10-17 (갱신: 2026-11-25)
+> 작성일: 2026-10-17 (갱신: 2026-11-28)
 
 이 문서는 둘이서 서버의 데이터 모델 단일 기준이다. PRD의 ID(FR, D, NFR, Q)를 그대로 참조하고, 이 문서에서 새로 정한 결정은 `DB-` 접두어를 쓴다. PRD와 충돌하면 PRD가 우선이다.
 
@@ -67,7 +67,7 @@
 | id | uuid | PK | |
 | account_type | varchar(10) | not null, CHECK in (`GUEST`, `MEMBER`) | 게스트 연동 시 `MEMBER`로 변경 (FR-AUTH-03) |
 | nickname | varchar(10) | not null | 게스트 기본값 "게스트", 회원은 소셜 프로필 이름. 앞뒤 공백을 지운 값을 저장하고, 글자 수는 유니코드 코드 포인트로 세어 1~10자다. 지운 뒤 빈 값이면 저장하지 않고 거부한다. 소셜 이름이 코드 포인트 10개를 넘으면 앞 10개만 쓰고, 이름이 없거나 공백뿐이면 "사용자"를 쓴다 (FR-AUTH-07, PRD D-56, D-69, D-82, NFR-LIMIT-01). 길이와 공백 검사는 서비스에서 하고, `varchar(10)`은 PostgreSQL이 문자 단위로 세므로 같은 기준이다. 게스트 연동(`/auth/link`) 성공 시 값이 정확히 "게스트"일 때만 위 규칙으로 소셜 프로필 이름으로 바꾸고, 사용자가 직접 바꾼 닉네임은 그대로 둔다 (FR-AUTH-03.AC1, PRD D-68) |
-| profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01). 키는 uuid이고 사진을 바꿀 때마다 새로 만든다. 이 값이 API의 `profileImageVersion`으로 나간다 (컬럼 추가 없음) |
+| profile_image_key | varchar(200) | null | 이미지 스토리지 객체 키. null이면 글자 아바타 (NFR-FILE-01). 키는 `profile/{userId}/{uuid}.jpg`이고 `{uuid}`는 올릴 때마다 새로 만드는 무작위 UUID다. 이 값이 API의 `profileImageVersion`으로 나간다 (컬럼 추가 없음) |
 | time_zone | varchar(50) | not null, default `Asia/Seoul` | IANA 시간대 |
 | deleted_at | timestamptz | null | 탈퇴 시각. 탈퇴하면 행을 지우지 않고 익명화한다 (4.3). 로그인 수단이 모두 지워져 다시 들어올 수 없다 |
 | created_at, updated_at | timestamptz | not null | `created_at`은 API `Me.createdAt`(가입일)로 내보낸다. 게스트가 연동한 회원은 계정이 그대로이므로 게스트로 시작한 시각이다 (FR-SET-01) |
@@ -559,6 +559,8 @@
 | FR-AUTH-07 AC6~AC9 (v0.12) | users.profile_image_key (`profileImageVersion`으로 나감), 사진 파일 정리 (4.4). 테이블 변화 없음 |
 | FR-APP-01 공지 팝업 | app_notices (D-176, D-181, D-183, DB-21). `closable`, `image_alt`, 제목·본문 null 허용. 관리자 API로만 생성·삭제, 자동 정리 없음. 공지 이미지는 스토리지 `notice/` (4.4) |
 | FR-APP-02 강제·권장 업데이트 | app_update_rules (D-177, D-180, D-183, DB-21). `image_alt`, 제목·본문 null 허용. 426 판단은 요청 헤더와 규칙 비교라 저장하지 않음 |
+| FR-AD-01, FR-AD-02, FR-AD-03, FR-AD-04 광고 (v0.23) | 서버 저장 없음. 테이블·컬럼 변화 없음 (NFR-PRIV-04, D-184~D-187) |
+| FR-AUTH-10 최근 로그인 수단 (v0.23) | 서버 저장 없음. 기기에만 기억한다. 테이블·컬럼 변화 없음 (D-188) |
 | FR-APP-03 기기 정보 | devices.os_version, app_version, app_build (D-182, DB-22, NFR-PRIV-03). 마이그레이션은 컬럼 추가만 |
 | FR-ANNIV-03 AC6, FR-MEMO-02·03·05·06 (v0.12) | anniversaries.updated_at, memos.title·body·pinned_at·pinned_by·updated_at, memo_favorites 설명만 (D-123, D-132, D-134). 테이블 변화 없음 |
 
